@@ -1,9 +1,12 @@
 /**
- * Single-root SVG figure with editorial chrome — no nested <svg> for children.
+ * FigureDocument — editorial single-root SVG wrapper.
+ * Prefer FigureFrame for multi-format branded exports; use FigureDocument for
+ * fixed-size editorial cards with warm-paper styling.
  */
 
+import { toCourtvizTheme } from "@ppd/brand";
 import { memo, type ReactNode } from "react";
-import { type CourtvizTheme, sprawlball } from "@courtviz/themes";
+import { type CourtvizTheme } from "@courtviz/themes";
 
 export interface FigureDocumentProps {
   id?: string;
@@ -28,7 +31,7 @@ export const FigureDocument = memo(function FigureDocument({
   padding = 40,
   source,
   subtitle,
-  theme = sprawlball,
+  theme = toCourtvizTheme("editorial"),
   title,
   width = 1080,
 }: FigureDocumentProps) {
@@ -40,10 +43,8 @@ export const FigureDocument = memo(function FigureDocument({
 
   const titleH = title ? fs.figureTitle * 1.2 : 0;
   const subtitleH = subtitle ? fs.figureSubtitle * 1.5 : 0;
-  const sourceH = source ? fs.source * 1.8 : 0;
   const headerH = titleH + subtitleH + (title || subtitle ? padding * 0.5 : 0);
   const contentY = padding + headerH;
-  const contentH = height - contentY - sourceH - padding * 0.5;
 
   return (
     <svg
@@ -86,9 +87,7 @@ export const FigureDocument = memo(function FigureDocument({
         </text>
       )}
 
-      <g data-content-height={contentH} transform={`translate(0 ${contentY})`}>
-        {children}
-      </g>
+      <g transform={`translate(0 ${contentY})`}>{children}</g>
 
       {source && (
         <text

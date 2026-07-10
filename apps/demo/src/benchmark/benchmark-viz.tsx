@@ -2,6 +2,7 @@ import { computeZoneWinRates } from "@courtviz/core";
 import { enrichedShots, momentumPoints } from "@courtviz/data/fixtures";
 import {
   buildBoludaStory,
+  buildMatchStory,
   toCourtvizTheme,
   type BenchmarkStory,
 } from "@ppd/brand";
@@ -18,6 +19,7 @@ import { getPlayerColor } from "@courtviz/themes";
 import { memo, useMemo, useState } from "react";
 
 export const boludaStory: BenchmarkStory = buildBoludaStory();
+export { buildMatchStory };
 export const editorialTheme = toCourtvizTheme("editorial");
 export const productTheme = toCourtvizTheme("product");
 

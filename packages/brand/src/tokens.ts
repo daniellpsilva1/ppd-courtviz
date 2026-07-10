@@ -1,8 +1,4 @@
-/**
- * Canonical PPD brand tokens — framework-neutral source of truth.
- *
- * Editorial (warm paper) and product (dark) modes share semantic data colors.
- */
+import { colorPrimitives, sportColors, typography as tokenTypography } from "@ppd/tokens";
 
 export interface PpdColorSemantics {
   positive: string;
@@ -96,22 +92,22 @@ export const ppdBrand: PpdBrandTokens = {
     },
   },
   semantics: {
-    positive: "#2F855A",
-    negative: "#C53030",
-    neutral: "#718096",
-    confidence: "#2B6CB0",
-    missing: "#A0AEC0",
-    playerHost: "#E8742C",
-    playerGuest: "#2B6CB0",
-    courtClay: "#C97B4E",
-    courtHard: "#2E5A88",
-    courtGrass: "#6B9E5A",
+    positive: colorPrimitives.positive,
+    negative: colorPrimitives.negative,
+    neutral: colorPrimitives.inkSubtle,
+    confidence: colorPrimitives.primary,
+    missing: colorPrimitives.inkMuted,
+    playerHost: sportColors.playerHost,
+    playerGuest: sportColors.playerGuest,
+    courtClay: sportColors.surfaceLight.clay,
+    courtHard: sportColors.surfaceLight.hard,
+    courtGrass: sportColors.surfaceLight.grass,
   },
   typography: {
-    displayFamily: "Oswald",
-    bodyFamily: "Inter",
-    displayFallback: "Arial Narrow, sans-serif",
-    bodyFallback: "Helvetica Neue, Arial, sans-serif",
+    displayFamily: tokenTypography.families.condensed,
+    bodyFamily: tokenTypography.families.body,
+    displayFallback: tokenTypography.families.condensedFallback,
+    bodyFallback: tokenTypography.families.bodyFallback,
   },
   motion: {
     fastMs: 150,

@@ -56,7 +56,7 @@ function exportHostHexbin() {
     React.createElement(Court, { half: "near", height: 600, surface: "clay", theme, width: 600 },
       React.createElement(HexbinLayer, {
         colorScale: "efficiency",
-        gridSize: 35,
+        gridsize: 35,
         player: "host",
         scales,
         shots: hostShots,
@@ -90,7 +90,7 @@ function exportGuestHexbin() {
     React.createElement(Court, { half: "near", height: 600, surface: "clay", theme, width: 600 },
       React.createElement(HexbinLayer, {
         colorScale: "efficiency",
-        gridSize: 35,
+        gridsize: 35,
         player: "guest",
         scales,
         shots: guestShots,
@@ -241,7 +241,7 @@ function exportDarkHexbin() {
     React.createElement(Court, { half: "near", height: 600, surface: "clay", theme, width: 600 },
       React.createElement(HexbinLayer, {
         colorScale: "efficiency",
-        gridSize: 35,
+        gridsize: 35,
         player: "host",
         scales,
         shots: hostShots,

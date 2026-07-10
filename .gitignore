@@ -27,3 +27,13 @@ coverage/
 # Remotion video output
 apps/video/out/
 apps/gallery/build/
+
+# Demo dev cache
+apps/demo/.vite/
+
+# Generated export artifacts (regenerate via pnpm export:all)
+apps/demo/public/exports/square/
+apps/demo/public/exports/portrait/
+apps/demo/public/exports/story/
+apps/demo/public/exports/landscape/
+apps/demo/public/exports/editorial/

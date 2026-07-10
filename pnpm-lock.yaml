@@ -266,6 +266,9 @@ importers:
       '@courtviz/themes':
         specifier: workspace:*
         version: link:../themes
+      '@ppd/brand':
+        specifier: workspace:*
+        version: link:../brand
       '@ppd/tokens':
         specifier: workspace:*
         version: link:../tokens

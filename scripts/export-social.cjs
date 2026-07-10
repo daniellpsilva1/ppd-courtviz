@@ -11,7 +11,7 @@ const oldPaths = module.paths || [];
 module.paths = [demoNodeModules, rootNodeModules, ...oldPaths];
 
 const React = require("react");
-const { Court, HexbinLayer, DotLayer, ServeLayer, RayLayer, MomentumChart, ColorBar, FigureFrame } = require("@courtviz/react");
+const { CourtSurface, HexbinLayer, DotLayer, ServeLayer, RayLayer, MomentumChart, ColorBar, FigureFrame } = require("@courtviz/react");
 const { createCourtScales, resolveFrameLayout } = require("@courtviz/core");
 const { ppd } = require("@courtviz/themes");
 const { enrichedShots, momentumPoints, hostName, guestName, surface } = require("@courtviz/data");
@@ -66,7 +66,7 @@ function buildHexbinPoster(player, titleSuffix) {
       title: `${player === "host" ? hostName : guestName} — ${titleSuffix}`,
     },
       React.createElement("g", { transform: `translate(${courtX - (format === "landscape" ? layout.content.x : 0)}, 0)` },
-        React.createElement(Court, { half, height, surface: "clay", theme, width },
+        React.createElement(CourtSurface, { half, height, idPrefix: `hexbin-${player}`, surface: "clay", theme, width },
           React.createElement(HexbinLayer, {
             colorScale: "efficiency",
             gridsize: 35,
@@ -100,7 +100,7 @@ function buildDotDensityPoster() {
       title: "Shot Bounce Locations",
     },
       React.createElement("g", { transform: `translate(${courtX - (format === "landscape" ? layout.content.x : 0)}, 0)` },
-        React.createElement(Court, { half, height, surface: "clay", theme, width },
+        React.createElement(CourtSurface, { half, height, idPrefix: "dotdensity", surface: "clay", theme, width },
           React.createElement(DotLayer, {
             alpha: 0.55,
             colorBy: "stroke",
@@ -131,7 +131,7 @@ function buildServePoster() {
       title: `${hostName} — Serve Placement`,
     },
       React.createElement("g", { transform: `translate(${courtX - (format === "landscape" ? layout.content.x : 0)}, 0)` },
-        React.createElement(Court, { half, height, surface: "clay", theme, width },
+        React.createElement(CourtSurface, { half, height, idPrefix: "serve-host", surface: "clay", theme, width },
           React.createElement(ServeLayer, {
             player: "host",
             scales,
@@ -162,7 +162,7 @@ function buildRaysPoster() {
       title: `${hostName} — Shot Trajectories`,
     },
       React.createElement("g", { transform: `translate(${courtX - (format === "landscape" ? layout.content.x : 0)}, 0)` },
-        React.createElement(Court, { half, height, surface: "clay", theme, width },
+        React.createElement(CourtSurface, { half, height, idPrefix: "rays-host", surface: "clay", theme, width },
           React.createElement(RayLayer, {
             alpha: 0.3,
             player: "host",

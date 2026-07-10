@@ -5,4 +5,10 @@ export {
   BenchmarkStorySchema,
   type BenchmarkStory,
 } from "./story/schema";
-export { buildBoludaStory } from "./story/build-boluda-story";
+export {
+  buildBoludaStory,
+  buildMatchStory,
+  computeStoryMetrics,
+  type MatchStoryFixtures,
+  type StoryNarrativeOverrides,
+} from "./story/build-boluda-story";

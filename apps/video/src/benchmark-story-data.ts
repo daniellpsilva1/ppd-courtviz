@@ -1,4 +1,6 @@
-import { buildBoludaStory, toCourtvizTheme } from "@ppd/brand";
+import { getMatchStoryTheme, matchStory, buildBoludaStory, buildMatchStory, toCourtvizTheme } from "./match-story-context";
 
-export const benchmarkStory = buildBoludaStory();
-export const benchmarkProductTheme = toCourtvizTheme("product");
+export const benchmarkStory = matchStory;
+export const benchmarkProductTheme = getMatchStoryTheme("product");
+
+export { buildBoludaStory, buildMatchStory, getMatchStoryTheme, toCourtvizTheme };
