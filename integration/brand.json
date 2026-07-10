@@ -1,0 +1,21 @@
+{
+  "_comment": "Generated from @ppd/tokens",
+  "name": "Peak Performance Data",
+  "colors": {
+    "primary": "#2563EB",
+    "accent": "#10B981",
+    "backgroundDark": "#0F172A",
+    "chartPalette": [
+      "#2563EB",
+      "#059669",
+      "#7C3AED",
+      "#D97706",
+      "#0891B2",
+      "#DB2777"
+    ]
+  },
+  "fonts": {
+    "heading": "Inter",
+    "display": "Oswald"
+  }
+}

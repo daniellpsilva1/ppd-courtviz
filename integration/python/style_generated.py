@@ -1,0 +1,8 @@
+"""Generated from @ppd/tokens."""
+BG_COLOR = "#0F172A"
+INK = "#F2F5FA"
+COURT_CLAY = "#A65D35"
+PLAYER_HOST = "#3B82F6"
+PLAYER_GUEST = "#F97316"
+DIV_LOW = "#1E4A8C"
+DIV_PEAK = "#FF4444"
