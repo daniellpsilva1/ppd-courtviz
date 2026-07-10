@@ -42,7 +42,6 @@ const transformed = rows.map((r) => ({
 }));
 
 const out = JSON.stringify(transformed, null, 2);
-const outPath =
-  "/Users/danielsilva/Desktop/PeakPerformanceDataMonorepo/PeakPerformanceDataMarketing/DataViz/data/points_boluda.json";
+const outPath = require("path").resolve(__dirname, "../data/raw/points_boluda.json");
 fs.writeFileSync(outPath, out);
 console.log(`Wrote ${transformed.length} points to ${outPath}`);

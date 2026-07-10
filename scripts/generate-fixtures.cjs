@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const dataDir = path.resolve(__dirname, "../../DataViz/data");
+const dataDir = path.resolve(__dirname, "../data/raw");
 const outDir = path.resolve(__dirname, "../packages/data/src/fixtures");
 
 fs.mkdirSync(outDir, { recursive: true });

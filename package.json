@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "turbo run build",
+    "build:app": "turbo run build --filter=@courtviz/react...",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
