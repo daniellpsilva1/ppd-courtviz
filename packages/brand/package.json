@@ -1,0 +1,37 @@
+{
+  "name": "@ppd/brand",
+  "version": "0.0.0",
+  "description": "PPD editorial modes, theme adapters, and match story payloads",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@courtviz/core": "workspace:*",
+    "@courtviz/data": "workspace:*",
+    "@courtviz/themes": "workspace:*",
+    "@ppd/tokens": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "vitest": "^3.0.0"
+  }
+}

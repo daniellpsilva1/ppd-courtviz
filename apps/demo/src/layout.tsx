@@ -3,6 +3,9 @@ import { guestName, hostName, matchDate, surface } from "@courtviz/data";
 
 const navItems = [
   { label: "Overview", path: "/" },
+  { label: "Brand", path: "/brand" },
+  { label: "Benchmark Story", path: "/benchmark/story" },
+  { label: "App Preview", path: "/benchmark/app" },
   { label: "Hexmap", path: "/hexmap" },
   { label: "Dot Density", path: "/dotdensity" },
   { label: "Serve", path: "/serve" },

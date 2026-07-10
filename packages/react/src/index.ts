@@ -3,6 +3,15 @@
 export { Court } from "./court";
 export type { CourtProps } from "./court";
 
+export { CourtSurface } from "./court-surface";
+export type { CourtSurfaceProps } from "./court-surface";
+
+export {
+  CourtScalesProvider,
+  useCourtScales,
+  useOptionalCourtScales,
+} from "./court-scales-context";
+
 export { HexbinLayer } from "./hexbin-layer";
 export type { HexbinLayerProps, HexbinColorScale } from "./hexbin-layer";
 
@@ -25,7 +34,16 @@ export { ColorBar, Legend } from "./legend";
 export type { ColorBarProps, LegendProps, LegendItem } from "./legend";
 
 export { FigureFrame } from "./figure-frame";
-export type { FigureFrameProps } from "./figure-frame";
+export type { FigureFrameProps, FigureBranding } from "./figure-frame";
+
+export { FigureDocument } from "./figure-document";
+export type { FigureDocumentProps } from "./figure-document";
+
+export { BrandMark, brandMarkWidth } from "./brand-mark";
+export type { BrandMarkProps } from "./brand-mark";
+
+export { ZoneBarChart } from "./zone-bar-chart";
+export type { ZoneBarChartProps, ZoneBarDatum } from "./zone-bar-chart";
 
 export { Annotation } from "./annotation";
 export type { AnnotationProps } from "./annotation";

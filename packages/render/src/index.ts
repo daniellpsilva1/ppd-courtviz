@@ -52,7 +52,6 @@ export async function svgToPNG(svg: string, _options?: {
   height?: number;
 }): Promise<Buffer> {
   try {
-    // @ts-expect-error — sharp is an optional dependency, may not be installed
     const sharp = (await import("sharp")).default;
     return await sharp(Buffer.from(svg))
       .png()

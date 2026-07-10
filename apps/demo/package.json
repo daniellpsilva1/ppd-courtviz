@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "export:static": "node ../../scripts/export-static.cjs",
+    "export:editorial": "tsx ../../scripts/export-editorial.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist .turbo"
   },
@@ -14,7 +15,10 @@
     "@courtviz/core": "workspace:*",
     "@courtviz/data": "workspace:*",
     "@courtviz/react": "workspace:*",
+    "@courtviz/render": "workspace:*",
     "@courtviz/themes": "workspace:*",
+    "@ppd/brand": "workspace:*",
+    "@ppd/tokens": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0"

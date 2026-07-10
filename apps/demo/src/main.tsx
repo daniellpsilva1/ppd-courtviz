@@ -8,6 +8,9 @@ import { ServePage } from "./pages/serve";
 import { RaysPage } from "./pages/rays";
 import { MomentumPage } from "./pages/momentum";
 import { OverviewPage } from "./pages/overview";
+import { BrandPage } from "./pages/brand";
+import { BenchmarkStoryPage } from "./benchmark/story-page";
+import { BenchmarkAppPreviewPage } from "./benchmark/app-preview-page";
 import "./styles.css";
 
 const router = createBrowserRouter([
@@ -20,6 +23,9 @@ const router = createBrowserRouter([
       { element: <ServePage />, path: "/serve" },
       { element: <RaysPage />, path: "/rays" },
       { element: <MomentumPage />, path: "/momentum" },
+      { element: <BrandPage />, path: "/brand" },
+      { element: <BenchmarkStoryPage />, path: "/benchmark/story" },
+      { element: <BenchmarkAppPreviewPage />, path: "/benchmark/app" },
     ],
   },
 ]);
