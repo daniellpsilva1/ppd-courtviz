@@ -8,6 +8,12 @@ import {
   SOCIAL_TOTAL_DURATION,
   SOCIAL_WIDTH,
 } from "./social-constants";
+import {
+  BENCHMARK_FPS,
+  BENCHMARK_HEIGHT,
+  BENCHMARK_WIDTH,
+} from "./benchmark-constants";
+import { BenchmarkStorySocial, BENCHMARK_TOTAL_DURATION } from "./benchmark-recap-social";
 
 export function RemotionRoot() {
   return (
@@ -27,6 +33,14 @@ export function RemotionRoot() {
         height={SOCIAL_HEIGHT}
         id="MatchRecapSocial"
         width={SOCIAL_WIDTH}
+      />
+      <Composition
+        component={BenchmarkStorySocial}
+        durationInFrames={BENCHMARK_TOTAL_DURATION}
+        fps={BENCHMARK_FPS}
+        height={BENCHMARK_HEIGHT}
+        id="BenchmarkStorySocial"
+        width={BENCHMARK_WIDTH}
       />
     </>
   );

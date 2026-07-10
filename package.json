@@ -15,11 +15,16 @@
     "version": "changeset version",
     "release": "turbo run build && changeset publish",
     "clean": "turbo run clean && rm -rf node_modules",
-    "export:static": "turbo run build && pnpm --filter demo exec node ../../scripts/export-static.cjs"
+    "export:static": "turbo run build && pnpm --filter demo exec node ../../scripts/export-static.cjs",
+    "export:social": "turbo run build && pnpm --filter demo exec node ../../scripts/export-social.cjs",
+    "export:editorial": "turbo run build && pnpm --filter demo export:editorial",
+    "export:all": "pnpm export:static && pnpm export:social && pnpm export:editorial"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.12",
     "@types/node": "^20.17.0",
+    "sharp": "^0.33.5",
+    "tsx": "^4.19.0",
     "turbo": "^2.4.0",
     "typescript": "^5.7.0"
   },

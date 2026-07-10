@@ -6,9 +6,11 @@ Inspired by [The SprawlBall](https://www.basketballanalyticsbook.com/) and [Hoop
 
 ## Features
 
-- **Framework-agnostic core**: Court geometry, coordinate normalization, and stats computation in pure TypeScript
-- **React SVG components**: `<Court>` with full/half views, 3 surfaces, portrait/landscape orientation
-- **Three themes**: SprawlBall (warm paper), PPD Dark (app), Broadcast (high-contrast video)
+- **Framework-agnostic core**: Court geometry, coordinate normalization, hexbin, stats, and multi-format frame layout
+- **Unified PPD brand system**: `@ppd/tokens` design tokens with drop-in integration artifacts
+- **Editorial storytelling**: `@ppd/brand` match story builder with Zod-validated payloads
+- **React SVG components**: `<Court>`, composable `<CourtSurface>`, branded `<FigureFrame>`, layers, charts
+- **Themes**: `ppd` (default dark), `ppdLight`, `broadcast`, legacy `sprawlball`
 - **Dual-encoded hexbins**: Size = frequency, color = efficiency (win rate vs. corpus baseline)
 - **True point-winner attribution**: Shots↔points join replaces the old `is_terminal` approximation
 - **Supabase integration**: Direct loading from SwingVision match data
@@ -18,10 +20,12 @@ Inspired by [The SprawlBall](https://www.basketballanalyticsbook.com/) and [Hoop
 
 | Package | Description |
 |---------|-------------|
-| `@courtviz/core` | Court geometry, scales, normalization, hexbin, stats |
+| `@ppd/tokens` | Canonical PPD design tokens (colors, typography, social formats) |
+| `@ppd/brand` | Editorial modes, theme adapters, match story builder |
+| `@courtviz/core` | Court geometry, scales, stats, `resolveFrameLayout()` |
 | `@courtviz/data` | Zod schemas, Supabase loader, shots↔points join |
-| `@courtviz/themes` | Design tokens (SprawlBall-inspired palettes, typography) |
-| `@courtviz/react` | React SVG components (`<Court>`) |
+| `@courtviz/themes` | Courtviz themes derived from `@ppd/tokens` |
+| `@courtviz/react` | React SVG components (`Court`, `FigureFrame`, layers) |
 | `@courtviz/render` | Server-side SVG/PNG export |
 
 ## Quick Start
@@ -32,6 +36,14 @@ pnpm build
 pnpm test
 ```
 
+### Demo app
+
+```bash
+pnpm --filter demo dev
+```
+
+Routes: `/brand`, `/benchmark/story`, `/benchmark/app`, plus viz pages (`/hexmap`, `/momentum`, etc.).
+
 ### Gallery (Ladle)
 
 ```bash
@@ -41,26 +53,52 @@ pnpm --filter @courtviz/gallery dev
 ### Usage
 
 ```tsx
-import { Court } from "@courtviz/react";
-import { sprawlball } from "@courtviz/themes";
+import { Court, FigureFrame, BrandMark } from "@courtviz/react";
+import { ppd } from "@courtviz/themes";
+import { resolveFrameLayout } from "@courtviz/core";
+import { buildBoludaStory, toCourtvizTheme } from "@ppd/brand";
 
-<Court surface="clay" theme={sprawlball} width={1080} height={1080} />
+const story = buildBoludaStory();
+const editorial = toCourtvizTheme("editorial");
+
+<Court surface="clay" theme={ppd} width={1080} height={1080} />
 ```
+
+## Export pipelines
+
+| Command | Output |
+|---------|--------|
+| `pnpm export:static` | 7 legacy flat SVGs (backward compat) |
+| `pnpm export:social` | 56 dark branded assets (7 posters × 4 formats × SVG+PNG) |
+| `pnpm export:editorial` | 4 warm editorial social cards |
+| `pnpm export:all` | All of the above |
+
+Social exports land in `apps/demo/public/exports/{square,portrait,story,landscape}/`. Editorial exports in `apps/demo/public/exports/editorial/`.
+
+## Video (Remotion)
+
+```bash
+pnpm --filter @courtviz/video dev
+pnpm --filter @courtviz/video render:social
+pnpm --filter @courtviz/video render:benchmark
+```
+
+Compositions: `MatchRecap`, `MatchRecapSocial`, `BenchmarkStorySocial`.
 
 ## Architecture
 
 ```
-courtviz/
-├── packages/
-│   ├── core/       # Geometry, scales, stats (no React dependency)
-│   ├── data/       # Zod schemas, Supabase loader, shots↔points join
-│   ├── themes/     # Design tokens
-│   ├── react/      # SVG components
-│   └── render/     # SSR to SVG/PNG
-├── apps/
-│   └── gallery/    # Ladle component gallery
-└── fixtures/       # Anonymized match data for testing
+@ppd/tokens (single source of truth)
+  ├── @courtviz/themes (ppd, ppdLight, broadcast, sprawlball)
+  ├── @courtviz/core (resolveFrameLayout for 4 social formats)
+  ├── @courtviz/react (BrandMark + branded FigureFrame)
+  ├── @ppd/brand (editorial modes + match story builder)
+  └── integration/ (CSS, Tailwind preset, brand.json, Python constants)
 ```
+
+See [MERGE.md](./MERGE.md) for migration notes from the Fable/GPT benchmark forks.
+
+Brand spec: [packages/tokens/BRAND.md](./packages/tokens/BRAND.md)
 
 ## License
 
