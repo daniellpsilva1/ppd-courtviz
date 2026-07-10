@@ -20,7 +20,7 @@ import {
   getSurfaceColor,
   getSurfaceColorLight,
   getSurroundColor,
-  sprawlball,
+  ppd,
 } from "@courtviz/themes";
 import { createCourtScales, type CourtScales } from "@courtviz/core";
 
@@ -69,7 +69,7 @@ export const Court = memo(function Court({
   orientation = "portrait",
   showServiceBox = true,
   surface = "hard",
-  theme = sprawlball,
+  theme = ppd,
   width = 1080,
 }: CourtProps) {
   // Swap dimensions for landscape

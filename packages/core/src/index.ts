@@ -3,6 +3,7 @@
 export * from "./geometry";
 export * from "./normalize";
 export * from "./scales";
+export * from "./frame-layout";
 export * from "./hexbin";
 export * from "./stats";
 export * from "./density";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Court, DensityLayer, DotLayer, FigureFrame, Legend } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
-import { broadcast, ppdDark, sprawlball } from "@courtviz/themes";
+import { broadcast, ppd, ppdLight, sprawlball } from "@courtviz/themes";
 import { enrichedShots, guestName, hostName, surface } from "@courtviz/data";
 import type { DotColorBy } from "@courtviz/react";
 
@@ -11,9 +11,9 @@ export function DotDensityPage() {
   const [half, setHalf] = useState<"full" | "near">("full");
   const [normalize, setNormalize] = useState(false);
   const [player, setPlayer] = useState("both");
-  const [themeName, setThemeName] = useState("ppdDark");
+  const [themeName, setThemeName] = useState("ppd");
 
-  const theme = themeName === "sprawlball" ? sprawlball : themeName === "broadcast" ? broadcast : ppdDark;
+  const theme = themeName === "sprawlball" ? sprawlball : themeName === "broadcast" ? broadcast : themeName === "ppdLight" ? ppdLight : ppd;
   const courtW = 600;
   const courtH = half === "full" ? 800 : 600;
   const frameW = 700;
@@ -89,7 +89,8 @@ export function DotDensityPage() {
         <div className="control-group">
           <label>Theme</label>
           <select onChange={(e) => setThemeName(e.target.value)} value={themeName}>
-            <option value="ppdDark">PPD Dark</option>
+            <option value="ppd">PPD</option>
+            <option value="ppdLight">PPD Light</option>
             <option value="sprawlball">SprawlBall</option>
             <option value="broadcast">Broadcast</option>
           </select>

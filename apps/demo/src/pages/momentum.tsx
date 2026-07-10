@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { MomentumChart } from "@courtviz/react";
-import { broadcast, ppdDark, sprawlball } from "@courtviz/themes";
+import { broadcast, ppd, ppdLight, sprawlball } from "@courtviz/themes";
 import { guestName, hostName, momentumPoints, sets } from "@courtviz/data";
 
 export function MomentumPage() {
-  const [themeName, setThemeName] = useState("ppdDark");
+  const [themeName, setThemeName] = useState("ppd");
   const [width, setWidth] = useState(900);
   const [height, setHeight] = useState(280);
 
-  const theme = themeName === "sprawlball" ? sprawlball : themeName === "broadcast" ? broadcast : ppdDark;
+  const theme = themeName === "sprawlball" ? sprawlball : themeName === "broadcast" ? broadcast : themeName === "ppdLight" ? ppdLight : ppd;
   const setScores = sets.map((s) => `Set ${s.setNumber}: ${s.hostScore}-${s.guestScore}`).join(" · ");
 
   return (
@@ -23,7 +23,8 @@ export function MomentumPage() {
       <div className="controls">
         <div className="control-group">
           <label>Theme</label>
-          <button className={themeName === "ppdDark" ? "active" : ""} onClick={() => setThemeName("ppdDark")}>PPD Dark</button>
+          <button className={themeName === "ppd" ? "active" : ""} onClick={() => setThemeName("ppd")}>PPD</button>
+          <button className={themeName === "ppdLight" ? "active" : ""} onClick={() => setThemeName("ppdLight")}>PPD Light</button>
           <button className={themeName === "sprawlball" ? "active" : ""} onClick={() => setThemeName("sprawlball")}>SprawlBall</button>
           <button className={themeName === "broadcast" ? "active" : ""} onClick={() => setThemeName("broadcast")}>Broadcast</button>
         </div>

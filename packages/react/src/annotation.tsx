@@ -6,7 +6,7 @@
  */
 
 import { memo } from "react";
-import { type CourtvizTheme, sprawlball } from "@courtviz/themes";
+import { type CourtvizTheme, ppd } from "@courtviz/themes";
 
 export interface AnnotationProps {
   /** Anchor x in SVG pixels (the point being annotated) */
@@ -36,7 +36,7 @@ export const Annotation = memo(function Annotation({
   showCallout = false,
   subtext,
   text,
-  theme = sprawlball,
+  theme = ppd,
   x,
   y,
 }: AnnotationProps) {

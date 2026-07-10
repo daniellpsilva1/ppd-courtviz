@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 import { MomentumChart } from "../momentum-chart";
-import { sprawlball, ppdDark } from "@courtviz/themes";
+import { sprawlball, ppd } from "@courtviz/themes";
 
 function makePoint(overrides: Partial<{ gameNumber: number; isBreakPoint: boolean; isMatchPoint: boolean; isSetPoint: boolean; pointWinner: string; setNumber: number }> = {}) {
   return {
@@ -106,18 +106,18 @@ describe("MomentumChart", () => {
     expect(lineCount).toBeGreaterThanOrEqual(2); // zero line + set boundary
   });
 
-  it("renders with ppdDark theme", () => {
+  it("renders with ppd theme", () => {
     const points = [makePoint({ pointWinner: "host" })];
     const markup = renderToStaticMarkup(
       React.createElement(MomentumChart, {
         height: 200,
         hostPlayer: "host",
         points,
-        theme: ppdDark,
+        theme: ppd,
         width: 800,
       }),
     );
-    expect(markup).toContain(ppdDark.background);
+    expect(markup).toContain(ppd.background);
   });
 
   it("handles empty points array gracefully", () => {

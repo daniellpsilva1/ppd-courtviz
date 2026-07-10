@@ -1,67 +1,135 @@
 /**
- * <FigureFrame> — self-contained editorial SVG figure wrapper.
- *
- * Provides title, subtitle, source note, and a content area for court
- * visualizations. Inspired by SprawlBall/Hoop Atlas figure layouts.
+ * <FigureFrame> — editorial SVG figure wrapper with multi-format layouts and branding.
  */
 
 import { memo, type ReactNode } from "react";
-import { type CourtvizTheme, sprawlball } from "@courtviz/themes";
+import { resolveFrameLayout, type FrameLayout } from "@courtviz/core";
+import { type SocialFormat } from "@ppd/tokens";
+import { type CourtvizTheme, ppd } from "@courtviz/themes";
+import { BrandMark } from "./brand-mark";
+
+export interface FigureBranding {
+  logo?: boolean;
+  handle?: string;
+  source?: string;
+}
 
 export interface FigureFrameProps {
-  /** Main figure title */
+  id?: string;
   title?: string;
-  /** Subtitle below the title */
   subtitle?: string;
-  /** Source / credit line at the bottom */
   source?: string;
-  /** Theme for styling */
+  accessibleSummary?: string;
   theme?: CourtvizTheme;
-  /** Total pixel width of the figure */
   width?: number;
-  /** Total pixel height of the figure */
   height?: number;
-  /** Padding around the content area in pixels */
   padding?: number;
-  /** Background color override (defaults to theme.background) */
+  format?: SocialFormat;
   background?: string;
-  /** Children (court SVG, legends, annotations, etc.) */
+  branding?: FigureBranding;
   children?: ReactNode;
 }
 
+function renderBrandingFooter(
+  layout: FrameLayout,
+  theme: CourtvizTheme,
+  branding: FigureBranding,
+  source?: string,
+) {
+  const footer = layout.footer;
+  const handle = branding.handle ?? theme.brand?.handle ?? "@peakperformancedata";
+  const sourceText = branding.source ?? source ?? theme.brand?.sourceLine;
+  const ruleY = footer.y;
+
+  return (
+    <g data-testid="figure-branding-footer">
+      <line
+        stroke={theme.border}
+        strokeWidth={1}
+        x1={footer.x}
+        x2={footer.x + footer.width}
+        y1={ruleY}
+        y2={ruleY}
+      />
+      {branding.logo !== false && (
+        <g transform={`translate(${footer.x}, ${ruleY + 12})`}>
+          <BrandMark height={28} theme={theme} variant="monogram" />
+        </g>
+      )}
+      <text
+        fill={theme.inkMuted}
+        fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
+        fontSize={theme.fontSize.label}
+        textAnchor="end"
+        x={footer.x + footer.width * 0.72}
+        y={ruleY + 30}
+      >
+        {handle}
+      </text>
+      {sourceText && (
+        <text
+          fill={theme.inkMuted}
+          fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
+          fontSize={theme.fontSize.source}
+          textAnchor="end"
+          x={footer.x + footer.width}
+          y={ruleY + 30}
+        >
+          {sourceText}
+        </text>
+      )}
+    </g>
+  );
+}
+
 export const FigureFrame = memo(function FigureFrame({
+  accessibleSummary,
   background,
+  branding,
   children,
-  height = 1080,
-  padding = 40,
+  format = "square",
+  height,
+  id = "figure",
+  padding,
   source,
   subtitle,
-  theme = sprawlball,
+  theme = ppd,
   title,
-  width = 1080,
+  width,
 }: FigureFrameProps) {
+  const layout = resolveFrameLayout(format, { height, padding, width });
   const bg = background ?? theme.background;
   const fs = theme.fontSize;
   const fonts = theme.fonts;
+  const hasBranding = Boolean(branding);
+  const isLandscape = format === "landscape";
+  const titleRegion = layout.title;
+  const contentRegion = layout.content;
+  const titleId = `${id}-title`;
+  const descId = `${id}-desc`;
 
-  const titleH = title ? fs.figureTitle * 1.2 : 0;
-  const subtitleH = subtitle ? fs.figureSubtitle * 1.5 : 0;
-  const sourceH = source ? fs.source * 1.8 : 0;
-  const headerH = titleH + subtitleH + (title || subtitle ? padding * 0.5 : 0);
-  const contentY = padding + headerH;
-  const contentH = height - contentY - sourceH - padding * 0.5;
+  const titleX = titleRegion.x;
+  const titleY = titleRegion.y + fs.figureTitle;
+  const subtitleY = titleY + (title ? fs.figureSubtitle + 8 : 0);
+  const contentTransform = isLandscape
+    ? `translate(${contentRegion.x} ${contentRegion.y})`
+    : `translate(0 ${contentRegion.y})`;
 
   return (
     <svg
-      height={height}
+      aria-describedby={accessibleSummary ? descId : undefined}
+      aria-labelledby={title ? titleId : undefined}
+      height={layout.height}
+      role="img"
       style={{ display: "block" }}
-      viewBox={`0 0 ${width} ${height}`}
-      width={width}
+      viewBox={`0 0 ${layout.width} ${layout.height}`}
+      width={layout.width}
     >
-      {/* Background */}
-      <rect fill={bg} height={height} width={width} x={0} y={0} />
+      <title id={titleId}>{title ?? "Data visualization"}</title>
+      {accessibleSummary && <desc id={descId}>{accessibleSummary}</desc>}
 
-      {/* Title */}
+      <rect fill={bg} height={layout.height} width={layout.width} x={0} y={0} />
+
       {title && (
         <text
           fill={theme.ink}
@@ -70,45 +138,48 @@ export const FigureFrame = memo(function FigureFrame({
           fontWeight={700}
           letterSpacing={0.5}
           textAnchor="start"
-          x={padding}
-          y={padding + fs.figureTitle}
+          x={titleX}
+          y={titleY}
         >
           {title}
         </text>
       )}
 
-      {/* Subtitle */}
       {subtitle && (
         <text
           fill={theme.inkMuted}
           fontFamily={`${fonts.bodyFont}, ${fonts.bodyFontFallback}`}
           fontSize={fs.figureSubtitle}
           textAnchor="start"
-          x={padding}
-          y={padding + titleH + fs.figureSubtitle + 4}
+          x={titleX}
+          y={subtitleY}
         >
           {subtitle}
         </text>
       )}
 
-      {/* Content area */}
-      <g transform={`translate(0 ${contentY})`} data-content-height={contentH}>
+      <g
+        data-content-height={contentRegion.height}
+        data-content-width={contentRegion.width}
+        transform={contentTransform}
+      >
         {children}
       </g>
 
-      {/* Source note */}
-      {source && (
+      {source && !hasBranding && (
         <text
           fill={theme.inkMuted}
           fontFamily={`${fonts.bodyFont}, ${fonts.bodyFontFallback}`}
           fontSize={fs.source}
           textAnchor="start"
-          x={padding}
-          y={height - padding * 0.5}
+          x={layout.padding}
+          y={layout.height - layout.padding * 0.5}
         >
           {source}
         </text>
       )}
+
+      {hasBranding && branding && renderBrandingFooter(layout, theme, branding, source)}
     </svg>
   );
 });

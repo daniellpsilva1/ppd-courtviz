@@ -27,6 +27,7 @@
   "dependencies": {
     "@courtviz/core": "workspace:*",
     "@courtviz/themes": "workspace:*",
+    "@ppd/tokens": "workspace:*",
     "d3-interpolate": "^3.0.1"
   },
   "peerDependencies": {

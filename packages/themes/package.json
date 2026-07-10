@@ -25,7 +25,8 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@courtviz/core": "workspace:*"
+    "@courtviz/core": "workspace:*",
+    "@ppd/tokens": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

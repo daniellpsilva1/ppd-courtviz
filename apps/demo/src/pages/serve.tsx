@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Court, FigureFrame, Legend, ServeLayer } from "@courtviz/react";
 import { computeServeZones, createCourtScales, zoneLabel } from "@courtviz/core";
-import { ppdDark } from "@courtviz/themes";
+import { ppd } from "@courtviz/themes";
 import { enrichedShots, guestName, hostName, surface } from "@courtviz/data";
 import type { ServeType } from "@courtviz/react";
 
@@ -13,7 +13,7 @@ export function ServePage() {
   const [serveType, setServeType] = useState<ServeType>("both");
   const [activePlayer, setActivePlayer] = useState<"host" | "guest" | "both">("both");
 
-  const theme = ppdDark;
+  const theme = ppd;
   const courtSize = 560;
   const frameW = 900;
   const frameH = 720;

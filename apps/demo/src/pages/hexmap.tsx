@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Court, ColorBar, FigureFrame, HexbinLayer, HexSizeLegend } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
-import { broadcast, ppdDark, sprawlball, type CourtvizTheme } from "@courtviz/themes";
+import { broadcast, ppd, ppdDark, ppdLight, sprawlball, type CourtvizTheme } from "@courtviz/themes";
 import { enrichedShots, guestName, hostName, surface } from "@courtviz/data";
 import type { HexbinColorScale } from "@courtviz/react";
 
-const themes: Record<string, CourtvizTheme> = { broadcast, ppdDark, sprawlball };
+const themes: Record<string, CourtvizTheme> = { broadcast, ppd, ppdDark, ppdLight, sprawlball };
 
 export function HexmapPage() {
   const [colorScale, setColorScale] = useState<HexbinColorScale>("efficiency");
   const [gridsize, setGridsize] = useState(6);
   const [player, setPlayer] = useState("host");
-  const [themeName, setThemeName] = useState("ppdDark");
+  const [themeName, setThemeName] = useState("ppd");
 
   const theme = themes[themeName]!;
   const courtSize = 600;
@@ -64,7 +64,9 @@ export function HexmapPage() {
         <div className="control-group">
           <label>Theme</label>
           <select onChange={(e) => setThemeName(e.target.value)} value={themeName}>
-            <option value="ppdDark">PPD Dark</option>
+            <option value="ppd">PPD</option>
+            <option value="ppdLight">PPD Light</option>
+            <option value="ppdDark">PPD Dark (legacy alias)</option>
             <option value="sprawlball">SprawlBall</option>
             <option value="broadcast">Broadcast</option>
           </select>

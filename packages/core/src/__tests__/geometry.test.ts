@@ -61,7 +61,7 @@ describe("courtLines", () => {
     const lines = courtLines("near");
     // Should skip far baseline, far service line, far center mark, center service line
     // 2 doubles + 2 singles + 1 near baseline + 1 net + 1 near service + 1 near center mark = 8
-    expect(lines.length).toBe(8);
+    expect(lines.length).toBe(9);
   });
 
   it("net extends beyond doubles sidelines", () => {

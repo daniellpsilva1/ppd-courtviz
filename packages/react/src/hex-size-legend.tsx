@@ -6,7 +6,7 @@
  */
 
 import { memo } from "react";
-import { type CourtvizTheme, sprawlball } from "@courtviz/themes";
+import { type CourtvizTheme, ppd } from "@courtviz/themes";
 
 export interface HexSizeLegendProps {
   /** Theme for styling */
@@ -30,7 +30,7 @@ export const HexSizeLegend = memo(function HexSizeLegend({
   label = "Shots",
   maxCount = 10,
   maxRadius = 20,
-  theme = sprawlball,
+  theme = ppd,
   x = 0,
   y = 0,
 }: HexSizeLegendProps) {

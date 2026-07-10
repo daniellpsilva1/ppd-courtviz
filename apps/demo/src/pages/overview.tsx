@@ -7,7 +7,7 @@ import {
   computeRallyBucketStats,
   createCourtScales,
 } from "@courtviz/core";
-import { ppdDark } from "@courtviz/themes";
+import { ppd } from "@courtviz/themes";
 import {
   enrichedShots,
   guestName,
@@ -23,7 +23,7 @@ import { FigureCard } from "../components/figure-card";
 import { RallyWinRateChart } from "../components/rally-win-rate-chart";
 
 export function OverviewPage() {
-  const theme = ppdDark;
+  const theme = ppd;
 
   const hostPointsWon = computePointsWonRate(points, "host");
   const guestPointsWon = computePointsWonRate(points, "guest");
