@@ -12,7 +12,8 @@ describe("@ppd/tokens", () => {
     expect(tokens.primitives.primary).toBe("#2563EB");
     expect(tokens.brand.handle).toBe("@peakperformancedata");
     expect(tokens.social.square.width).toBe(1080);
-    expect(tokens.typography.families.condensed).toBe("Oswald");
+    expect(tokens.typography.families.condensed).toBe("Barlow Condensed");
+    expect(tokens.primitives.marketing).toBe("#0047FF");
   });
 
   it("defines chart palette with six colors", () => {

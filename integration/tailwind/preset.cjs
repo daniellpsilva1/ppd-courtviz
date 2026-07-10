@@ -12,7 +12,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        condensed: ["Oswald", "sans-serif"],
+        condensed: ["Barlow Condensed", "sans-serif"],
         sans: ["Inter", "sans-serif"],
       },
     },

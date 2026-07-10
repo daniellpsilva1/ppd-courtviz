@@ -4,9 +4,10 @@
  * fixed-size editorial cards with warm-paper styling.
  */
 
-import { toCourtvizTheme } from "@ppd/brand";
+import { brandDefaults } from "@ppd/tokens";
 import { memo, type ReactNode } from "react";
-import { type CourtvizTheme } from "@courtviz/themes";
+import { ppdEditorial, type CourtvizTheme } from "@courtviz/themes";
+import { BrandMark } from "./brand-mark";
 
 export interface FigureDocumentProps {
   id?: string;
@@ -19,19 +20,21 @@ export interface FigureDocumentProps {
   height?: number;
   padding?: number;
   background?: string;
+  branding?: boolean;
   children?: ReactNode;
 }
 
 export const FigureDocument = memo(function FigureDocument({
   accessibleSummary,
   background,
+  branding = true,
   children,
   height = 1080,
   id = "figure",
   padding = 40,
   source,
   subtitle,
-  theme = toCourtvizTheme("editorial"),
+  theme = ppdEditorial,
   title,
   width = 1080,
 }: FigureDocumentProps) {
@@ -99,6 +102,22 @@ export const FigureDocument = memo(function FigureDocument({
         >
           {source}
         </text>
+      )}
+
+      {branding && (
+        <g transform={`translate(${padding}, ${height - padding * 1.4})`}>
+          <BrandMark height={24} theme={theme} variant="monogram" />
+          <text
+            fill={theme.inkMuted}
+            fontFamily={`${fonts.bodyFont}, ${fonts.bodyFontFallback}`}
+            fontSize={fs.source}
+            textAnchor="end"
+            x={width - padding * 2}
+            y={18}
+          >
+            {brandDefaults.handle}
+          </text>
+        </g>
       )}
     </svg>
   );

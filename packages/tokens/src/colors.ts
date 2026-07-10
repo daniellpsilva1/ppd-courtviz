@@ -14,6 +14,8 @@ export const colorPrimitives = {
   primary: "#2563EB",
   primaryBright: "#3B82F6",
   primaryDark: "#1D4ED8",
+  /** Marketing / landing page accent blue */
+  marketing: "#0047FF",
   accent: "#10B981",
   accentDark: "#059669",
   violet: "#A855F7",
@@ -88,6 +90,19 @@ export const sportColors = {
     midLight: "#CBD5E1",
     high: "#E8742C",
     peak: "#8B1A1A",
+  },
+  stroke: {
+    forehand: "#3B82F6",
+    backhand: "#2563EB",
+    volley: "#10B981",
+    serve: "#A855F7",
+    overhead: "#EC4899",
+    feed: "#64748B",
+  },
+  outcome: {
+    in: "#10B981",
+    out: "#EF4444",
+    net: "#F59E0B",
   },
 } as const;
 

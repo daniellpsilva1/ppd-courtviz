@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { toCourtvizTheme } from "@ppd/brand";
+import { ppdEditorial } from "@courtviz/themes";
 import { FigureDocument } from "../figure-document";
 
 describe("FigureDocument", () => {
@@ -18,6 +18,7 @@ describe("FigureDocument", () => {
     );
     expect(html).toContain('role="img"');
     expect(html).toContain("Court heatmap summary");
-    expect(html).toContain(toCourtvizTheme("editorial").background);
+    expect(html).toContain(ppdEditorial.background);
+    expect(html).toContain("brand-mark-icon");
   });
 });

@@ -1,4 +1,4 @@
-import { colorPrimitives, sportColors, typography as tokenTypography } from "@ppd/tokens";
+import { colorPrimitives, semanticColors, sportColors, typography as tokenTypography } from "@ppd/tokens";
 
 export interface PpdColorSemantics {
   positive: string;
@@ -54,40 +54,43 @@ export interface PpdBrandTokens {
   };
 }
 
+const light = semanticColors.light;
+const dark = semanticColors.dark;
+
 export const ppdBrand: PpdBrandTokens = {
   name: "Peak Performance Data",
   modes: {
     editorial: {
       name: "editorial",
-      background: "#F7F3EB",
-      surface: "#FFFDF8",
-      surfaceRaised: "#FFFFFF",
-      border: "#D8D0C4",
-      ink: "#12141A",
-      inkMuted: "#5C5F6A",
-      accent: "#C4522D",
-      accentMuted: "#E8A88A",
+      background: light.surface,
+      surface: light.background,
+      surfaceRaised: light.surfaceRaised,
+      border: light.border,
+      ink: colorPrimitives.navy900,
+      inkMuted: colorPrimitives.inkSubtle,
+      accent: colorPrimitives.primary,
+      accentMuted: colorPrimitives.primaryBright,
     },
     product: {
       name: "product",
-      background: "#0E1117",
-      surface: "#161A22",
-      surfaceRaised: "#1E232D",
-      border: "#2A3140",
-      ink: "#F2F3F5",
-      inkMuted: "#9CA3AF",
-      accent: "#E8742C",
-      accentMuted: "#FF9F5A",
+      background: dark.background,
+      surface: dark.surface,
+      surfaceRaised: dark.surfaceRaised,
+      border: dark.border,
+      ink: dark.ink,
+      inkMuted: dark.inkMuted,
+      accent: dark.primary,
+      accentMuted: colorPrimitives.accent,
     },
     broadcast: {
       name: "broadcast",
-      background: "#000000",
+      background: colorPrimitives.black,
       surface: "#111111",
       surfaceRaised: "#1A1A1A",
       border: "#333333",
-      ink: "#FFFFFF",
+      ink: colorPrimitives.white,
       inkMuted: "#CCCCCC",
-      accent: "#FF7A1A",
+      accent: colorPrimitives.amber,
       accentMuted: "#FFB380",
     },
   },

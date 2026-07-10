@@ -184,6 +184,22 @@ export const ppdLight: CourtvizTheme = buildThemeFromTokens({
   annotationFill: semanticColors.light.surfaceRaised,
 });
 
+/** Light editorial theme for article-style graphics and social cards */
+export const ppdEditorial: CourtvizTheme = buildThemeFromTokens({
+  name: "ppd-editorial",
+  semantic: {
+    ...semanticColors.light,
+    background: semanticColors.light.surface,
+    halo: semanticColors.light.halo,
+  },
+  surfaces: sportColors.surfaceLight,
+  diverging: sportColors.divergingLight,
+  players: { host: sportColors.playerHost, guest: "#2563EB" },
+  fontSize: typography.sizes,
+  annotationFill: semanticColors.light.surfaceRaised,
+  brand: true,
+});
+
 export const broadcast: CourtvizTheme = buildThemeFromTokens({
   name: "broadcast",
   semantic: {
@@ -239,7 +255,7 @@ export const sprawlball: CourtvizTheme = {
 };
 
 export const themes: Record<string, CourtvizTheme> = {
-  broadcast, ppd, ppdDark, ppdLight, sprawlball,
+  broadcast, ppd, ppdDark, ppdEditorial, ppdLight, sprawlball,
 };
 
 export function getTheme(name: string = "ppd"): CourtvizTheme {

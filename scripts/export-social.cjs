@@ -11,8 +11,8 @@ const oldPaths = module.paths || [];
 module.paths = [demoNodeModules, rootNodeModules, ...oldPaths];
 
 const React = require("react");
-const { CourtSurface, HexbinLayer, DotLayer, ServeLayer, RayLayer, MomentumChart, ColorBar, FigureFrame } = require("@courtviz/react");
-const { createCourtScales, resolveFrameLayout } = require("@courtviz/core");
+const { CourtSurface, HexbinLayer, DotLayer, ServeLayer, RayLayer, MomentumChart, ColorBar, FigureFrame, ServeAnnotations, StatCallout } = require("@courtviz/react");
+const { createCourtScales, resolveFrameLayout, computeServeZones, computeZoneWinRates } = require("@courtviz/core");
 const { ppd } = require("@courtviz/themes");
 const { enrichedShots, momentumPoints, hostName, guestName, surface } = require("@courtviz/data");
 const { exportGraphic } = require("@courtviz/render");
@@ -57,6 +57,8 @@ function buildHexbinPoster(player, titleSuffix) {
     const scales = createCourtScales({ half, height, margin: 1.5, width });
     const shots = enrichedShots.filter((s) => s.player === player && s.stroke !== "Serve");
     const courtX = layout.content.x + (layout.content.width - width) / 2;
+    const zoneRates = computeZoneWinRates(shots, player);
+    const topZone = zoneRates[0];
 
     return React.createElement(FigureFrame, {
       branding,
@@ -79,6 +81,13 @@ function buildHexbinPoster(player, titleSuffix) {
         React.createElement("g", { transform: `translate(${(width - 200) / 2}, ${height + 16})` },
           React.createElement(ColorBar, { min: "Cold", max: "Hot", theme, width: 200 }),
         ),
+        topZone && React.createElement(StatCallout, {
+          label: `${topZone.zone} zone win rate`,
+          theme,
+          value: `${Math.round(topZone.winRate * 100)}%`,
+          x: width - 180,
+          y: height - 60,
+        }),
       ),
     );
   };
@@ -122,6 +131,7 @@ function buildServePoster() {
     const { height, width } = courtSizeForLayout(layout, half);
     const scales = createCourtScales({ half, height, margin: 1.5, width });
     const courtX = layout.content.x + (layout.content.width - width) / 2;
+    const hostZones = computeServeZones(enrichedShots, "host");
 
     return React.createElement(FigureFrame, {
       branding,
@@ -138,6 +148,11 @@ function buildServePoster() {
             serveType: "both",
             shots: enrichedShots,
             theme,
+          }),
+          React.createElement(ServeAnnotations, {
+            scales,
+            theme,
+            zones: hostZones,
           }),
         ),
       ),

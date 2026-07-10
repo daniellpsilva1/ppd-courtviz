@@ -14,6 +14,7 @@ export * from "./colors";
 export * from "./typography";
 export * from "./layout";
 export * from "./social";
+export * from "./logo";
 
 export interface PpdTokens {
   primitives: typeof colorPrimitives;

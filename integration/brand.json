@@ -1,10 +1,18 @@
 {
-  "_comment": "Generated from @ppd/tokens",
+  "_comment": "Generated from @ppd/tokens — do not edit by hand",
+  "_generatedFrom": "@ppd/tokens",
   "name": "Peak Performance Data",
+  "tagline": "Unified athlete intelligence for tennis academies",
+  "website": "https://peakperformancedata.app",
   "colors": {
     "primary": "#2563EB",
+    "primaryBright": "#3B82F6",
+    "primaryDark": "#1D4ED8",
+    "marketing": "#0047FF",
     "accent": "#10B981",
+    "accentDark": "#059669",
     "backgroundDark": "#0F172A",
+    "backgroundLight": "#FFFFFF",
     "chartPalette": [
       "#2563EB",
       "#059669",
@@ -12,10 +20,19 @@
       "#D97706",
       "#0891B2",
       "#DB2777"
+    ],
+    "chartPaletteDark": [
+      "#3B82F6",
+      "#10B981",
+      "#A855F7",
+      "#F59E0B",
+      "#06B6D4",
+      "#EC4899"
     ]
   },
   "fonts": {
     "heading": "Inter",
-    "display": "Oswald"
+    "body": "Inter",
+    "display": "Barlow Condensed"
   }
 }

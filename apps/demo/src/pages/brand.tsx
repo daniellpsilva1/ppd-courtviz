@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
-import { Court, HexbinLayer, FigureFrame } from "@courtviz/react";
+import { Court, HexbinLayer, FigureFrame, BrandMark } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
 import {
   broadcast,
   ppd,
+  ppdEditorial,
   ppdLight,
   sprawlball,
   type CourtvizTheme,
 } from "@courtviz/themes";
 import {
+  brandDefaults,
   chartPalette,
   colorPrimitives,
   semanticColors,
@@ -19,7 +21,8 @@ import {
 import { enrichedShots, guestName, hostName, surface } from "@courtviz/data";
 
 const themeOptions: Array<{ key: string; theme: CourtvizTheme; label: string }> = [
-  { key: "ppd", label: "PPD (default)", theme: ppd },
+  { key: "ppd", label: "PPD Dark (default)", theme: ppd },
+  { key: "ppdEditorial", label: "PPD Editorial", theme: ppdEditorial },
   { key: "ppdLight", label: "PPD Light", theme: ppdLight },
   { key: "broadcast", label: "Broadcast", theme: broadcast },
   { key: "sprawlball", label: "SprawlBall (legacy)", theme: sprawlball },
@@ -62,9 +65,27 @@ export function BrandPage() {
       </header>
 
       <section className="brand-section">
+        <h3>Logo</h3>
+        <div className="logo-preview-row">
+          <svg height={48} viewBox="0 0 48 48" width={48}>
+            <BrandMark height={48} theme={ppd} variant="monogram" />
+          </svg>
+          <svg height={28} viewBox="0 0 200 28" width={200}>
+            <BrandMark height={28} theme={ppd} variant="lockup" />
+          </svg>
+        </div>
+        <p className="muted">{brandDefaults.sourceLine}</p>
+      </section>
+
+      <section className="brand-section">
         <h3>Color primitives</h3>
         <div className="swatch-grid">
-          {Object.entries(colorPrimitives).slice(0, 12).map(([name, hex]) => (
+          <Swatch color={colorPrimitives.primary} label="primary" />
+          <Swatch color={colorPrimitives.primaryBright} label="primaryBright" />
+          <Swatch color={colorPrimitives.marketing} label="marketing" />
+          <Swatch color={colorPrimitives.accent} label="accent" />
+          <Swatch color={colorPrimitives.navy900} label="navy900" />
+          {Object.entries(colorPrimitives).slice(0, 8).map(([name, hex]) => (
             <Swatch color={hex} key={name} label={name} />
           ))}
         </div>
@@ -93,8 +114,9 @@ export function BrandPage() {
         <div className="swatch-grid">
           <Swatch color={sportColors.playerHost} label="playerHost" />
           <Swatch color={sportColors.playerGuest} label="playerGuest" />
+          <Swatch color={sportColors.stroke.forehand} label="stroke.forehand" />
+          <Swatch color={sportColors.outcome.in} label="outcome.in" />
           <Swatch color={sportColors.diverging.low} label="diverging.low" />
-          <Swatch color={sportColors.diverging.mid} label="diverging.mid" />
           <Swatch color={sportColors.diverging.peak} label="diverging.peak" />
           <Swatch color={sportColors.surface.clay} label="surface.clay" />
         </div>
@@ -105,7 +127,7 @@ export function BrandPage() {
         <div className="type-ramp">
           {Object.entries(typography.sizes).map(([name, size]) => (
             <div className="type-sample" key={name}>
-              <span className="type-meta">{name} · {size}px</span>
+              <span className="type-meta">{name} · {size}px · {typography.families.condensed}</span>
               <p
                 style={{
                   fontFamily: name.startsWith("figure") || name === "title"
@@ -176,7 +198,7 @@ export function BrandPage() {
               <div className="export-thumbs">
                 {["hexbin-host", "momentum", "serve-host"].map((name) => (
                   <a
-                    href={`/exports/${format}/${name}.png`}
+                    href={`/exports/${format}/${name}.svg`}
                     key={`${format}-${name}`}
                     rel="noreferrer"
                     target="_blank"
@@ -184,7 +206,7 @@ export function BrandPage() {
                     <img
                       alt={`${name} ${format}`}
                       loading="lazy"
-                      src={`/exports/${format}/${name}.png`}
+                      src={`/exports/${format}/${name}.svg`}
                     />
                     <span>{name}</span>
                   </a>

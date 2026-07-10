@@ -124,6 +124,9 @@ importers:
       '@ppd/brand':
         specifier: workspace:*
         version: link:../../packages/brand
+      '@ppd/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
       '@remotion/google-fonts':
         specifier: ^4.0.272
         version: 4.0.486(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

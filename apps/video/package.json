@@ -20,6 +20,7 @@
     "@courtviz/react": "workspace:*",
     "@courtviz/themes": "workspace:*",
     "@ppd/brand": "workspace:*",
+    "@ppd/tokens": "workspace:*",
     "@remotion/google-fonts": "^4.0.272",
     "@remotion/media": "4.0.486",
     "@remotion/transitions": "^4.0.272",

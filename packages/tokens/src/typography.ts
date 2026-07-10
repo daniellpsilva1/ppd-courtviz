@@ -1,5 +1,5 @@
 export const fontFamilies = {
-  condensed: "Oswald",
+  condensed: "Barlow Condensed",
   body: "Inter",
   condensedFallback: "Arial Narrow, sans-serif",
   bodyFallback: "Helvetica Neue, Arial, sans-serif",

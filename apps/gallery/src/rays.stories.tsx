@@ -1,11 +1,11 @@
 import type { Story } from "@ladle/react";
 import { Court, RayLayer } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
-import { sprawlball } from "@courtviz/themes";
+import { ppd } from "@courtviz/themes";
 import { enrichedShots } from "@courtviz/data";
 
 export const AllRaysFullCourt: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "full", height: 800, margin: 1.5, width: 600 });
 
   return (
@@ -26,7 +26,7 @@ export const AllRaysFullCourt: Story = () => {
 };
 
 export const ForehandRaysHalfCourt: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
 
   return (
@@ -50,7 +50,7 @@ export const ForehandRaysHalfCourt: Story = () => {
 };
 
 export const BackhandRaysHalfCourt: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
 
   return (

@@ -1,11 +1,11 @@
 import type { Story } from "@ladle/react";
 import { Court, DotLayer, Legend } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
-import { sprawlball } from "@courtviz/themes";
+import { ppd } from "@courtviz/themes";
 import { enrichedShots } from "@courtviz/data";
 
 export const AllShotsDotDensity: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "full", height: 800, margin: 1.5, width: 600 });
 
   return (
@@ -28,7 +28,7 @@ export const AllShotsDotDensity: Story = () => {
 };
 
 export const HostShotsBySpeed: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "full", height: 800, margin: 1.5, width: 600 });
 
   return (
@@ -52,7 +52,7 @@ export const HostShotsBySpeed: Story = () => {
 };
 
 export const TerminalShotsMap: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
 
   return (
@@ -77,7 +77,7 @@ export const TerminalShotsMap: Story = () => {
 };
 
 export const DotDensityWithLegend: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "full", height: 800, margin: 1.5, width: 600 });
 
   const legendItems = [

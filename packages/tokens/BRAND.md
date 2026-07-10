@@ -5,9 +5,15 @@ Unified dark "data brand" identity for app, court graphics, social exports, and 
 ## Identity
 
 - **Canvas**: deep navy (`#0F172A`)
-- **Primary**: electric blue (`#3B82F6` on dark)
+- **Primary**: electric blue (`#3B82F6` on dark, `#2563EB` on light)
+- **Marketing**: landing blue (`#0047FF`)
 - **Accent**: emerald (`#10B981`)
-- **Display**: Oswald · **Body**: Inter
+- **Display**: Barlow Condensed · **Body**: Inter
+
+## Logo
+
+- **Icon**: mountain peak + waveform in circle (inline SVG via `@ppd/tokens/logo`)
+- **Lockup**: icon + "PEAK PERFORMANCE / DATA" wordmark
 
 ## Social formats
 
@@ -20,6 +26,12 @@ Unified dark "data brand" identity for app, court graphics, social exports, and 
 
 ## Branding on exports
 
-- BrandMark (PPD monogram) bottom-left
+- BrandMark (PPD logo icon) bottom-left
 - `@peakperformancedata` center-right
 - Source line bottom-right
+
+## Integration
+
+Regenerate cross-project artifacts: `pnpm --filter @ppd/tokens build`
+
+Outputs: `integration/css/ppd-variables.css`, `integration/tailwind/preset.cjs`, `integration/brand.json`, `integration/python/style_generated.py`

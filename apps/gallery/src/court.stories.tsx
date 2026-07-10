@@ -2,14 +2,14 @@ import type { Story } from "@ladle/react";
 import { Court } from "@courtviz/react";
 import {
   broadcast,
-  ppdDark,
-  sprawlball,
+  ppd,
+  ppdEditorial,
   type CourtvizTheme,
 } from "@courtviz/themes";
 import type { CourtHalf, Surface } from "@courtviz/core";
 
 const surfaces: Surface[] = ["clay", "hard", "grass"];
-const themes: Record<string, CourtvizTheme> = { broadcast, ppdDark, sprawlball };
+const themes: Record<string, CourtvizTheme> = { broadcast, ppd, ppdEditorial };
 const halves: CourtHalf[] = ["full", "near", "far"];
 
 export const CourtMatrix: Story = () => (
@@ -52,7 +52,7 @@ export const HalfCourtClay: Story = () => (
 );
 
 export const DarkThemeCourt: Story = () => (
-  <Court height={600} surface="hard" theme={ppdDark} width={600} />
+  <Court height={600} surface="hard" theme={ppd} width={600} />
 );
 
 export const BroadcastCourt: Story = () => (

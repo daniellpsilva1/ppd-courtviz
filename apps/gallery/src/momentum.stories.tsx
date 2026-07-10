@@ -1,10 +1,10 @@
 import type { Story } from "@ladle/react";
 import { MomentumChart, ColorBar } from "@courtviz/react";
-import { sprawlball, ppdDark } from "@courtviz/themes";
+import { ppd, ppdEditorial } from "@courtviz/themes";
 import { momentumPoints, hostName } from "@courtviz/data";
 
 export const MomentumFull: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
 
   return (
     <div style={{ background: theme.background, padding: 20, borderRadius: 8 }}>
@@ -23,7 +23,7 @@ export const MomentumFull: Story = () => {
 };
 
 export const MomentumDark: Story = () => {
-  const theme = ppdDark;
+  const theme = ppd;
 
   return (
     <div style={{ background: theme.background, padding: 20, borderRadius: 8 }}>
@@ -39,7 +39,7 @@ export const MomentumDark: Story = () => {
 };
 
 export const MomentumCompact: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
 
   return (
     <div style={{ background: theme.background, padding: 16, borderRadius: 8 }}>
@@ -55,7 +55,7 @@ export const MomentumCompact: Story = () => {
 };
 
 export const ColorBarEfficiency: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
 
   return (
     <div style={{ background: theme.background, padding: 20, borderRadius: 8 }}>

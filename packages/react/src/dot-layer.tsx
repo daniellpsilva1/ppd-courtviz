@@ -5,24 +5,25 @@
  */
 
 import { memo, useMemo } from "react";
+import { sportColors } from "@ppd/tokens";
 import { type CourtScales, type EnrichedShot, hasValidSpatialCoords, normalizeShot } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
 
 export type DotColorBy = "stroke" | "player" | "speed" | "result";
 
 const STROKE_COLORS: Record<string, string> = {
-  Backhand: "#2B6CB0",
-  Feed: "#718096",
-  Forehand: "#E8742C",
-  Overhead: "#D53F8C",
-  Serve: "#805AD5",
-  Volley: "#38A169",
+  Backhand: sportColors.stroke.backhand,
+  Feed: sportColors.stroke.feed,
+  Forehand: sportColors.stroke.forehand,
+  Overhead: sportColors.stroke.overhead,
+  Serve: sportColors.stroke.serve,
+  Volley: sportColors.stroke.volley,
 };
 
 const RESULT_COLORS: Record<string, string> = {
-  In: "#38A169",
-  Net: "#3182CE",
-  Out: "#E53E3E",
+  In: sportColors.outcome.in,
+  Net: sportColors.outcome.net,
+  Out: sportColors.outcome.out,
 };
 
 export interface DotLayerProps {

@@ -1,13 +1,13 @@
 import type { Story } from "@ladle/react";
 import { Court, HexbinLayer } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
-import { broadcast, ppdDark, sprawlball, type CourtvizTheme } from "@courtviz/themes";
+import { broadcast, ppd, ppdEditorial, type CourtvizTheme } from "@courtviz/themes";
 import { enrichedShots, guestName, hostName } from "@courtviz/data";
 
-const themes: Record<string, CourtvizTheme> = { broadcast, ppdDark, sprawlball };
+const themes: Record<string, CourtvizTheme> = { broadcast, ppd, ppdEditorial };
 
 export const BounceHexmapHost: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const groundstrokes = enrichedShots.filter(
     (s) => s.player === "host" && s.stroke !== "Serve" && s.result === "In",
@@ -35,7 +35,7 @@ export const BounceHexmapHost: Story = () => {
 };
 
 export const BounceHexmapSpeed: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const groundstrokes = enrichedShots.filter(
     (s) => s.player === "host" && s.stroke !== "Serve" && s.result === "In",
@@ -63,7 +63,7 @@ export const BounceHexmapSpeed: Story = () => {
 };
 
 export const BounceHexmapGuest: Story = () => {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const groundstrokes = enrichedShots.filter(
     (s) => s.player === "guest" && s.stroke !== "Serve" && s.result === "In",
@@ -91,7 +91,7 @@ export const BounceHexmapGuest: Story = () => {
 };
 
 export const HexmapDarkTheme: Story = () => {
-  const theme = ppdDark;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const groundstrokes = enrichedShots.filter(
     (s) => s.player === "host" && s.stroke !== "Serve" && s.result === "In",

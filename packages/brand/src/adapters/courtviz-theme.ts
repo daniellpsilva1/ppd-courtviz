@@ -39,7 +39,7 @@ export function toCourtvizTheme(mode: PpdBrandModeName = "editorial"): CourtvizT
         grass: surf.surroundGrass,
         hard: surf.surroundHard,
       },
-      haloColor: "#FAF6EE",
+      haloColor: light.halo,
       playerHost: s.playerHost,
       playerGuest: s.playerGuest,
       diverging: { ...sportColors.divergingLight },

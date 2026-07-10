@@ -42,7 +42,7 @@ describe("FigureFrame", () => {
     );
     expect(markup).toContain("figure-branding-footer");
     expect(markup).toContain("@peakperformancedata");
-    expect(markup).toContain("PPD");
+    expect(markup).toContain("brand-mark-icon");
   });
 
   it("renders children inside content area", () => {

@@ -1,7 +1,8 @@
-import { loadFont as loadOswald } from "@remotion/google-fonts/Oswald";
+import { loadFont as loadBarlowCondensed } from "@remotion/google-fonts/BarlowCondensed";
 import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
+import { typography } from "@ppd/tokens";
 
-const oswald = loadOswald("normal", {
+const barlow = loadBarlowCondensed("normal", {
   weights: ["400", "600", "700"],
   subsets: ["latin"],
 });
@@ -11,5 +12,8 @@ const inter = loadInter("normal", {
   subsets: ["latin"],
 });
 
-export const condensedFont = oswald.fontFamily;
+export const condensedFont = barlow.fontFamily;
 export const bodyFont = inter.fontFamily;
+
+/** Token-defined display family (for reference in compositions) */
+export const displayFamilyToken = typography.families.condensed;

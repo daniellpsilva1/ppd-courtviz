@@ -24,7 +24,7 @@ const { renderToStaticMarkup } = require("react-dom/server");
 
 const { Court, HexbinLayer, DotLayer, ServeLayer, RayLayer, MomentumChart, ColorBar } = require("@courtviz/react");
 const { createCourtScales } = require("@courtviz/core");
-const { sprawlball, ppdDark } = require("@courtviz/themes");
+const { sprawlball, ppd } = require("@courtviz/themes");
 const { enrichedShots, momentumPoints, hostName, guestName, surface } = require("@courtviz/data");
 
 const outDir = path.resolve(__dirname, "..", "apps", "demo", "public", "exports");
@@ -46,7 +46,7 @@ function renderElement(element, width, height) {
 // ---------------------------------------------------------------------------
 
 function exportHostHexbin() {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const hostShots = enrichedShots.filter((s) => s.player === "host" && s.stroke !== "Serve");
 
@@ -80,7 +80,7 @@ function exportHostHexbin() {
 // ---------------------------------------------------------------------------
 
 function exportGuestHexbin() {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const guestShots = enrichedShots.filter((s) => s.player === "guest" && s.stroke !== "Serve");
 
@@ -114,7 +114,7 @@ function exportGuestHexbin() {
 // ---------------------------------------------------------------------------
 
 function exportDotDensity() {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "full", height: 800, margin: 1.5, width: 600 });
 
   const element = React.createElement(
@@ -144,7 +144,7 @@ function exportDotDensity() {
 // ---------------------------------------------------------------------------
 
 function exportServe() {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
 
   const element = React.createElement(
@@ -173,7 +173,7 @@ function exportServe() {
 // ---------------------------------------------------------------------------
 
 function exportRays() {
-  const theme = sprawlball;
+  const theme = ppd;
   const scales = createCourtScales({ half: "full", height: 800, margin: 1.5, width: 600 });
   const hostShots = enrichedShots.filter((s) => s.player === "host" && s.stroke !== "Serve");
 
@@ -203,7 +203,7 @@ function exportRays() {
 // ---------------------------------------------------------------------------
 
 function exportMomentum() {
-  const theme = sprawlball;
+  const theme = ppd;
 
   const element = React.createElement(
     "svg",
@@ -230,7 +230,7 @@ function exportMomentum() {
 // ---------------------------------------------------------------------------
 
 function exportDarkHexbin() {
-  const theme = ppdDark;
+  const theme = ppd;
   const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width: 600 });
   const hostShots = enrichedShots.filter((s) => s.player === "host" && s.stroke !== "Serve");
 

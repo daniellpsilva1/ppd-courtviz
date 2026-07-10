@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 import { DotLayer } from "../dot-layer";
 import { createCourtScales, type EnrichedShot } from "@courtviz/core";
-import { sprawlball } from "@courtviz/themes";
+import { sportColors } from "@ppd/tokens";
+import { ppd } from "@courtviz/themes";
 
 function makeShot(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
   return {
@@ -48,7 +49,7 @@ describe("DotLayer", () => {
         scales,
         shots,
         size: 4,
-        theme: sprawlball,
+        theme: ppd,
       }),
     );
     expect(markup).toContain("circle");
@@ -63,7 +64,7 @@ describe("DotLayer", () => {
         scales,
         shots: [],
         size: 4,
-        theme: sprawlball,
+        theme: ppd,
       }),
     );
     expect(markup).not.toContain("circle");
@@ -80,11 +81,11 @@ describe("DotLayer", () => {
         scales,
         shots,
         size: 4,
-        theme: sprawlball,
+        theme: ppd,
       }),
     );
-    expect(markup).toContain("#E8742C"); // Forehand
-    expect(markup).toContain("#2B6CB0"); // Backhand
+    expect(markup).toContain(sportColors.stroke.forehand);
+    expect(markup).toContain(sportColors.stroke.backhand);
   });
 
   it("colors by player when colorBy is player", () => {
@@ -98,11 +99,11 @@ describe("DotLayer", () => {
         scales,
         shots,
         size: 4,
-        theme: sprawlball,
+        theme: ppd,
       }),
     );
-    expect(markup).toContain(sprawlball.playerHost);
-    expect(markup).toContain(sprawlball.playerGuest);
+    expect(markup).toContain(ppd.playerHost);
+    expect(markup).toContain(ppd.playerGuest);
   });
 
   it("colors by result when colorBy is result", () => {
@@ -116,11 +117,11 @@ describe("DotLayer", () => {
         scales,
         shots,
         size: 4,
-        theme: sprawlball,
+        theme: ppd,
       }),
     );
-    expect(markup).toContain("#38A169"); // In
-    expect(markup).toContain("#E53E3E"); // Out
+    expect(markup).toContain(sportColors.outcome.in);
+    expect(markup).toContain(sportColors.outcome.out);
   });
 
   it("skips shots with null bounce coordinates", () => {
@@ -134,7 +135,7 @@ describe("DotLayer", () => {
         scales,
         shots,
         size: 4,
-        theme: sprawlball,
+        theme: ppd,
       }),
     );
     const circleCount = (markup.match(/<circle/g) || []).length;

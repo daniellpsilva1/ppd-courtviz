@@ -99,28 +99,44 @@ module.exports = {
 write(path.join(outDir, "tailwind", "preset.cjs"), preset);
 
 write(path.join(outDir, "brand.json"), JSON.stringify({
-  _comment: "Generated from @ppd/tokens",
+  _comment: "Generated from @ppd/tokens — do not edit by hand",
+  _generatedFrom: "@ppd/tokens",
   name: tokens.brand.productName,
+  tagline: tokens.brand.tagline,
+  website: tokens.brand.website,
   colors: {
     primary: colorPrimitives.primary,
+    primaryBright: colorPrimitives.primaryBright,
+    primaryDark: colorPrimitives.primaryDark,
+    marketing: colorPrimitives.marketing,
     accent: colorPrimitives.accent,
+    accentDark: colorPrimitives.accentDark,
     backgroundDark: dark.background,
+    backgroundLight: light.background,
     chartPalette: [...chartPaletteLight],
+    chartPaletteDark: [...chartPalette],
   },
   fonts: {
     heading: typography.families.body,
+    body: typography.families.body,
     display: typography.families.condensed,
   },
 }, null, 2));
 
-const py = `"""Generated from @ppd/tokens."""
+const py = `"""Generated from @ppd/tokens — do not edit by hand."""
 BG_COLOR = "${dark.background}"
 INK = "${dark.ink}"
+INK_MUTED = "${dark.inkMuted}"
+PRIMARY = "${colorPrimitives.primary}"
+PRIMARY_BRIGHT = "${colorPrimitives.primaryBright}"
+ACCENT = "${colorPrimitives.accent}"
 COURT_CLAY = "${sportColors.surface.clay}"
 PLAYER_HOST = "${sportColors.playerHost}"
 PLAYER_GUEST = "${sportColors.playerGuest}"
 DIV_LOW = "${sportColors.diverging.low}"
 DIV_PEAK = "${sportColors.diverging.peak}"
+DISPLAY_FONT = "${typography.families.condensed}"
+BODY_FONT = "${typography.families.body}"
 `;
 
 write(path.join(outDir, "python", "style_generated.py"), py);

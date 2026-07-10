@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Court, FigureFrame, Legend, ServeLayer } from "@courtviz/react";
+import { Court, FigureFrame, Legend, ServeLayer, ServeAnnotations } from "@courtviz/react";
 import { computeServeZones, createCourtScales, zoneLabel } from "@courtviz/core";
 import { ppd } from "@courtviz/themes";
 import { enrichedShots, guestName, hostName, surface } from "@courtviz/data";
@@ -80,6 +80,14 @@ export function ServePage() {
                     serveType={serveType}
                     shots={enrichedShots}
                     theme={theme}
+                  />
+                )}
+                {(activePlayer === "both" || activePlayer === "host") && hostZones.length > 0 && (
+                  <ServeAnnotations
+                    metric="inRate"
+                    scales={scales}
+                    theme={theme}
+                    zones={hostZones}
                   />
                 )}
               </Court>

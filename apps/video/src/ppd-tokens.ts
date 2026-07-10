@@ -1,13 +1,15 @@
+import { colorPrimitives, semanticColors } from "@ppd/tokens";
 import { ppdDark } from "@courtviz/themes";
 
-/** Design tokens aligned with the courtviz demo / PPD app shell */
+/** Design tokens from @ppd/tokens — single source of truth */
 export const PPD = {
-  bg: "#0f1117",
-  surface: "#1a1d28",
-  border: "#2a2d3a",
-  text: "#e4e4e7",
-  textMuted: "#71717a",
-  accent: "#e8742c",
+  bg: semanticColors.dark.background,
+  surface: semanticColors.dark.surface,
+  border: semanticColors.dark.border,
+  text: semanticColors.dark.ink,
+  textMuted: semanticColors.dark.inkMuted,
+  accent: colorPrimitives.accent,
+  primary: colorPrimitives.primaryBright,
   radius: {
     sm: 8,
     md: 12,

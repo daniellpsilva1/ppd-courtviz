@@ -45,8 +45,14 @@ export type { BrandMarkProps } from "./brand-mark";
 export { ZoneBarChart } from "./zone-bar-chart";
 export type { ZoneBarChartProps, ZoneBarDatum } from "./zone-bar-chart";
 
-export { Annotation } from "./annotation";
-export type { AnnotationProps } from "./annotation";
+export { Annotation, CalloutCircle, ZonePercentage, InsightLabel, ArrowAnnotation } from "./annotation";
+export type { AnnotationProps, CalloutCircleProps, ZonePercentageProps, InsightLabelProps, ArrowAnnotationProps } from "./annotation";
+
+export { ServeAnnotations } from "./serve-annotations";
+export type { ServeAnnotationsProps } from "./serve-annotations";
+
+export { StatCallout } from "./stat-callout";
+export type { StatCalloutProps } from "./stat-callout";
 
 export { HexSizeLegend } from "./hex-size-legend";
 export type { HexSizeLegendProps } from "./hex-size-legend";
