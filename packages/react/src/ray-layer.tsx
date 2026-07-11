@@ -11,6 +11,7 @@ import {
   type EnrichedShot,
   type ShotFlow,
   computeShotFlows,
+  curvedPath,
   hasValidSpatialCoords,
   normalizeHit,
   normalizeShot,
@@ -52,7 +53,7 @@ export interface RayLayerProps {
   showHitDots?: boolean;
   /** Draw curved arcs instead of straight lines (default false) */
   curved?: boolean;
-  /** Curvature amount for arcs (default 0.3) */
+  /** Curvature amount for arcs (default 0.12) */
   curvature?: number;
   /** Flow mode: aggregate shots into bundles (default false) */
   flowMode?: boolean;
@@ -60,12 +61,16 @@ export interface RayLayerProps {
   flowMinCount?: number;
   /** Max flow width in pixels (default 8) */
   flowMaxWidth?: number;
+  clip?: boolean;
+  clipBounds?: { xMin: number; xMax: number; yMin: number; yMax: number };
 }
 
 export const RayLayer = memo(function RayLayer({
   alpha = 0.35,
+  clip = true,
+  clipBounds,
   curved = false,
-  curvature = 0.3,
+  curvature = 0.12,
   flowMaxWidth = 8,
   flowMinCount = 2,
   flowMode = false,
@@ -110,50 +115,21 @@ export const RayLayer = memo(function RayLayer({
   }, [shots, flowMode, player, strokeFilter, flowMinCount]);
 
   const markerId = useMemo(() => `ray-arrowhead-${Math.random().toString(36).slice(2, 8)}`, []);
+  const clipId = useMemo(() => `ray-clip-${Math.random().toString(36).slice(2, 8)}`, []);
 
   const maxFlowCount = useMemo(() => {
     return flows.reduce((m, f) => Math.max(m, f.count), 0);
   }, [flows]);
 
-  // Build a curved path between two court points
-  const curvedPath = (x1: number, y1: number, x2: number, y2: number): string => {
-    const mx = (x1 + x2) / 2;
-    const my = (y1 + y2) / 2;
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len === 0) return `M${x1},${y1}L${x2},${y2}`;
-    // Perpendicular offset for curve control point
-    const offset = curvature * len;
-    const cx = mx - (dy / len) * offset;
-    const cy = my + (dx / len) * offset;
-    return `M${x1},${y1}Q${cx},${cy}${x2},${y2}`;
-  };
+  const curvedRayPath = (x1: number, y1: number, x2: number, y2: number): string =>
+    curvedPath(x1, y1, x2, y2, curvature, clipBounds);
 
-  return (
-    <g>
-      <defs>
-        {Object.entries(STROKE_COLORS).map(([stroke, color]) => (
-          <marker
-            id={`${markerId}-${stroke}`}
-            key={stroke}
-            markerHeight={4}
-            markerWidth={4}
-            orient="auto"
-            refX={3}
-            refY={2}
-          >
-            <path d="M0,0 L4,2 L0,4 Z" fill={color} />
-          </marker>
-        ))}
-      </defs>
-
-      {/* Flow mode: aggregated bundles */}
-      {flowMode && flows.map((flow, i) => {
+  const flowPaths = flowMode
+    ? flows.map((flow, i) => {
         const width = maxFlowCount > 0
           ? Math.max(1, flowMaxWidth * Math.sqrt(flow.count / maxFlowCount))
           : 1;
-        const d = curvedPath(
+        const d = curvedRayPath(
           scales.x(flow.fromX),
           scales.y(flow.fromY),
           scales.x(flow.toX),
@@ -166,13 +142,15 @@ export const RayLayer = memo(function RayLayer({
             key={`flow-${i}`}
             opacity={alpha + 0.25}
             stroke={getWinRateColor(flow.winRate, theme)}
+            strokeLinecap="round"
             strokeWidth={width}
           />
         );
-      })}
+      })
+    : null;
 
-      {/* Individual rays */}
-      {!flowMode && rays.map(({ bx, by, hx, hy, stroke }, i) => {
+  const rayPaths = !flowMode
+    ? rays.map(({ bx, by, hx, hy, stroke }, i) => {
         const color = STROKE_COLORS[stroke] ?? theme.ink;
         const x1 = scales.x(hx);
         const y1 = scales.y(hy);
@@ -180,7 +158,7 @@ export const RayLayer = memo(function RayLayer({
         const y2 = scales.y(by);
 
         if (curved) {
-          const d = curvedPath(x1, y1, x2, y2);
+          const d = curvedRayPath(x1, y1, x2, y2);
           return (
             <path
               d={d}
@@ -189,6 +167,7 @@ export const RayLayer = memo(function RayLayer({
               markerEnd={`url(#${markerId}-${stroke})`}
               opacity={alpha}
               stroke={color}
+              strokeLinecap="round"
               strokeWidth={0.8}
             />
           );
@@ -207,30 +186,68 @@ export const RayLayer = memo(function RayLayer({
             y2={y2}
           />
         );
-      })}
+      })
+    : null;
 
-      {/* Hit dots */}
-      {showHitDots && !flowMode &&
-        rays.map(({ hx, hy, stroke }, i) => (
-          <g key={`dot-${i}`}>
-            <circle
-              cx={scales.x(hx)}
-              cy={scales.y(hy)}
-              fill="none"
-              opacity={alpha * 0.5}
-              r={3}
-              stroke={theme.haloColor}
-              strokeWidth={0.5}
-            />
-            <circle
-              cx={scales.x(hx)}
-              cy={scales.y(hy)}
-              fill={STROKE_COLORS[stroke] ?? theme.ink}
-              opacity={alpha + 0.25}
-              r={2}
-            />
-          </g>
+  const hitDots = showHitDots && !flowMode
+    ? rays.map(({ hx, hy, stroke }, i) => (
+        <g key={`dot-${i}`}>
+          <circle
+            cx={scales.x(hx)}
+            cy={scales.y(hy)}
+            fill="none"
+            opacity={alpha * 0.5}
+            r={3}
+            stroke={theme.haloColor}
+            strokeWidth={0.5}
+          />
+          <circle
+            cx={scales.x(hx)}
+            cy={scales.y(hy)}
+            fill={STROKE_COLORS[stroke] ?? theme.ink}
+            opacity={alpha + 0.25}
+            r={2}
+          />
+        </g>
+      ))
+    : null;
+
+  const layer = (
+    <>
+      {flowPaths}
+      {rayPaths}
+      {hitDots}
+    </>
+  );
+
+  return (
+    <g>
+      <defs>
+        {Object.entries(STROKE_COLORS).map(([stroke, color]) => (
+          <marker
+            id={`${markerId}-${stroke}`}
+            key={stroke}
+            markerHeight={4}
+            markerWidth={4}
+            orient="auto"
+            refX={3}
+            refY={2}
+          >
+            <path d="M0,0 L4,2 L0,4 Z" fill={color} />
+          </marker>
         ))}
+        {clip && clipBounds && (
+          <clipPath id={clipId}>
+            <rect
+              height={clipBounds.yMax - clipBounds.yMin}
+              width={clipBounds.xMax - clipBounds.xMin}
+              x={clipBounds.xMin}
+              y={clipBounds.yMin}
+            />
+          </clipPath>
+        )}
+      </defs>
+      <g clipPath={clip && clipBounds ? `url(#${clipId})` : undefined}>{layer}</g>
     </g>
   );
 });

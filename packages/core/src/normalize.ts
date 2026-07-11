@@ -28,8 +28,8 @@ export function hasValidSpatialCoords(shot: {
   hitY: number | null;
 }): boolean {
   if (shot.bounceX == null || shot.bounceY == null) return false;
-  // hitY may exceed court length in SwingVision exports; normalizeShot resolves it.
   if (shot.hitY == null) return false;
+  if (!isValidHitY(shot.hitY)) return false;
   return true;
 }
 

@@ -42,6 +42,9 @@ export type { FigureDocumentProps } from "./figure-document";
 export { BrandMark, brandMarkWidth } from "./brand-mark";
 export type { BrandMarkProps } from "./brand-mark";
 
+export { ZoneWinRateLayer } from "./zone-win-rate-layer";
+export type { ZoneWinRateLayerProps } from "./zone-win-rate-layer";
+
 export { ZoneBarChart } from "./zone-bar-chart";
 export type { ZoneBarChartProps, ZoneBarDatum } from "./zone-bar-chart";
 

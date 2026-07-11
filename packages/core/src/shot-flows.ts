@@ -7,8 +7,8 @@
  */
 
 import { type EnrichedShot, shotPlayerWonPoint } from "./stats";
-import { NET_Y, SINGLES_HALF } from "./geometry";
-import { normalizeHit, normalizeShot } from "./normalize";
+import { COURT_LENGTH, NET_Y, SINGLES_HALF } from "./geometry";
+import { hasValidSpatialCoords, normalizeHit, normalizeShot } from "./normalize";
 
 export interface ShotFlow {
   /** Origin zone label */
@@ -71,10 +71,8 @@ export function computeShotFlows(
 
   const filtered = shots.filter(
     (s) =>
-      s.bounceX != null &&
-      s.bounceY != null &&
+      hasValidSpatialCoords(s) &&
       s.hitX != null &&
-      s.hitY != null &&
       (player === null || s.player === player) &&
       (stroke === null || s.stroke === stroke) &&
       s.stroke !== "Serve",
@@ -126,12 +124,12 @@ export function computeShotFlows(
     .filter((e) => e.count >= minCount)
     .map((e) => ({
       count: e.count,
-      fromX: mean(e.fromXs),
-      fromY: mean(e.fromYs),
+      fromX: clamp(mean(e.fromXs), -SINGLES_HALF, SINGLES_HALF),
+      fromY: clamp(mean(e.fromYs), 0, COURT_LENGTH),
       fromZone: e.fromZone,
       meanSpeed: e.speeds.length > 0 ? mean(e.speeds) : null,
-      toX: mean(e.toXs),
-      toY: mean(e.toYs),
+      toX: clamp(mean(e.toXs), -SINGLES_HALF, SINGLES_HALF),
+      toY: clamp(mean(e.toYs), 0, COURT_LENGTH),
       toZone: e.toZone,
       winRate: e.count > 0 ? e.wonCount / e.count : 0,
     }))
@@ -140,6 +138,10 @@ export function computeShotFlows(
 
 function mean(arr: number[]): number {
   return arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 export { NET_Y, SINGLES_HALF };

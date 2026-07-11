@@ -17,7 +17,15 @@ export interface MatchStoryFixtures {
   sets: SetSummary[];
   points: Point[];
   enrichedShots: EnrichedShot[];
-  momentumPoints: Array<{ pointWinner: string | null }>;
+  momentumPoints: Array<{
+    setNumber: number;
+    gameNumber: number;
+    pointNumber: number;
+    pointWinner: string;
+    isBreakPoint: boolean;
+    isSetPoint: boolean;
+    isMatchPoint: boolean;
+  }>;
 }
 
 export interface StoryNarrativeOverrides {

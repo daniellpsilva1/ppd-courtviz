@@ -9,3 +9,5 @@ export * from "./stats";
 export * from "./density";
 export * from "./serve-zones";
 export * from "./shot-flows";
+export * from "./curved-path";
+export * from "./bounce-zones";
