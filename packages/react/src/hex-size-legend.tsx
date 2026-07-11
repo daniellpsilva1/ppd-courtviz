@@ -27,9 +27,9 @@ export interface HexSizeLegendProps {
 
 export const HexSizeLegend = memo(function HexSizeLegend({
   counts = [2, 5, 10],
-  label = "Shots",
+  label = "Bigger = hit here more often",
   maxCount = 10,
-  maxRadius = 20,
+  maxRadius = 22,
   theme = ppd,
   x = 0,
   y = 0,
@@ -55,11 +55,11 @@ export const HexSizeLegend = memo(function HexSizeLegend({
       <text
         fill={stroke}
         fontFamily={`${fonts.condensedFont}, ${fonts.condensedFontFallback}`}
-        fontSize={fs.label}
+        fontSize={fs.body}
         fontWeight={600}
         textAnchor="start"
         x={0}
-        y={-maxRadius - 4}
+        y={-maxRadius - 6}
       >
         {label}
       </text>
@@ -81,12 +81,12 @@ export const HexSizeLegend = memo(function HexSizeLegend({
               dominantBaseline="middle"
               fill={stroke}
               fontFamily={`${fonts.bodyFont}, ${fonts.bodyFontFallback}`}
-              fontSize={fs.small}
+              fontSize={fs.label}
               textAnchor="middle"
               x={cx}
-              y={cy + maxRadius + 12}
+              y={cy + maxRadius + 14}
             >
-              {count}
+              {count} shots
             </text>
           </g>
         );

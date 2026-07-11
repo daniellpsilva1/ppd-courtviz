@@ -17,6 +17,7 @@ describe("resolveFrameLayout", () => {
 
   it("reserves story safe areas", () => {
     const layout = resolveFrameLayout("story");
-    expect(layout.safeArea.y).toBe(220);
+    expect(layout.safeArea.y).toBe(72);
+    expect(layout.content.height).toBeGreaterThan(1400);
   });
 });

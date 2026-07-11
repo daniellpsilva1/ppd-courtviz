@@ -2,7 +2,7 @@ import {
   computeBreakPointConversion,
   computeFirstServeInRate,
   computePointsWonRate,
-  computeZoneWinRates,
+  computeZoneWinRatesByPoint,
 } from "@courtviz/core";
 import type { EnrichedShot } from "@courtviz/core";
 import type { Point, SetSummary } from "@courtviz/data";
@@ -62,7 +62,7 @@ function formatZoneLabel(zone: string): string {
 }
 
 function pickTopZone(enrichedShots: EnrichedShot[], player: "host" | "guest") {
-  const qualifying = computeZoneWinRates(enrichedShots, player)
+  const qualifying = computeZoneWinRatesByPoint(enrichedShots, player)
     .filter((z) => z.total >= 8)
     .sort((a, b) => b.winRate - a.winRate);
 
@@ -70,7 +70,7 @@ function pickTopZone(enrichedShots: EnrichedShot[], player: "host" | "guest") {
     return qualifying[0]!;
   }
 
-  const anyZone = computeZoneWinRates(enrichedShots, player)
+  const anyZone = computeZoneWinRatesByPoint(enrichedShots, player)
     .filter((z) => z.total > 0)
     .sort((a, b) => b.winRate - a.winRate);
 

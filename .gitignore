@@ -31,7 +31,11 @@ apps/gallery/build/
 # Demo dev cache
 apps/demo/.vite/
 
-# Generated export artifacts (regenerate via pnpm export:all)
+# Generated export artifacts (regenerate via pnpm export:deck)
+apps/demo/public/exports/deck/
+apps/demo/public/exports/carousel/
+apps/demo/public/exports/captions/
+apps/demo/public/exports/video/
 apps/demo/public/exports/square/
 apps/demo/public/exports/portrait/
 apps/demo/public/exports/story/

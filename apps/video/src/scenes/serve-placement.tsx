@@ -1,15 +1,14 @@
 import {
   COURT_LENGTH,
   NET_Y,
-  SERVICE_LINE_NEAR,
-  SINGLES_HALF,
   createCourtScales,
   hasValidSpatialCoords,
+  shouldDisplayServe,
 } from "@courtviz/core";
-import { enrichedShots, guestName, hostName, surface } from "@courtviz/data/fixtures";
+import { enrichedShots, guestName, hostName } from "@courtviz/data/fixtures";
 import { Court } from "@courtviz/react";
-import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { BRAND_SURFACE } from "../brand-surface";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { CourtCard } from "../components/court-card";
 import { InsightCallout } from "../components/insight-callout";
@@ -31,9 +30,6 @@ const TOTAL_W = COURT_W * 2 + GAP + 64;
 const LEFT = (1920 - TOTAL_W) / 2;
 const TOP = 220;
 
-const SERVICE_BOX_TOLERANCE = 0.5;
-
-/** Mirror serve bounce to near half using bounce position (not hitY). */
 function normalizeServeBounce(bounceX: number, bounceY: number): [number, number] {
   if (bounceY > NET_Y) {
     return [-bounceX, COURT_LENGTH - bounceY];
@@ -41,25 +37,15 @@ function normalizeServeBounce(bounceX: number, bounceY: number): [number, number
   return [bounceX, bounceY];
 }
 
-function isInServiceBox(x: number, y: number): boolean {
-  return (
-    y >= SERVICE_LINE_NEAR - SERVICE_BOX_TOLERANCE &&
-    y <= NET_Y + SERVICE_BOX_TOLERANCE &&
-    Math.abs(x) <= SINGLES_HALF + SERVICE_BOX_TOLERANCE
-  );
-}
-
 function buildServes(player: string) {
   return enrichedShots
     .filter(
-      (s) => s.player === player && s.stroke === "Serve" && hasValidSpatialCoords(s),
+      (s) =>
+        s.player === player &&
+        s.stroke === "Serve" &&
+        hasValidSpatialCoords(s) &&
+        shouldDisplayServe(s),
     )
-    .filter((s) => {
-      const [nx, ny] = normalizeServeBounce(s.bounceX!, s.bounceY!);
-      const inBox = isInServiceBox(nx, ny);
-      if (s.result === "In" && !inBox) return false;
-      return true;
-    })
     .map((s) => {
       const [nx, ny] = normalizeServeBounce(s.bounceX!, s.bounceY!);
       return {
@@ -71,8 +57,8 @@ function buildServes(player: string) {
     });
 }
 
-const hostServes = buildServes("host");
-const guestServes = buildServes("guest");
+const hostServes = buildServes("host").filter((s) => s.isIn);
+const guestServes = buildServes("guest").filter((s) => s.isIn);
 const hostScales = createCourtScales({ half: "near", height: COURT_H, margin: 1.5, width: COURT_W });
 const guestScales = createCourtScales({ half: "near", height: COURT_H, margin: 1.5, width: COURT_W });
 
@@ -89,7 +75,7 @@ export function ServePlacementScene() {
 
       <div style={{ display: "flex", gap: GAP, left: LEFT, position: "absolute", top: TOP }}>
         <ServePanel
-          color={getPlayerColor("host", darkCourt)}
+          color="#38BDF8"
           directions={hostServeDirections}
           firstServeIn={Math.round(hostFirstServe.rate * 100)}
           frame={frame}
@@ -100,7 +86,7 @@ export function ServePlacementScene() {
           startFrame={15}
         />
         <ServePanel
-          color={getPlayerColor("guest", darkCourt)}
+          color="#FB923C"
           directions={guestServeDirections}
           firstServeIn={Math.round(guestFirstServe.rate * 100)}
           frame={frame}
@@ -153,7 +139,7 @@ function ServePanel({
       labelOpacity={labelSpring}
       subtitle={`${firstServeIn}% in · ${directions.downTheT} T / ${directions.outWide} wide · ${directions.avgSpeedKmh} km/h`}
     >
-      <Court half="near" height={COURT_H} surface={surface} theme={darkCourt} width={COURT_W}>
+      <Court half="near" height={COURT_H} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_W}>
         {serves.map((serve, i) => (
           <ServeMarker
             color={color}
@@ -201,7 +187,7 @@ function ServeMarker({
 
   const cx = scales.x(serve.x);
   const cy = scales.y(serve.y);
-  const size = 10 * progress;
+  const size = 12 * progress;
   const fillOpacity = (serve.isIn ? 0.95 : 0.45) * progress;
 
   if (isFirst) {

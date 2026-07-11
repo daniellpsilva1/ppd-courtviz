@@ -20,6 +20,16 @@ const STROKE_COLORS: Record<string, string> = {
   Volley: sportColors.stroke.volley,
 };
 
+/** High-contrast palette for blue hard-court surfaces */
+const HIGH_CONTRAST_STROKE_COLORS: Record<string, string> = {
+  Backhand: "#22D3EE",
+  Feed: "#FDE047",
+  Forehand: "#FB923C",
+  Overhead: "#F472B6",
+  Serve: "#C084FC",
+  Volley: "#4ADE80",
+};
+
 const RESULT_COLORS: Record<string, string> = {
   In: sportColors.outcome.in,
   Net: sportColors.outcome.net,
@@ -39,12 +49,17 @@ export interface DotLayerProps {
   useHalfCourtNormalization?: boolean;
   /** Halo stroke width (default 0.5, set 0 to disable) */
   haloWidth?: number;
+  /** Use brighter stroke colors for dark/blue court surfaces */
+  highContrast?: boolean;
+  /** Clip dots to court surface (parent Court also clips) */
+  clip?: boolean;
 }
 
 export const DotLayer = memo(function DotLayer({
   alpha = 0.6,
   colorBy = "stroke",
-  haloWidth = 0.5,
+  haloWidth = 1,
+  highContrast = false,
   player,
   resultFilter,
   scales,
@@ -74,7 +89,10 @@ export const DotLayer = memo(function DotLayer({
   }, [shots, player, strokeFilter, resultFilter, useHalfCourtNormalization]);
 
   function getColor(stroke: string, plyr: string, speed: number | null, result: string): string {
-    if (colorBy === "stroke") return STROKE_COLORS[stroke] ?? "#999999";
+    if (colorBy === "stroke") {
+      const palette = highContrast ? HIGH_CONTRAST_STROKE_COLORS : STROKE_COLORS;
+      return palette[stroke] ?? (highContrast ? "#F8FAFC" : "#999999");
+    }
     if (colorBy === "player") return getPlayerColor(plyr, theme);
     if (colorBy === "speed") {
       if (speed == null) return "#999999";
@@ -97,10 +115,10 @@ export const DotLayer = memo(function DotLayer({
               cx={scales.x(x)}
               cy={scales.y(y)}
               fill="none"
-              opacity={alpha * 0.5}
-              r={size + haloWidth}
+              opacity={alpha * 0.7}
+              r={size + haloWidth + 0.5}
               stroke={theme.haloColor}
-              strokeWidth={haloWidth}
+              strokeWidth={haloWidth + 0.5}
             />
           )}
           <circle

@@ -9,7 +9,7 @@ export function BenchmarkInsightScene() {
     <AbsoluteFill
       style={{
         backgroundColor: benchmarkProductTheme.surfaceColors.hard,
-        backgroundImage: `linear-gradient(180deg, ${benchmarkProductTheme.background} 0%, ${benchmarkProductTheme.surfaceColors.clay}33 100%)`,
+        backgroundImage: `linear-gradient(180deg, ${benchmarkProductTheme.background} 0%, ${benchmarkProductTheme.surfaceColors.hard}55 100%)`,
         color: benchmarkProductTheme.ink,
         fontFamily: benchmarkProductTheme.fonts.bodyFont,
         justifyContent: "center",

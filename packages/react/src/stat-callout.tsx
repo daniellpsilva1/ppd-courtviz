@@ -29,6 +29,7 @@ export const StatCallout = memo(function StatCallout({
   return (
     <g data-testid="stat-callout" transform={`translate(${x}, ${y})`}>
       <text
+        dominantBaseline="hanging"
         fill={accent}
         fontFamily={`${fonts.condensedFont}, ${fonts.condensedFontFallback}`}
         fontSize={28}
@@ -41,6 +42,7 @@ export const StatCallout = memo(function StatCallout({
         {value}
       </text>
       <text
+        dominantBaseline="hanging"
         fill={theme.inkMuted}
         fontFamily={`${fonts.bodyFont}, ${fonts.bodyFontFallback}`}
         fontSize={12}
@@ -48,7 +50,7 @@ export const StatCallout = memo(function StatCallout({
         letterSpacing={1}
         textAnchor="start"
         x={0}
-        y={20}
+        y={36}
       >
         {label.toUpperCase()}
       </text>

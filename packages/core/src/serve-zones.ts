@@ -4,9 +4,45 @@
  * Computes per-zone counts, in-rate, and win rate for serve placement analysis.
  */
 
-import { type EnrichedShot, shotPlayerWonPoint } from "./stats";
+import { type EnrichedShot, pointKeyFromShot, shotPlayerWonPoint } from "./stats";
 import { NET_Y, SERVICE_LINE_FAR, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
 import { isValidHitY, normalizeShot } from "./normalize";
+
+export const SERVICE_BOX_TOLERANCE = 0.35;
+
+/** Whether a normalized bounce lies inside (or just inside) a service box. */
+export function isInServiceBox(
+  x: number,
+  y: number,
+  tolerance = SERVICE_BOX_TOLERANCE,
+): boolean {
+  return (
+    y >= SERVICE_LINE_NEAR - tolerance &&
+    y <= NET_Y + tolerance &&
+    Math.abs(x) <= SINGLES_HALF + tolerance
+  );
+}
+
+/** Filter serves for display — in-box only; faults only when near the box. */
+export function shouldDisplayServe(
+  serve: EnrichedShot,
+  maxFaultDistance = 2.0,
+): boolean {
+  if (serve.bounceX == null || serve.bounceY == null || serve.hitY == null || !isValidHitY(serve.hitY)) {
+    return false;
+  }
+  const [nx, ny] = normalizeShot(serve.bounceX, serve.bounceY, serve.hitY);
+  if (serve.result === "In") return isInServiceBox(nx, ny);
+
+  const distY =
+    ny < SERVICE_LINE_NEAR
+      ? SERVICE_LINE_NEAR - ny
+      : ny > NET_Y
+        ? ny - NET_Y
+        : 0;
+  const distX = Math.max(0, Math.abs(nx) - SINGLES_HALF);
+  return Math.hypot(distX, distY) <= maxFaultDistance;
+}
 
 export type ServeZone = "wide" | "body" | "T";
 
@@ -55,6 +91,26 @@ function classifySide(nx: number): "deuce" | "ad" {
  *
  * All serves are normalized to the near half-court before zone classification.
  */
+function pickRepresentativeServePerPoint(serves: EnrichedShot[]): EnrichedShot[] {
+  const byPoint = new Map<string, EnrichedShot[]>();
+
+  for (const serve of serves) {
+    const key = pointKeyFromShot(serve);
+    const bucket = byPoint.get(key) ?? [];
+    bucket.push(serve);
+    byPoint.set(key, bucket);
+  }
+
+  const picked: EnrichedShot[] = [];
+  for (const pointServes of byPoint.values()) {
+    const sorted = [...pointServes].sort((a, b) => (b.shotNumber ?? 0) - (a.shotNumber ?? 0));
+    const inServe = sorted.find((serve) => serve.result === "In");
+    picked.push(inServe ?? sorted[0]!);
+  }
+
+  return picked;
+}
+
 export function computeServeZones(
   shots: EnrichedShot[],
   player: string,
@@ -63,9 +119,7 @@ export function computeServeZones(
     (s) =>
       s.player === player &&
       s.stroke === "Serve" &&
-      s.bounceX != null &&
-      s.bounceY != null &&
-      isValidHitY(s.hitY),
+      shouldDisplayServe(s),
   );
 
   const zoneMap = new Map<string, {
@@ -78,7 +132,7 @@ export function computeServeZones(
     zone: ServeZone;
   }>();
 
-  for (const serve of serves) {
+  for (const serve of pickRepresentativeServePerPoint(serves)) {
     const [nx, ny] = normalizeShot(serve.bounceX!, serve.bounceY!, serve.hitY!);
     const side = classifySide(nx);
     const zone = classifyZone(nx, side);
@@ -95,8 +149,10 @@ export function computeServeZones(
     };
 
     entry.count++;
-    if (serve.result === "In") entry.inCount++;
-    if (shotPlayerWonPoint(serve)) entry.wonCount++;
+    if (serve.result === "In") {
+      entry.inCount++;
+      if (shotPlayerWonPoint(serve)) entry.wonCount++;
+    }
     entry.xs.push(nx);
     entry.ys.push(ny);
     zoneMap.set(key, entry);
@@ -110,7 +166,7 @@ export function computeServeZones(
       meanX: e.xs.length > 0 ? e.xs.reduce((a, b) => a + b, 0) / e.xs.length : 0,
       meanY: e.ys.length > 0 ? e.ys.reduce((a, b) => a + b, 0) / e.ys.length : 0,
       side: e.side,
-      winRate: e.count > 0 ? e.wonCount / e.count : 0,
+      winRate: e.inCount > 0 ? e.wonCount / e.inCount : 0,
       zone: e.zone,
     }))
     .sort((a, b) => b.count - a.count);

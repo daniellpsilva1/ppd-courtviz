@@ -34,6 +34,17 @@ export function hasValidSpatialCoords(shot: {
 }
 
 /**
+ * Whether a serve has bounce coordinates suitable for placement maps.
+ * Invalid hitY is allowed — normalizeShot resolves it to the far end.
+ */
+export function hasValidServeCoords(shot: {
+  bounceX: number | null;
+  bounceY: number | null;
+}): boolean {
+  return shot.bounceX != null && shot.bounceY != null;
+}
+
+/**
  * Resolve hitY for normalization — invalid values default to far end.
  */
 function resolveHitY(hitY: number | null | undefined): number {

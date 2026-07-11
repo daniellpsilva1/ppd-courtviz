@@ -28,7 +28,7 @@ describe("buildMatchStory", () => {
   it("computes metrics from fixtures", () => {
     const metrics = computeStoryMetrics(fixtures);
     expect(metrics.hostWin.rate).toBeGreaterThan(0);
-    expect(metrics.hostTopZoneWinPct).toBeGreaterThan(0);
+    expect(metrics.winnerTopZoneWinPct).toBeGreaterThan(0);
   });
 
   it("builds a valid story with defaults", () => {

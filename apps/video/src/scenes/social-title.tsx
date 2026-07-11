@@ -1,8 +1,9 @@
-import { guestName, hostName, matchDate, sets, surface } from "@courtviz/data/fixtures";
 import { Court } from "@courtviz/react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { BRAND_SURFACE } from "../brand-surface";
 import { bodyFont, condensedFont } from "../fonts";
-import { formatMatchResult, formatSetScoreDetailed } from "../match-stats";
+import { formatMatchResultFromContext, formatSetScoreDetailedFromSets } from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
 import { PPD, theme } from "../ppd-tokens";
 
 function formatDate(dateStr: string): string {
@@ -16,9 +17,14 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function surfaceLabel(surface: string): string {
+  return `${surface.charAt(0).toUpperCase()}${surface.slice(1)} Court`;
+}
+
 export function SocialTitleScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const ctx = getVideoMatchContext();
 
   const courtOpacity = interpolate(frame, [0, 30], [0, 0.12], {
     extrapolateLeft: "clamp",
@@ -34,8 +40,7 @@ export function SocialTitleScene() {
     extrapolateRight: "clamp",
   });
 
-  const hostSetsWon = sets.filter((s) => s.hostScore > s.guestScore).length;
-  const surfaceLabel = surface.charAt(0).toUpperCase() + surface.slice(1);
+  const hostSetsWon = ctx.sets.filter((s) => s.hostScore > s.guestScore).length;
 
   return (
     <AbsoluteFill style={{ backgroundColor: theme.background, overflow: "hidden" }}>
@@ -48,7 +53,7 @@ export function SocialTitleScene() {
           transform: "scale(1.05)",
         }}
       >
-        <Court half="full" height={640} surface={surface} theme={theme} width={480} />
+        <Court half="full" height={640} surface={ctx.surface ?? BRAND_SURFACE} theme={theme} width={480} />
       </AbsoluteFill>
 
       <AbsoluteFill
@@ -95,7 +100,7 @@ export function SocialTitleScene() {
             transform: `translateY(${(1 - hostSlide) * -20}px)`,
           }}
         >
-          {hostName}
+          {ctx.hostName}
         </div>
 
         <div
@@ -129,7 +134,7 @@ export function SocialTitleScene() {
             transform: `translateY(${(1 - guestSlide) * 20}px)`,
           }}
         >
-          {guestName}
+          {ctx.guestName}
         </div>
 
         <div
@@ -152,17 +157,17 @@ export function SocialTitleScene() {
               letterSpacing: "0.04em",
             }}
           >
-            {formatSetScoreDetailed()}
+            {formatSetScoreDetailedFromSets(ctx.sets)}
           </div>
           <div
             style={{
-              color: hostSetsWon === sets.length ? theme.playerHost : theme.playerGuest,
+              color: hostSetsWon === ctx.sets.length ? theme.playerHost : theme.playerGuest,
               fontFamily: bodyFont,
               fontSize: 15,
               marginTop: 6,
             }}
           >
-            {formatMatchResult()}
+            {formatMatchResultFromContext(ctx)}
           </div>
         </div>
 
@@ -177,7 +182,7 @@ export function SocialTitleScene() {
             textTransform: "uppercase",
           }}
         >
-          {surfaceLabel} · {formatDate(matchDate)}
+          {surfaceLabel(ctx.surface)} · {formatDate(ctx.matchDate)}
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

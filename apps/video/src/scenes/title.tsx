@@ -1,6 +1,7 @@
-import { guestName, hostName, matchDate, sets, surface } from "@courtviz/data/fixtures";
+import { guestName, hostName, matchDate, sets } from "@courtviz/data/fixtures";
 import { Court } from "@courtviz/react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { BRAND_SURFACE } from "../brand-surface";
 import { bodyFont, condensedFont } from "../fonts";
 import { formatMatchResult, formatSetScoreDetailed } from "../match-stats";
 import { PPD, theme } from "../ppd-tokens";
@@ -38,7 +39,7 @@ export function TitleScene() {
   });
 
   const hostSetsWon = sets.filter((s) => s.hostScore > s.guestScore).length;
-  const surfaceLabel = surface.charAt(0).toUpperCase() + surface.slice(1);
+  const surfaceLabel = "Hard Court";
 
   return (
     <AbsoluteFill style={{ backgroundColor: theme.background, overflow: "hidden" }}>
@@ -68,7 +69,7 @@ export function TitleScene() {
           transform: `scale(${courtScale})`,
         }}
       >
-        <Court half="full" height={900} surface={surface} theme={theme} width={720} />
+        <Court half="full" height={900} surface={BRAND_SURFACE} theme={theme} width={720} />
       </AbsoluteFill>
 
       <AbsoluteFill

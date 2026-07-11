@@ -1,19 +1,29 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont, condensedFont } from "../fonts";
-import { formatSetScore } from "../match-stats";
+import { formatSetScoreFromSets } from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
+import { chromeOffsets } from "../scene-layout";
+import { PpdLogo } from "./ppd-logo";
 import { PPD, theme } from "../ppd-tokens";
 
 type MatchScoreBarProps = {
   guestName: string;
   hostName: string;
+  orientation?: "vertical" | "landscape";
 };
 
-export function MatchScoreBar({ guestName, hostName }: MatchScoreBarProps) {
+export function MatchScoreBar({
+  guestName,
+  hostName,
+  orientation = "landscape",
+}: MatchScoreBarProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const ctx = getVideoMatchContext();
+  const { scoreBottom } = chromeOffsets(orientation);
 
   const slideIn = spring({
-    config: { damping: 200 },
+    config: { damping: 28, stiffness: 200 },
     delay: 10,
     fps,
     frame,
@@ -22,7 +32,7 @@ export function MatchScoreBar({ guestName, hostName }: MatchScoreBarProps) {
   return (
     <div
       style={{
-        bottom: 40,
+        bottom: scoreBottom,
         left: "50%",
         opacity: interpolate(slideIn, [0, 1], [0, 1]),
         position: "absolute",
@@ -62,7 +72,7 @@ export function MatchScoreBar({ guestName, hostName }: MatchScoreBarProps) {
             letterSpacing: "0.04em",
           }}
         >
-          {formatSetScore()}
+          {formatSetScoreFromSets(ctx.sets)}
         </span>
         <span
           style={{
@@ -82,18 +92,21 @@ export function MatchScoreBar({ guestName, hostName }: MatchScoreBarProps) {
             width: 1,
           }}
         />
-        <span
-          style={{
-            color: PPD.textMuted,
-            fontFamily: bodyFont,
-            fontSize: 11,
-            fontWeight: 500,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
-          Peak Performance Data
-        </span>
+        <PpdLogo height={28} width={28} />
+        {orientation !== "vertical" ? (
+          <span
+            style={{
+              color: PPD.textMuted,
+              fontFamily: bodyFont,
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            Peak Performance Data
+          </span>
+        ) : null}
       </div>
     </div>
   );

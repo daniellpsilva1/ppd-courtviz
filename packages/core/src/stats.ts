@@ -6,7 +6,8 @@
  * from the shots↔points join (replacing the old is_terminal approximation).
  */
 
-import { NET_Y } from "./geometry";
+import { NET_Y, SINGLES_HALF } from "./geometry";
+import { hasValidSpatialCoords, normalizeShot } from "./normalize";
 
 /**
  * Zone definitions for the tennis court (near half, normalized).
@@ -189,6 +190,107 @@ export interface ZoneWinRate {
   won: number;
   errors: number;
   winRate: number;
+}
+
+/**
+ * Classify normalized near-half coordinates into court zones.
+ */
+export function deriveNormalizedCourtZone(
+  bounceX: number,
+  bounceY: number,
+  hitY: number,
+): string {
+  const [nx, ny] = normalizeShot(bounceX, bounceY, hitY);
+  const isDeep = ny < NET_Y / 2;
+  const absX = Math.abs(nx);
+
+  if (absX > SINGLES_HALF * 0.6) {
+    return nx > 0 ? `deuce_${isDeep ? "deep" : "short"}` : `ad_${isDeep ? "deep" : "short"}`;
+  }
+  return `center_${isDeep ? "deep" : "short"}`;
+}
+
+export function zoneMatchesSide(zone: string, side: "deuce" | "ad" | "center"): boolean {
+  if (side === "center") return zone.startsWith("center_");
+  return zone.startsWith(`${side}_`);
+}
+
+function pickLastInShotPerPoint(shots: EnrichedShot[]): EnrichedShot[] {
+  const byPoint = new Map<string, EnrichedShot[]>();
+
+  for (const shot of shots) {
+    const key = pointKeyFromShot(shot);
+    const bucket = byPoint.get(key) ?? [];
+    bucket.push(shot);
+    byPoint.set(key, bucket);
+  }
+
+  const picked: EnrichedShot[] = [];
+  for (const pointShots of byPoint.values()) {
+    const inShots = pointShots
+      .filter((shot) => shot.result === "In" && hasValidSpatialCoords(shot))
+      .sort((a, b) => (b.shotNumber ?? 0) - (a.shotNumber ?? 0));
+    if (inShots[0]) picked.push(inShots[0]!);
+  }
+
+  return picked;
+}
+
+/**
+ * Point-level zone win rates — one vote per point using the player's last in shot.
+ */
+export function computeZoneWinRatesByPoint(
+  shots: EnrichedShot[],
+  player: string,
+): ZoneWinRate[] {
+  const playerShots = shots.filter(
+    (s) => s.player === player && s.stroke !== "Serve" && hasValidSpatialCoords(s),
+  );
+  const zoneMap = new Map<string, { total: number; won: number; errors: number }>();
+
+  for (const shot of pickLastInShotPerPoint(playerShots)) {
+    const zone = deriveNormalizedCourtZone(shot.bounceX!, shot.bounceY!, shot.hitY!);
+    const entry = zoneMap.get(zone) ?? { total: 0, won: 0, errors: 0 };
+    entry.total++;
+    if (shotPlayerWonPoint(shot)) entry.won++;
+    if (shot.result === "Out" || shot.result === "Net") entry.errors++;
+    zoneMap.set(zone, entry);
+  }
+
+  return Array.from(zoneMap.entries())
+    .map(([zone, stats]) => ({
+      zone,
+      total: stats.total,
+      won: stats.won,
+      errors: stats.errors,
+      winRate: stats.total > 0 ? stats.won / stats.total : 0,
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+export interface SideWinRate {
+  side: "deuce" | "ad" | "center";
+  total: number;
+  won: number;
+  winRate: number;
+}
+
+export function aggregateSideWinRatesByPoint(
+  shots: EnrichedShot[],
+  player: string,
+): SideWinRate[] {
+  const zones = computeZoneWinRatesByPoint(shots, player);
+  return (["deuce", "ad", "center"] as const).map((side) => {
+    const matching = zones.filter((zone) => zoneMatchesSide(zone.zone, side));
+    const total = matching.reduce((sum, zone) => sum + zone.total, 0);
+    const won = matching.reduce((sum, zone) => sum + zone.won, 0);
+    return {
+      side,
+      total,
+      won,
+      winRate: total > 0 ? won / total : 0,
+    };
+  });
 }
 
 export function computeZoneWinRates(

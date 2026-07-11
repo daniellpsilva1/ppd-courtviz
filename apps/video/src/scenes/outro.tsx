@@ -1,18 +1,20 @@
-import { guestName, hostName } from "@courtviz/data/fixtures";
+import { useMemo } from "react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { PpdLogo } from "../components/ppd-logo";
 import { bodyFont, condensedFont } from "../fonts";
 import {
-  closingLine,
-  formatMatchResult,
-  formatSetScoreDetailed,
-  guestWinRate,
-  hostWinRate,
+  formatMatchResultFromContext,
+  formatSetScoreDetailedFromSets,
+  getMatchStats,
 } from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
 import { PPD, theme } from "../ppd-tokens";
 
 export function OutroScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const ctx = getVideoMatchContext();
+  const stats = useMemo(() => getMatchStats(), []);
 
   const logoSpring = spring({ config: { damping: 200 }, fps, frame });
   const scoreSpring = spring({ config: { damping: 200 }, delay: 14, fps, frame });
@@ -42,18 +44,23 @@ export function OutroScene() {
       >
         <div
           style={{
+            alignItems: "center",
+            display: "flex",
+            flexDirection: "column",
             opacity: logoSpring,
             textAlign: "center",
             transform: `scale(${interpolate(logoSpring, [0, 1], [0.96, 1])})`,
           }}
         >
+          <PpdLogo height={96} width={96} />
           <div
             style={{
               color: theme.ink,
               fontFamily: condensedFont,
-              fontSize: 52,
+              fontSize: 40,
               fontWeight: 700,
               letterSpacing: "0.06em",
+              marginTop: 16,
               textTransform: "uppercase",
             }}
           >
@@ -93,7 +100,7 @@ export function OutroScene() {
               letterSpacing: "0.04em",
             }}
           >
-            {formatSetScoreDetailed()}
+            {formatSetScoreDetailedFromSets(ctx.sets)}
           </div>
           <div
             style={{
@@ -103,7 +110,7 @@ export function OutroScene() {
               marginTop: 8,
             }}
           >
-            {formatMatchResult()}
+            {formatMatchResultFromContext(ctx)}
           </div>
         </div>
 
@@ -115,8 +122,8 @@ export function OutroScene() {
             opacity: statsSpring,
           }}
         >
-          <MiniStat label={hostName} value={`${Math.round(hostWinRate.rate * 100)}% pts`} />
-          <MiniStat label={guestName} value={`${Math.round(guestWinRate.rate * 100)}% pts`} />
+          <MiniStat label={ctx.hostName} value={`${Math.round(stats.hostWinRate.rate * 100)}% pts`} />
+          <MiniStat label={ctx.guestName} value={`${Math.round(stats.guestWinRate.rate * 100)}% pts`} />
         </div>
 
         <div
@@ -130,7 +137,7 @@ export function OutroScene() {
             textAlign: "center",
           }}
         >
-          {closingLine()}
+          {stats.closingLine}
         </div>
 
         <div

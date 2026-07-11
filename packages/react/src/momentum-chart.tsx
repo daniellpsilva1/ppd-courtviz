@@ -22,6 +22,8 @@ export interface MomentumChartProps {
   showSetBoundaries?: boolean;
   /** Show set number labels at boundaries (default true) */
   showSetLabels?: boolean;
+  /** Use single primary color for both fills (host/guest opacities differ) */
+  monoBlue?: boolean;
 }
 
 export const MomentumChart = memo(function MomentumChart({
@@ -31,6 +33,7 @@ export const MomentumChart = memo(function MomentumChart({
   showBreakPoints = true,
   showSetBoundaries = true,
   showSetLabels = true,
+  monoBlue = false,
   theme,
   width = 800,
 }: MomentumChartProps) {
@@ -60,8 +63,11 @@ export const MomentumChart = memo(function MomentumChart({
   const xScale = (i: number) => padding.left + (i / Math.max(momentum.length - 1, 1)) * chartW;
   const yScale = (v: number) => padding.top + chartH / 2 - (v / maxAbs) * (chartH / 2);
 
-  const hostColor = getPlayerColor("host", theme);
-  const guestColor = getPlayerColor("guest", theme);
+  const primaryColor = theme.playerHost ?? getPlayerColor("host", theme);
+  const hostColor = monoBlue ? primaryColor : getPlayerColor("host", theme);
+  const guestColor = monoBlue ? primaryColor : getPlayerColor("guest", theme);
+  const hostFillOpacity = monoBlue ? 0.35 : 0.2;
+  const guestFillOpacity = monoBlue ? 0.18 : 0.2;
   const zeroY = yScale(0);
 
   // Host area (positive, above zero)
@@ -173,14 +179,14 @@ export const MomentumChart = memo(function MomentumChart({
       <path
         d={hostAreaPath}
         fill={hostColor}
-        opacity={0.2}
+        opacity={hostFillOpacity}
       />
 
       {/* Guest fill (negative) */}
       <path
         d={guestAreaPath}
         fill={guestColor}
-        opacity={0.2}
+        opacity={guestFillOpacity}
       />
 
       {/* Line */}

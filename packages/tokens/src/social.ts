@@ -35,7 +35,7 @@ export const socialFormats = {
     width: 1080,
     height: 1920,
     aspectRatio: "9:16",
-    safeArea: { top: 220, right: 40, bottom: 220, left: 40 },
+    safeArea: { top: 72, right: 40, bottom: 96, left: 40 },
   },
   landscape: {
     name: "landscape" as const,
@@ -50,7 +50,7 @@ export const brandHandle = "@peakperformancedata";
 
 export const brandDefaults = {
   handle: brandHandle,
-  sourceLine: "Data: SwingVision · Graphic: Peak Performance Data",
+  sourceLine: "Graphic: Peak Performance Data",
   productName: "Peak Performance Data",
   tagline: "Unified athlete intelligence for tennis academies",
   website: "https://peakperformancedata.app",

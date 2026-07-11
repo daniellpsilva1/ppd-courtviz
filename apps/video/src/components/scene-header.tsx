@@ -1,6 +1,7 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont, condensedFont } from "../fonts";
 import { PPD, theme } from "../ppd-tokens";
+import { verticalContentLayout } from "../scene-layout";
 
 type SceneHeaderProps = {
   subtitle?: string;
@@ -9,10 +10,11 @@ type SceneHeaderProps = {
 
 export function SceneHeader({ subtitle, title }: SceneHeaderProps) {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, height } = useVideoConfig();
+  const layout = verticalContentLayout(height);
 
   const progress = spring({
-    config: { damping: 200 },
+    config: { damping: 28, stiffness: 200 },
     fps,
     frame,
   });
@@ -22,10 +24,10 @@ export function SceneHeader({ subtitle, title }: SceneHeaderProps) {
   return (
     <div
       style={{
-        left: 80,
+        left: layout.sidePadding,
         opacity: progress,
         position: "absolute",
-        top: 64,
+        top: layout.headerTop,
         transform: `translateY(${(1 - progress) * -16}px)`,
         zIndex: 10,
       }}
@@ -42,7 +44,7 @@ export function SceneHeader({ subtitle, title }: SceneHeaderProps) {
         style={{
           color: theme.ink,
           fontFamily: condensedFont,
-          fontSize: 40,
+          fontSize: 32,
           fontWeight: 700,
           letterSpacing: "0.03em",
           lineHeight: 1,

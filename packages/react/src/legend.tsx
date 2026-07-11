@@ -2,7 +2,7 @@
  * <ColorBar> and <Legend> — reusable SVG legend components.
  */
 
-import { memo } from "react";
+import { memo, useId } from "react";
 import { type CourtvizTheme, efficiencyColorStops } from "@courtviz/themes";
 
 // ---------------------------------------------------------------------------
@@ -19,15 +19,15 @@ export interface ColorBarProps {
 }
 
 export const ColorBar = memo(function ColorBar({
-  height = 16,
+  height = 20,
   label,
   max,
   min,
   theme,
-  width = 200,
+  width = 240,
 }: ColorBarProps) {
   const stops = efficiencyColorStops(theme);
-  const gradientId = `colorbar-${Math.random().toString(36).slice(2, 8)}`;
+  const gradientId = useId().replace(/:/g, "");
 
   return (
     <g>
@@ -42,10 +42,23 @@ export const ColorBar = memo(function ColorBar({
           ))}
         </linearGradient>
       </defs>
+      {label && (
+        <text
+          fill={theme.ink}
+          fontFamily={theme.fonts.condensedFont}
+          fontSize={theme.fontSize.body}
+          fontWeight="bold"
+          textAnchor="start"
+          x={0}
+          y={-6}
+        >
+          {label}
+        </text>
+      )}
       <rect
         fill={`url(#${gradientId})`}
         height={height}
-        rx={2}
+        rx={3}
         width={width}
         x={0}
         y={0}
@@ -53,36 +66,23 @@ export const ColorBar = memo(function ColorBar({
       <text
         fill={theme.inkMuted}
         fontFamily={theme.fonts.bodyFont}
-        fontSize={theme.fontSize.small}
+        fontSize={theme.fontSize.label}
         textAnchor="start"
         x={0}
-        y={height + 12}
+        y={height + 16}
       >
         {min}
       </text>
       <text
         fill={theme.inkMuted}
         fontFamily={theme.fonts.bodyFont}
-        fontSize={theme.fontSize.small}
+        fontSize={theme.fontSize.label}
         textAnchor="end"
         x={width}
-        y={height + 12}
+        y={height + 16}
       >
         {max}
       </text>
-      {label && (
-        <text
-          fill={theme.ink}
-          fontFamily={theme.fonts.condensedFont}
-          fontSize={theme.fontSize.body}
-          fontWeight="bold"
-          textAnchor="middle"
-          x={width / 2}
-          y={-4}
-        >
-          {label}
-        </text>
-      )}
     </g>
   );
 });
@@ -113,14 +113,15 @@ export const Legend = memo(function Legend({
   x = 0,
   y = 0,
 }: LegendProps) {
-  const gap = 4;
-  const lineHeight = swatchSize + gap;
+  const gap = 6;
+  const lineHeight = swatchSize + gap + 4;
+  const labelWidth = orientation === "horizontal" ? 120 : 0;
 
   return (
     <g transform={`translate(${x}, ${y})`}>
       {items.map((item, i) => {
         const itemY = orientation === "vertical" ? i * lineHeight : 0;
-        const itemX = orientation === "horizontal" ? i * (swatchSize + gap + item.label.length * 6) : 0;
+        const itemX = orientation === "horizontal" ? i * (swatchSize + gap + labelWidth) : 0;
         return (
           <g key={i} transform={`translate(${itemX}, ${itemY})`}>
             <rect
@@ -135,7 +136,7 @@ export const Legend = memo(function Legend({
               dominantBaseline="middle"
               fill={theme.ink}
               fontFamily={theme.fonts.bodyFont}
-              fontSize={theme.fontSize.small}
+              fontSize={theme.fontSize.label}
               x={swatchSize + gap}
               y={swatchSize / 2}
             >

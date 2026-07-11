@@ -131,7 +131,7 @@ importers:
         specifier: ^4.0.272
         version: 4.0.486(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@remotion/media':
-        specifier: 4.0.486
+        specifier: ^4.0.272
         version: 4.0.486(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@remotion/transitions':
         specifier: ^4.0.272

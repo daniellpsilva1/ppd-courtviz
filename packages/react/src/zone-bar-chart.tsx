@@ -78,8 +78,8 @@ export const ZoneBarChart = memo(function ZoneBarChart({
               fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
               fontSize={10}
               fontWeight={600}
-              pointerEvents="none"
-              x={pad.left + barW + 6}
+              textAnchor="end"
+              x={width - pad.right}
               y={y + barH * 0.75}
             >
               {Math.round(row.winRate * 100)}% ({row.total})

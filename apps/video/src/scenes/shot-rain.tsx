@@ -1,8 +1,9 @@
 import { createCourtScales, hasValidSpatialCoords, shotPlayerWonPoint } from "@courtviz/core";
-import { enrichedShots, guestName, hostName, surface } from "@courtviz/data/fixtures";
+import { enrichedShots, guestName, hostName } from "@courtviz/data/fixtures";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { BRAND_SURFACE } from "../brand-surface";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { CourtZoom } from "../components/court-zoom";
 import { InsightCallout } from "../components/insight-callout";
@@ -108,7 +109,7 @@ export function ShotRainScene() {
 
       <div style={{ left: COURT_LEFT, position: "absolute", top: COURT_TOP }}>
         <CourtZoom durationInFrames={SCENE_DURATIONS.shotRain} from={1} to={1.04}>
-          <Court half="full" height={COURT_HEIGHT} surface={surface} theme={darkCourt} width={COURT_WIDTH}>
+          <Court half="full" height={COURT_HEIGHT} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_WIDTH}>
             <defs>
               <filter id="dot-glow">
                 <feGaussianBlur result="blur" stdDeviation="2" />
@@ -194,9 +195,10 @@ function AnimatedDots({ frame, visibleCount }: { frame: number; visibleCount: nu
           frame: frame - appearAt,
         });
         const isRecent = index >= visibleCount - 8;
-        const baseOpacity = wonPoint ? 0.85 : 0.45;
-        const opacity = isRecent ? Math.min(1, baseOpacity + 0.35 * pop) : baseOpacity;
-        const radius = (isRecent ? 6.5 : 4) * Math.max(pop, 0.3);
+        const baseOpacity = wonPoint ? 0.9 : 0.65;
+        const opacity = isRecent ? Math.min(1, baseOpacity + 0.25 * pop) : baseOpacity;
+        const radius = (isRecent ? 7 : 5) * Math.max(pop, 0.3);
+        const strokeColor = wonPoint ? "#FFFFFF" : darkCourt.haloColor;
 
         return (
           <circle
@@ -207,8 +209,8 @@ function AnimatedDots({ frame, visibleCount }: { frame: number; visibleCount: nu
             key={`${shot.setNumber}-${shot.gameNumber}-${shot.pointNumber}-${index}`}
             opacity={opacity}
             r={radius}
-            stroke={darkCourt.haloColor}
-            strokeWidth={0.5}
+            stroke={strokeColor}
+            strokeWidth={wonPoint ? 1 : 0.6}
           />
         );
       })}

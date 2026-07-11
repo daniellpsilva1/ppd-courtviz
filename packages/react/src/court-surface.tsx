@@ -28,6 +28,7 @@ import { CourtScalesProvider } from "./court-scales-context";
 export interface CourtSurfaceProps {
   idPrefix?: string;
   half?: CourtHalf;
+  displayRange?: "full" | "near" | "serviceBoxes";
   surface?: Surface;
   orientation?: Orientation;
   width?: number;
@@ -80,7 +81,8 @@ function ServiceBoxFill({
 
 export const CourtSurface = memo(function CourtSurface({
   children,
-  half = "full",
+  displayRange,
+  half: halfProp = "full",
   height = 1080,
   idPrefix = "court",
   lineWidth = 2,
@@ -93,6 +95,13 @@ export const CourtSurface = memo(function CourtSurface({
   theme = ppd,
   width = 1080,
 }: CourtSurfaceProps) {
+  const half =
+    displayRange === "full"
+      ? "full"
+      : displayRange === "near" || displayRange === "serviceBoxes"
+        ? "near"
+        : halfProp;
+
   const [svgWidth, svgHeight] =
     orientation === "landscape" ? [height, width] : [width, height];
 

@@ -1,7 +1,7 @@
 // @courtviz/react — React SVG components for tennis court visualization
 
 export { Court } from "./court";
-export type { CourtProps } from "./court";
+export type { CourtProps, DisplayRange } from "./court";
 
 export { CourtSurface } from "./court-surface";
 export type { CourtSurfaceProps } from "./court-surface";
@@ -62,3 +62,6 @@ export type { StatCalloutProps } from "./stat-callout";
 
 export { HexSizeLegend } from "./hex-size-legend";
 export type { HexSizeLegendProps } from "./hex-size-legend";
+
+export { InsightPanel } from "./insight-panel";
+export type { InsightPanelProps } from "./insight-panel";

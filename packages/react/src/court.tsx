@@ -24,9 +24,13 @@ import {
 } from "@courtviz/themes";
 import { createCourtScales, type CourtScales } from "@courtviz/core";
 
+export type DisplayRange = "full" | "near" | "serviceBoxes";
+
 export interface CourtProps {
   /** Which half of the court to render */
   half?: CourtHalf;
+  /** Zoom preset — maps to half (serviceBoxes uses near half) */
+  displayRange?: DisplayRange;
   /** Court surface type */
   surface?: Surface;
   /** Orientation: portrait (standard) or landscape (rotated 90°) */
@@ -62,7 +66,8 @@ export interface CourtProps {
 export const Court = memo(function Court({
   className,
   children,
-  half = "full",
+  displayRange,
+  half: halfProp = "full",
   height = 1080,
   lineWidth = 2,
   margin = 1.5,
@@ -72,6 +77,13 @@ export const Court = memo(function Court({
   theme = ppd,
   width = 1080,
 }: CourtProps) {
+  const half =
+    displayRange === "full"
+      ? "full"
+      : displayRange === "near" || displayRange === "serviceBoxes"
+        ? "near"
+        : halfProp;
+
   // Swap dimensions for landscape
   const [svgWidth, svgHeight] = orientation === "landscape"
     ? [height, width]

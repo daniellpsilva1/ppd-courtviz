@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COURT_LENGTH, NET_Y } from "../geometry";
 import {
   hasValidSpatialCoords,
+  hasValidServeCoords,
   isFarEnd,
   isValidHitY,
   normalizeHit,
@@ -152,6 +153,23 @@ describe("hasValidSpatialCoords", () => {
         hitY: 20,
       }),
     ).toBe(true);
+  });
+});
+
+describe("hasValidServeCoords", () => {
+  it("accepts serves with invalid hitY when bounce coords exist", () => {
+    expect(
+      hasValidServeCoords({
+        bounceX: 1,
+        bounceY: 5,
+      }),
+    ).toBe(true);
+    expect(
+      hasValidServeCoords({
+        bounceX: null,
+        bounceY: 5,
+      }),
+    ).toBe(false);
   });
 });
 

@@ -10,6 +10,8 @@ import { BrandMark } from "./brand-mark";
 
 export interface FigureBranding {
   logo?: boolean;
+  /** PNG/SVG data URI or URL for the real brand logo */
+  logoHref?: string;
   handle?: string;
   source?: string;
 }
@@ -37,9 +39,12 @@ function renderBrandingFooter(
   source?: string,
 ) {
   const footer = layout.footer;
-  const handle = branding.handle ?? theme.brand?.handle ?? "@peakperformancedata";
+  const handle = branding.handle ?? theme.brand?.handle ?? "@yourhandle";
   const sourceText = branding.source ?? source ?? theme.brand?.sourceLine;
   const ruleY = footer.y;
+
+  const handleX = footer.x + footer.width;
+  const sourceX = footer.x + footer.width;
 
   return (
     <g data-testid="figure-branding-footer">
@@ -52,17 +57,28 @@ function renderBrandingFooter(
         y2={ruleY}
       />
       {branding.logo !== false && (
-        <g transform={`translate(${footer.x}, ${ruleY + 12})`}>
-          <BrandMark height={28} theme={theme} variant="monogram" />
-        </g>
+        branding.logoHref ? (
+          <image
+            height={32}
+            href={branding.logoHref}
+            preserveAspectRatio="xMidYMid meet"
+            width={32}
+            x={footer.x}
+            y={ruleY + 8}
+          />
+        ) : (
+          <g transform={`translate(${footer.x}, ${ruleY + 10})`}>
+            <BrandMark height={28} theme={theme} variant="monogram" />
+          </g>
+        )
       )}
       <text
         fill={theme.inkMuted}
         fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
         fontSize={theme.fontSize.label}
         textAnchor="end"
-        x={footer.x + footer.width * 0.72}
-        y={ruleY + 30}
+        x={handleX}
+        y={ruleY + 24}
       >
         {handle}
       </text>
@@ -72,8 +88,8 @@ function renderBrandingFooter(
           fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
           fontSize={theme.fontSize.source}
           textAnchor="end"
-          x={footer.x + footer.width}
-          y={ruleY + 30}
+          x={sourceX}
+          y={ruleY + 42}
         >
           {sourceText}
         </text>
@@ -102,7 +118,6 @@ export const FigureFrame = memo(function FigureFrame({
   const fs = theme.fontSize;
   const fonts = theme.fonts;
   const hasBranding = Boolean(branding);
-  const isLandscape = format === "landscape";
   const titleRegion = layout.title;
   const contentRegion = layout.content;
   const titleId = `${id}-title`;
@@ -111,9 +126,7 @@ export const FigureFrame = memo(function FigureFrame({
   const titleX = titleRegion.x;
   const titleY = titleRegion.y + fs.figureTitle;
   const subtitleY = titleY + (title ? fs.figureSubtitle + 8 : 0);
-  const contentTransform = isLandscape
-    ? `translate(${contentRegion.x} ${contentRegion.y})`
-    : `translate(0 ${contentRegion.y})`;
+  const contentTransform = `translate(${contentRegion.x} ${contentRegion.y})`;
 
   return (
     <svg
@@ -158,7 +171,14 @@ export const FigureFrame = memo(function FigureFrame({
         </text>
       )}
 
+      <defs>
+        <clipPath id={`${id}-content-clip`}>
+          <rect height={contentRegion.height} width={contentRegion.width} x={0} y={0} />
+        </clipPath>
+      </defs>
+
       <g
+        clipPath={`url(#${id}-content-clip)`}
         data-content-height={contentRegion.height}
         data-content-width={contentRegion.width}
         transform={contentTransform}

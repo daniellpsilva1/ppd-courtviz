@@ -1,8 +1,5 @@
 /**
  * <RayLayer> — shot trajectory arrows with optional curved arcs and flow mode.
- *
- * Straight lines or curved arcs from hit to bounce, colored by stroke type.
- * Flow mode aggregates shots into representative bundles with width proportional to count.
  */
 
 import { memo, useMemo } from "react";
@@ -28,6 +25,15 @@ const STROKE_COLORS: Record<string, string> = {
   Volley: "#38A169",
 };
 
+const HIGH_CONTRAST_STROKE_COLORS: Record<string, string> = {
+  Backhand: "#22D3EE",
+  Feed: "#FDE047",
+  Forehand: "#FB923C",
+  Overhead: "#F472B6",
+  Serve: "#C084FC",
+  Volley: "#4ADE80",
+};
+
 function getWinRateColor(winRate: number, theme: CourtvizTheme): string {
   const stops = efficiencyColorStops(theme);
   const t = Math.max(0, Math.min(1, winRate));
@@ -51,18 +57,17 @@ export interface RayLayerProps {
   alpha?: number;
   useHalfCourtNormalization?: boolean;
   showHitDots?: boolean;
-  /** Draw curved arcs instead of straight lines (default false) */
   curved?: boolean;
   /** Curvature amount for arcs (default 0.12) */
   curvature?: number;
-  /** Flow mode: aggregate shots into bundles (default false) */
   flowMode?: boolean;
-  /** Min count per flow in flow mode (default 2) */
   flowMinCount?: number;
-  /** Max flow width in pixels (default 8) */
   flowMaxWidth?: number;
   clip?: boolean;
   clipBounds?: { xMin: number; xMax: number; yMin: number; yMax: number };
+  highContrast?: boolean;
+  /** Base stroke width for individual rays (default 0.8) */
+  strokeWidth?: number;
 }
 
 export const RayLayer = memo(function RayLayer({
@@ -74,11 +79,13 @@ export const RayLayer = memo(function RayLayer({
   flowMaxWidth = 8,
   flowMinCount = 2,
   flowMode = false,
+  highContrast = false,
   player,
   scales,
   shots,
   showHitDots = true,
   strokeFilter,
+  strokeWidth = 0.8,
   theme,
   useHalfCourtNormalization = false,
 }: RayLayerProps) {
@@ -124,6 +131,22 @@ export const RayLayer = memo(function RayLayer({
   const curvedRayPath = (x1: number, y1: number, x2: number, y2: number): string =>
     curvedPath(x1, y1, x2, y2, curvature, clipBounds);
 
+  const strokePalette = highContrast ? HIGH_CONTRAST_STROKE_COLORS : STROKE_COLORS;
+
+  const markers = Object.entries(strokePalette).map(([stroke, color]) => (
+    <marker
+      id={`${markerId}-${stroke}`}
+      key={stroke}
+      markerHeight={4}
+      markerWidth={4}
+      orient="auto"
+      refX={3}
+      refY={2}
+    >
+      <path d="M0,0 L4,2 L0,4 Z" fill={color} />
+    </marker>
+  ));
+
   const flowPaths = flowMode
     ? flows.map((flow, i) => {
         const width = maxFlowCount > 0
@@ -151,7 +174,7 @@ export const RayLayer = memo(function RayLayer({
 
   const rayPaths = !flowMode
     ? rays.map(({ bx, by, hx, hy, stroke }, i) => {
-        const color = STROKE_COLORS[stroke] ?? theme.ink;
+        const color = strokePalette[stroke] ?? theme.ink;
         const x1 = scales.x(hx);
         const y1 = scales.y(hy);
         const x2 = scales.x(bx);
@@ -168,7 +191,7 @@ export const RayLayer = memo(function RayLayer({
               opacity={alpha}
               stroke={color}
               strokeLinecap="round"
-              strokeWidth={0.8}
+              strokeWidth={strokeWidth}
             />
           );
         }
@@ -179,7 +202,7 @@ export const RayLayer = memo(function RayLayer({
             markerEnd={`url(#${markerId}-${stroke})`}
             opacity={alpha}
             stroke={color}
-            strokeWidth={0.8}
+            strokeWidth={strokeWidth}
             x1={x1}
             x2={x2}
             y1={y1}
@@ -204,7 +227,7 @@ export const RayLayer = memo(function RayLayer({
           <circle
             cx={scales.x(hx)}
             cy={scales.y(hy)}
-            fill={STROKE_COLORS[stroke] ?? theme.ink}
+            fill={strokePalette[stroke] ?? theme.ink}
             opacity={alpha + 0.25}
             r={2}
           />
@@ -223,19 +246,7 @@ export const RayLayer = memo(function RayLayer({
   return (
     <g>
       <defs>
-        {Object.entries(STROKE_COLORS).map(([stroke, color]) => (
-          <marker
-            id={`${markerId}-${stroke}`}
-            key={stroke}
-            markerHeight={4}
-            markerWidth={4}
-            orient="auto"
-            refX={3}
-            refY={2}
-          >
-            <path d="M0,0 L4,2 L0,4 Z" fill={color} />
-          </marker>
-        ))}
+        {markers}
         {clip && clipBounds && (
           <clipPath id={clipId}>
             <rect

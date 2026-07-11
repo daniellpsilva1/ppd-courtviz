@@ -14,9 +14,9 @@ function makeShot(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
     spin: null,
     speedKmh: 180,
     bounceX: 2.0,
-    bounceY: 6.0,
+    bounceY: 8.5,
     hitX: 1.0,
-    hitY: 11.0,
+    hitY: 17.0,
     hitZ: 2.8,
     bounceZone: "deuce",
     direction: null,
@@ -39,8 +39,8 @@ const scales = createCourtScales({ half: "near", height: 600, margin: 1.5, width
 describe("ServeLayer", () => {
   it("renders circles for serve shots", () => {
     const shots = [
-      makeShot({ bounceX: 2, bounceY: 6 }),
-      makeShot({ bounceX: 3, bounceY: 7, type: "second_serve" }),
+      makeShot({ bounceX: 2, bounceY: 8.5 }),
+      makeShot({ bounceX: 3, bounceY: 9, type: "second_serve" }),
     ];
     const markup = renderToStaticMarkup(
       React.createElement(ServeLayer, {
@@ -57,8 +57,8 @@ describe("ServeLayer", () => {
 
   it("filters to first serves only", () => {
     const shots = [
-      makeShot({ bounceX: 2, bounceY: 6, type: "first_serve" }),
-      makeShot({ bounceX: 3, bounceY: 7, type: "second_serve" }),
+      makeShot({ bounceX: 2, bounceY: 8.5, type: "first_serve" }),
+      makeShot({ bounceX: 3, bounceY: 9, type: "second_serve" }),
     ];
     const markup = renderToStaticMarkup(
       React.createElement(ServeLayer, {
@@ -75,8 +75,8 @@ describe("ServeLayer", () => {
 
   it("filters to second serves only", () => {
     const shots = [
-      makeShot({ bounceX: 2, bounceY: 6, type: "first_serve" }),
-      makeShot({ bounceX: 3, bounceY: 7, type: "second_serve" }),
+      makeShot({ bounceX: 2, bounceY: 8.5, type: "first_serve" }),
+      makeShot({ bounceX: 3, bounceY: 9, type: "second_serve" }),
     ];
     const markup = renderToStaticMarkup(
       React.createElement(ServeLayer, {
@@ -105,7 +105,7 @@ describe("ServeLayer", () => {
   });
 
   it("uses player color for fill", () => {
-    const shots = [makeShot({ bounceX: 2, bounceY: 6, player: "host" })];
+    const shots = [makeShot({ bounceX: 2, bounceY: 8.5, player: "host" })];
     const markup = renderToStaticMarkup(
       React.createElement(ServeLayer, {
         player: "host",

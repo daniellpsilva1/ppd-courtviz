@@ -11,9 +11,9 @@ function makeServe(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
     spin: null,
     speedKmh: 180,
     bounceX: 2.0,
-    bounceY: 6.0,
+    bounceY: 14.0,
     hitX: 1.0,
-    hitY: 11.0,
+    hitY: 10.0,
     hitZ: 2.8,
     bounceZone: "deuce",
     direction: null,
@@ -39,10 +39,10 @@ describe("computeServeZones", () => {
 
   it("classifies serves into zones", () => {
     const serves = [
-      makeServe({ bounceX: -3, bounceY: 7, pointWinner: "host" }),
-      makeServe({ bounceX: -3, bounceY: 7, pointWinner: "guest" }),
-      makeServe({ bounceX: 3, bounceY: 7, pointWinner: "host" }),
-      makeServe({ bounceX: 0, bounceY: 7, pointWinner: "host" }),
+      makeServe({ bounceX: -3, bounceY: 14, pointWinner: "host" }),
+      makeServe({ bounceX: -3, bounceY: 14, pointWinner: "guest" }),
+      makeServe({ bounceX: 3, bounceY: 14, pointWinner: "host" }),
+      makeServe({ bounceX: 0, bounceY: 14, pointWinner: "host" }),
     ];
     const result = computeServeZones(serves, "host");
     expect(result.length).toBeGreaterThan(0);
@@ -56,8 +56,8 @@ describe("computeServeZones", () => {
 
   it("filters by player", () => {
     const serves = [
-      makeServe({ player: "host", bounceX: -3, bounceY: 7 }),
-      makeServe({ player: "guest", bounceX: -3, bounceY: 7 }),
+      makeServe({ player: "host", bounceX: -3, bounceY: 14 }),
+      makeServe({ player: "guest", bounceX: -3, bounceY: 14 }),
     ];
     const result = computeServeZones(serves, "host");
     const totalServes = result.reduce((sum, z) => sum + z.count, 0);

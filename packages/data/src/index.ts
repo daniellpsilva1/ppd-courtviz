@@ -3,4 +3,5 @@
 export * from "./schema";
 export * from "./enrich";
 export * from "./loader";
+export * from "./official-stats";
 export * from "./fixtures/boluda";

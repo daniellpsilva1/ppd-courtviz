@@ -68,22 +68,28 @@ const editorial = toCourtvizTheme("editorial");
 
 | Command | Output |
 |---------|--------|
-| `pnpm export:static` | 7 legacy flat SVGs (backward compat) |
-| `pnpm export:social` | 56 dark branded assets (7 posters × 4 formats × SVG+PNG) |
-| `pnpm export:editorial` | 4 warm editorial social cards |
-| `pnpm export:all` | All of the above |
+| `pnpm export` / `pnpm export:deck` | Coach deck in portrait + story (`exports/deck/`) |
+| `pnpm export:posters` | Optional standalone posters × 4 formats |
+| `pnpm export:captions` | Platform captions + hashtags (`exports/captions/`) |
+| `pnpm export:all` | Deck + posters + captions + video |
 
-Social exports land in `apps/demo/public/exports/{square,portrait,story,landscape}/`. Editorial exports in `apps/demo/public/exports/editorial/`.
+Coach deck lands in `apps/demo/public/exports/deck/{portrait,story}/` with `manifest.json`.
+Optional posters land in `apps/demo/public/exports/{square,portrait,story,landscape}/`.
+
+Pass `--matchId=<uuid>` or `--cache=path/to/match.json` to export a specific match (requires Supabase env for matchId).
 
 ## Video (Remotion)
 
 ```bash
-pnpm --filter @courtviz/video dev
-pnpm --filter @courtviz/video render:social
+pnpm video:prepare
+pnpm video:render:social
+pnpm --filter @courtviz/video render
 pnpm --filter @courtviz/video render:benchmark
 ```
 
-Compositions: `MatchRecap`, `MatchRecapSocial`, `BenchmarkStorySocial`.
+Compositions: `MatchRecap` (landscape broadcast), `MatchRecapSocial` (9:16), `BenchmarkStorySocial`.
+
+`MatchRecapSocial` scenes: title → heatmaps → trajectories → shot patterns → key stats → coach insights → momentum (short) → outro.
 
 ## Architecture
 

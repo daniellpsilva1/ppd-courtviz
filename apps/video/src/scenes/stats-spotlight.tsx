@@ -36,7 +36,7 @@ export function StatsSpotlightScene() {
           delay={8}
           guestLabel={`${Math.round(guestServiceStats.serviceWinRate * 100)}%`}
           guestName={guestName}
-          headline="Won on Return"
+          headline="Service Points Won"
           hostLabel={`${Math.round(hostServiceStats.serviceWinRate * 100)}%`}
           hostName={hostName}
           narrative={`${hostName} won ${hostServiceStats.serviceWon} of ${hostServiceStats.servicePoints} service points — return game decided the match`}

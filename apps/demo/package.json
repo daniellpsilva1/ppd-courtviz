@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "export:static": "node ../../scripts/export-static.cjs",
-    "export:editorial": "tsx ../../scripts/export-editorial.ts",
+    "export:social": "node ../../scripts/export-social.cjs",
+    "export:carousel": "node ../../scripts/export-carousel.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist .turbo"
   },

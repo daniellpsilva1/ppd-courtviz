@@ -10,10 +10,12 @@ import {
   MatchSchema,
   PointSchema,
   SetSummarySchema,
+  PlayerStatSchema,
   ShotSchema,
   type MatchData,
   type Point,
   type SetSummary,
+  type PlayerStat,
   type Shot,
 } from "../schema";
 
@@ -21,6 +23,7 @@ import matchJson from "./match_boluda.json";
 import pointsJson from "./points_boluda.json";
 import setsJson from "./sets_boluda.json";
 import shotsJson from "./shots_boluda.json";
+import statsJson from "./stats_boluda.json";
 
 // ---------------------------------------------------------------------------
 // Validate with Zod
@@ -40,13 +43,23 @@ const points: Point[] = pointsJson.map((p: Record<string, unknown>) =>
   PointSchema.parse(p),
 );
 
+const stats: PlayerStat[] = statsJson.map((s: Record<string, unknown>) =>
+  PlayerStatSchema.parse({
+    matchId: s.matchId ?? s.match_id,
+    player: s.player,
+    setNumber: s.setNumber ?? s.set_number,
+    statName: s.statName ?? s.stat_name,
+    statValue: Number(s.statValue ?? s.stat_value),
+  }),
+);
+
 const matchData: MatchData = {
   games: [],
   match,
   points,
   sets,
   shots,
-  stats: [],
+  stats,
 };
 
 // ---------------------------------------------------------------------------
@@ -85,5 +98,6 @@ export {
   points,
   sets,
   shots,
+  stats,
   surface,
 };

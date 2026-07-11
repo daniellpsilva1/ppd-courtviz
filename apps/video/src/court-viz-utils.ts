@@ -4,8 +4,11 @@ import {
   computeHexbins,
   computeShotFlows,
   createCourtScales,
+  curvedPath,
+  normalizeShot,
   shotPlayerWonPoint,
   type EnrichedShot,
+  type HexbinResult,
   type ShotFlow,
 } from "@courtviz/core";
 import { ppdDark, efficiencyColorStops, type CourtvizTheme } from "@courtviz/themes";
@@ -33,10 +36,23 @@ export function getEfficiencyColor(value: number, useDark = false): string {
   return colorStops[colorStops.length - 1]![1];
 }
 
+export type HexbinBuildOptions = {
+  gridsize?: number;
+  minCount?: number;
+  sizeRange?: [number, number];
+};
+
+export const SOCIAL_HEX_OPTS: HexbinBuildOptions = {
+  gridsize: 8,
+  minCount: 1,
+  sizeRange: [0.35, 0.75],
+};
+
 export function buildPlayerHexbins(
   shots: EnrichedShot[],
   player: string,
   half: "near" | "full" = "near",
+  options: HexbinBuildOptions = {},
 ) {
   const playerShots = shots.filter(
     (s) =>
@@ -47,14 +63,33 @@ export function buildPlayerHexbins(
       s.result === "In",
   );
 
+  const {
+    gridsize = SOCIAL_HEX_OPTS.gridsize ?? 8,
+    minCount = SOCIAL_HEX_OPTS.minCount ?? 1,
+    sizeRange = SOCIAL_HEX_OPTS.sizeRange ?? [0.35, 0.75],
+  } = options;
+
+  const xs = playerShots.map((s) =>
+    half === "near" ? normalizeShot(s.bounceX!, s.bounceY!, s.hitY!)[0] : s.bounceX!,
+  );
+  const ys = playerShots.map((s) =>
+    half === "near" ? normalizeShot(s.bounceX!, s.bounceY!, s.hitY!)[1] : s.bounceY!,
+  );
+
   return computeHexbins(
     {
-      x: playerShots.map((s) => s.bounceX!),
-      y: playerShots.map((s) => s.bounceY!),
+      x: xs,
+      y: ys,
       values: playerShots.map((s) => (shotPlayerWonPoint(s) ? 1 : 0)),
     },
-    { gridsize: 8, half, minCount: 2, sizeRange: [0.25, 0.95] },
-  ).sort((a, b) => b.count - a.count);
+    { gridsize, half, minCount, sizeRange },
+  ).sort((a, b) => a.count - b.count);
+}
+
+export function sharedEfficiencyDomain(hexbinsList: HexbinResult[][]) {
+  const values = hexbinsList.flat().map((h) => h.value);
+  if (values.length === 0) return { vmin: 0, vmax: 1 };
+  return { vmin: Math.min(...values), vmax: Math.max(...values) };
 }
 
 export function buildPlayerFlows(shots: EnrichedShot[], player: string): ShotFlow[] {
@@ -85,35 +120,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Curved path with reduced curvature and control point clamped inside court bounds.
- */
-export function curvedPath(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  curvature = 0.07,
-  courtBounds?: { xMin: number; xMax: number; yMin: number; yMax: number },
-): string {
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len === 0) return `M${x1},${y1}L${x2},${y2}`;
-
-  const offset = curvature * len;
-  let cx = mx - (dy / len) * offset;
-  let cy = my + (dx / len) * offset;
-
-  if (courtBounds) {
-    cx = clamp(cx, courtBounds.xMin, courtBounds.xMax);
-    cy = clamp(cy, courtBounds.yMin, courtBounds.yMax);
-  }
-
-  return `M${x1},${y1}Q${cx},${cy}${x2},${y2}`;
-}
+export { curvedPath };
 
 export function defaultCourtScales(
   width: number,

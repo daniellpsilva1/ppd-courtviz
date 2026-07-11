@@ -75,6 +75,23 @@ fs.writeFileSync(
 );
 console.log("Sets:", transformedSets.length);
 
+// Transform and copy stats
+const statsRaw = JSON.parse(
+  fs.readFileSync(path.join(dataDir, "stats_boluda.json"), "utf-8"),
+);
+const transformedStats = statsRaw.map((s) => ({
+  matchId: s.match_id,
+  player: s.player,
+  setNumber: s.set_number,
+  statName: s.stat_name,
+  statValue: Number(s.stat_value),
+}));
+fs.writeFileSync(
+  path.join(outDir, "stats_boluda.json"),
+  JSON.stringify(transformedStats),
+);
+console.log("Stats:", transformedStats.length);
+
 // Transform and copy match meta
 const meta = JSON.parse(
   fs.readFileSync(path.join(dataDir, "match_boluda_meta.json"), "utf-8"),

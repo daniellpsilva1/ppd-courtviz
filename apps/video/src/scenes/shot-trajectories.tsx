@@ -1,7 +1,8 @@
-import { enrichedShots, guestName, hostName, surface } from "@courtviz/data/fixtures";
+import { enrichedShots, guestName, hostName } from "@courtviz/data/fixtures";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { BRAND_SURFACE } from "../brand-surface";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { CourtCard } from "../components/court-card";
 import { InsightCallout } from "../components/insight-callout";
@@ -56,6 +57,7 @@ export function ShotTrajectoriesScene() {
       <div style={{ display: "flex", gap: GAP, left: LEFT, position: "absolute", top: TOP }}>
         <FlowPanel
           bounds={hostBounds}
+          clipId="flow-clip-host"
           color={getPlayerColor("host", darkCourt)}
           flows={hostFlows}
           frame={frame}
@@ -66,6 +68,7 @@ export function ShotTrajectoriesScene() {
         />
         <FlowPanel
           bounds={guestBounds}
+          clipId="flow-clip-guest"
           color={getPlayerColor("guest", darkCourt)}
           flows={guestFlows}
           frame={frame}
@@ -117,6 +120,7 @@ export function ShotTrajectoriesScene() {
 
 function FlowPanel({
   bounds,
+  clipId,
   color,
   flows,
   frame,
@@ -126,6 +130,7 @@ function FlowPanel({
   sideDelay,
 }: {
   bounds: ReturnType<typeof courtPixelBounds>;
+  clipId: string;
   color: string;
   flows: ReturnType<typeof buildPlayerFlows>;
   frame: number;
@@ -143,7 +148,18 @@ function FlowPanel({
 
   return (
     <CourtCard accentColor={color} label={name} labelOpacity={labelSpring}>
-      <Court half="full" height={COURT_H} surface={surface} theme={darkCourt} width={COURT_W}>
+      <Court half="full" height={COURT_H} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_W}>
+        <defs>
+          <clipPath id={clipId}>
+            <rect
+              height={bounds.yMax - bounds.yMin}
+              width={bounds.xMax - bounds.xMin}
+              x={bounds.xMin}
+              y={bounds.yMin}
+            />
+          </clipPath>
+        </defs>
+        <g clipPath={`url(#${clipId})`}>
         {flows.map((flow, index) => {
           const progress = spring({
             config: { damping: 200 },
@@ -156,8 +172,9 @@ function FlowPanel({
           const y1 = scales.y(flow.fromY);
           const x2 = scales.x(flow.toX);
           const y2 = scales.y(flow.toY);
-          const d = curvedPath(x1, y1, x2, y2, 0.07, bounds);
+          const d = curvedPath(x1, y1, x2, y2, 0.02, bounds);
           const flowColor = getEfficiencyColor(flow.winRate, true);
+          const inset = strokeW * 0.5;
 
           return (
             <g key={index} opacity={0.82 * progress}>
@@ -169,24 +186,25 @@ function FlowPanel({
                 strokeWidth={strokeW}
               />
               <circle
-                cx={x1}
-                cy={y1}
+                cx={Math.max(bounds.xMin + inset, Math.min(bounds.xMax - inset, x1))}
+                cy={Math.max(bounds.yMin + inset, Math.min(bounds.yMax - inset, y1))}
                 fill="none"
-                r={4 * progress}
+                r={3.5 * progress}
                 stroke={color}
                 strokeWidth={1.5}
               />
               <circle
-                cx={x2}
-                cy={y2}
+                cx={Math.max(bounds.xMin + inset, Math.min(bounds.xMax - inset, x2))}
+                cy={Math.max(bounds.yMin + inset, Math.min(bounds.yMax - inset, y2))}
                 fill={flowColor}
-                r={3.5 * progress}
+                r={3 * progress}
                 stroke={darkCourt.haloColor}
                 strokeWidth={0.5}
               />
             </g>
           );
         })}
+        </g>
       </Court>
     </CourtCard>
   );

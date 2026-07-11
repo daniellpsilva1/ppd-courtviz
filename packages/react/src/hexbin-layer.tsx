@@ -7,6 +7,7 @@ import {
   type CourtScales,
   type EnrichedShot,
   computeHexbins,
+  normalizeShot,
   shotPlayerWonPoint,
 } from "@courtviz/core";
 import {
@@ -31,10 +32,21 @@ export interface HexbinLayerProps {
   showLabels?: boolean;
   labelMinCount?: number;
   haloWidth?: number;
+  /** Hex size range relative to grid cell (default tighter to reduce overlap) */
+  sizeRange?: [number, number];
+  /** Shared efficiency domain for comparable side-by-side courts */
+  valueDomain?: { vmin: number; vmax: number };
+  /** Clip hexes to court bounds (parent Court also clips) */
+  clip?: boolean;
+  /** Normalize bounce coords to near half (dominance posters) */
+  useHalfCourtNormalization?: boolean;
+  /** Binning extent [xmin, xmax, ymin, ymax] in court meters */
+  extent?: [number, number, number, number];
 }
 
 function getEfficiencyColor(value: number, vmin: number, vmax: number, stops: Array<[number, string]>): string {
-  const t = Math.max(0, Math.min(1, (value - vmin) / (vmax - vmin)));
+  const span = Math.max(vmax - vmin, 0.001);
+  const t = Math.max(0, Math.min(1, (value - vmin) / span));
   for (let i = 0; i < stops.length - 1; i++) {
     const [offset1, color1] = stops[i]!;
     const [offset2, color2] = stops[i + 1]!;
@@ -49,16 +61,20 @@ function getEfficiencyColor(value: number, vmin: number, vmax: number, stops: Ar
 export const HexbinLayer = memo(function HexbinLayer({
   alpha = 0.85,
   colorScale = "efficiency",
+  extent,
   gridsize = 6,
   half = "full",
-  haloWidth = 1.5,
-  labelMinCount = 4,
+  haloWidth = 0.75,
+  labelMinCount = 6,
   minCount = 2,
   player,
   scales,
   showLabels = true,
   shots,
+  sizeRange = [0.25, 0.65],
   theme,
+  useHalfCourtNormalization = false,
+  valueDomain,
 }: HexbinLayerProps) {
   const { hide, show, tooltip } = useSvgTooltip();
 
@@ -71,8 +87,14 @@ export const HexbinLayer = memo(function HexbinLayer({
         s.result === "In",
     );
 
-    const xs = filtered.map((s) => s.bounceX!);
-    const ys = filtered.map((s) => s.bounceY!);
+    const xs = filtered.map((s) => {
+      if (!useHalfCourtNormalization) return s.bounceX!;
+      return normalizeShot(s.bounceX!, s.bounceY!, s.hitY!)[0];
+    });
+    const ys = filtered.map((s) => {
+      if (!useHalfCourtNormalization) return s.bounceY!;
+      return normalizeShot(s.bounceX!, s.bounceY!, s.hitY!)[1];
+    });
 
     let values: number[] | undefined;
     if (colorScale === "efficiency") {
@@ -83,13 +105,14 @@ export const HexbinLayer = memo(function HexbinLayer({
 
     return computeHexbins(
       { x: xs, y: ys, values },
-      { gridsize, half, minCount, sizeRange: [0.25, 0.95] },
+      { gridsize, half, minCount, sizeRange, extent },
     );
-  }, [shots, player, half, gridsize, minCount, colorScale]);
+  }, [shots, player, half, gridsize, minCount, colorScale, sizeRange, extent, useHalfCourtNormalization]);
 
   const stops = useMemo(() => efficiencyColorStops(theme), [theme]);
 
   const colorRange = useMemo(() => {
+    if (valueDomain) return valueDomain;
     if (colorScale === "efficiency") {
       return { vmax: 1, vmin: 0 };
     }
@@ -97,7 +120,7 @@ export const HexbinLayer = memo(function HexbinLayer({
       return { vmax: 120, vmin: 40 };
     }
     return { vmax: hexbins.reduce((m, h) => Math.max(m, h.count), 0), vmin: 0 };
-  }, [colorScale, hexbins]);
+  }, [colorScale, hexbins, valueDomain]);
 
   const labelSize = theme.fontSize.label;
 
@@ -136,7 +159,7 @@ export const HexbinLayer = memo(function HexbinLayer({
                 opacity={alpha * 0.6}
                 points={points}
                 stroke={theme.haloColor}
-                strokeWidth={haloWidth + 1}
+                strokeWidth={haloWidth}
               />
             )}
 

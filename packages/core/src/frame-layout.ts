@@ -22,6 +22,118 @@ export interface FrameLayout {
   safeArea: FrameRegion;
 }
 
+export interface PosterBandHeights {
+  analyticsBand: number;
+  legendBand: number;
+  insightBand: number;
+}
+
+export interface PosterContentSpec {
+  courtAspect?: number;
+  analyticsBand?: number;
+  legendBand?: number;
+  insightBand?: number;
+  gap?: number;
+}
+
+export interface PosterContentLayout {
+  courtX: number;
+  courtY: number;
+  courtWidth: number;
+  courtHeight: number;
+  analyticsY: number;
+  legendY: number;
+  insightY: number;
+  bands: PosterBandHeights;
+}
+
+const DEFAULT_BANDS: Record<SocialFormat, PosterBandHeights> = {
+  square: { analyticsBand: 160, legendBand: 120, insightBand: 80 },
+  portrait: { analyticsBand: 180, legendBand: 150, insightBand: 80 },
+  story: { analyticsBand: 200, legendBand: 160, insightBand: 80 },
+  landscape: { analyticsBand: 0, legendBand: 0, insightBand: 80 },
+};
+
+export function resolvePosterBands(
+  format: SocialFormat,
+  overrides?: Partial<PosterBandHeights>,
+): PosterBandHeights {
+  const base = DEFAULT_BANDS[format];
+  return {
+    analyticsBand: overrides?.analyticsBand ?? base.analyticsBand,
+    legendBand: overrides?.legendBand ?? base.legendBand,
+    insightBand: overrides?.insightBand ?? base.insightBand,
+  };
+}
+
+/**
+ * Measure content blocks and distribute vertical space evenly — no magic offsets.
+ */
+export function resolvePosterContentLayout(
+  layout: FrameLayout,
+  spec: PosterContentSpec = {},
+): PosterContentLayout {
+  const region = layout.content;
+  const bands = resolvePosterBands(layout.format, {
+    analyticsBand: spec.analyticsBand,
+    legendBand: spec.legendBand,
+    insightBand: spec.insightBand,
+  });
+  const gap = spec.gap ?? 12;
+  const courtAspect = spec.courtAspect ?? 1;
+  const reservedHeight =
+    bands.analyticsBand +
+    bands.legendBand +
+    bands.insightBand +
+    (bands.analyticsBand > 0 ? gap : 0) +
+    (bands.legendBand > 0 ? gap : 0) +
+    (bands.insightBand > 0 ? gap : 0);
+
+  const maxCourtHeight = Math.max(120, region.height - reservedHeight - gap);
+  const maxCourtWidth = region.width - 8;
+  let courtHeight = maxCourtHeight;
+  let courtWidth = courtHeight * courtAspect;
+  if (courtWidth > maxCourtWidth) {
+    courtWidth = maxCourtWidth;
+    courtHeight = courtWidth / courtAspect;
+  }
+
+  let blockHeight = courtHeight + reservedHeight;
+  const maxBlockHeight = Math.max(120, region.height - gap);
+  if (blockHeight > maxBlockHeight) {
+    courtHeight = Math.max(80, maxBlockHeight - reservedHeight);
+    courtWidth = courtHeight * courtAspect;
+    if (courtWidth > maxCourtWidth) {
+      courtWidth = maxCourtWidth;
+      courtHeight = courtWidth / courtAspect;
+    }
+    blockHeight = courtHeight + reservedHeight;
+  }
+
+  const courtY = Math.max(0, Math.round((region.height - blockHeight) / 2));
+  const courtX = Math.round((region.width - courtWidth) / 2);
+  let cursor = courtY + courtHeight + gap;
+
+  const analyticsY = bands.analyticsBand > 0 ? cursor : 0;
+  if (bands.analyticsBand > 0) cursor += bands.analyticsBand + gap;
+
+  const legendY = bands.legendBand > 0 ? cursor : 0;
+  if (bands.legendBand > 0) cursor += bands.legendBand + gap;
+
+  const insightY = bands.insightBand > 0 ? cursor : 0;
+
+  return {
+    analyticsY,
+    bands,
+    courtHeight: Math.round(courtHeight),
+    courtWidth: Math.round(courtWidth),
+    courtX,
+    courtY,
+    insightY,
+    legendY,
+  };
+}
+
 export function resolveFrameLayout(
   format: SocialFormat = "square",
   overrides?: { width?: number; height?: number; padding?: number },

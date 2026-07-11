@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  aggregateSideWinRatesByPoint,
   computeBreakPointConversion,
   computeFirstServeInRate,
   computeMomentum,
   computePointsWonRate,
   computeZoneWinRates,
+  computeZoneWinRatesByPoint,
   type EnrichedShot,
 } from "../stats";
 
@@ -36,6 +38,62 @@ function makeShot(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
     ...overrides,
   };
 }
+
+describe("computeZoneWinRatesByPoint", () => {
+  it("counts one vote per point using the last in shot", () => {
+    const shots: EnrichedShot[] = [
+      makeShot({
+        setNumber: 1,
+        gameNumber: 1,
+        pointNumber: 1,
+        shotNumber: 1,
+        bounceX: 3.5,
+        bounceY: 18,
+        hitY: 22,
+        bounceZone: "deuce",
+        pointWinner: "host",
+      }),
+      makeShot({
+        setNumber: 1,
+        gameNumber: 1,
+        pointNumber: 1,
+        shotNumber: 2,
+        bounceX: 3.5,
+        bounceY: 18,
+        hitY: 22,
+        bounceZone: "deuce",
+        pointWinner: "host",
+      }),
+      makeShot({
+        setNumber: 1,
+        gameNumber: 1,
+        pointNumber: 2,
+        shotNumber: 1,
+        bounceX: -2,
+        bounceY: 18,
+        hitY: 22,
+        bounceZone: "ad",
+        pointWinner: "guest",
+      }),
+    ];
+
+    const result = computeZoneWinRatesByPoint(shots, "host");
+    const deuce = result.find((entry) => entry.zone.startsWith("deuce_"));
+    expect(deuce?.total).toBe(1);
+    expect(deuce?.won).toBe(1);
+  });
+
+  it("aggregates deuce and ad sides at point level", () => {
+    const shots: EnrichedShot[] = [
+      makeShot({ setNumber: 1, gameNumber: 1, pointNumber: 1, shotNumber: 1, bounceX: 3.5, bounceY: 18, hitY: 22, pointWinner: "host" }),
+      makeShot({ setNumber: 1, gameNumber: 1, pointNumber: 2, shotNumber: 1, bounceX: -3.5, bounceY: 18, hitY: 22, pointWinner: "guest" }),
+    ];
+    const sides = aggregateSideWinRatesByPoint(shots, "host");
+    const deuce = sides.find((side) => side.side === "deuce");
+    expect(deuce?.total).toBe(1);
+    expect(deuce?.won).toBe(1);
+  });
+});
 
 describe("computeZoneWinRates", () => {
   it("computes win rates per zone using true pointWinner", () => {

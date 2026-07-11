@@ -16,11 +16,17 @@
     "version": "changeset version",
     "release": "turbo run build && changeset publish",
     "clean": "turbo run clean && rm -rf node_modules",
-    "export": "turbo run build && tsx scripts/export.ts",
-    "export:static": "turbo run build && tsx scripts/export.ts --mode=legacy",
-    "export:social": "turbo run build && tsx scripts/export.ts --mode=product",
-    "export:editorial": "turbo run build && tsx scripts/export.ts --mode=editorial",
-    "export:all": "turbo run build && tsx scripts/export.ts --mode=all"
+    "export": "turbo run build && tsx scripts/export.ts --mode=default",
+    "export:deck": "turbo run build && tsx scripts/export.ts --mode=deck",
+    "export:posters": "turbo run build && tsx scripts/export.ts --mode=posters",
+    "export:social": "turbo run build && tsx scripts/export.ts --mode=posters",
+    "export:carousel": "turbo run build && tsx scripts/export.ts --mode=deck",
+    "export:captions": "turbo run build && tsx scripts/export.ts --mode=captions",
+    "export:all": "turbo run build && tsx scripts/export.ts --mode=all",
+    "video:prepare": "node scripts/prepare-video-data.cjs",
+    "video:render:social": "node scripts/prepare-video-data.cjs && pnpm --filter @courtviz/video render:social",
+    "video:render": "node scripts/prepare-video-data.cjs && pnpm --filter @courtviz/video render",
+    "video:render:all": "node scripts/prepare-video-data.cjs && pnpm --filter @courtviz/video render && pnpm --filter @courtviz/video render:social"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.12",
