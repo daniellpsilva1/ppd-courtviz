@@ -141,7 +141,6 @@ export const ServeLayer = memo(function ServeLayer({
                 strokeWidth={isIn ? 0.6 : 2}
               />
             )}
-            <title>{tooltipLines.join(" · ")}</title>
           </g>
         );
       })}

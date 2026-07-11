@@ -142,8 +142,7 @@ export const CourtSurface = memo(function CourtSurface({
 
   return (
     <CourtScalesProvider scales={scales}>
-      <SvgTooltipProvider bounds={{ height: svgHeight, width: svgWidth }} theme={theme}>
-        <defs>
+      <defs>
         <clipPath id={clipId}>
           <rect height={courtH} width={courtW} x={courtX} y={courtY} />
         </clipPath>
@@ -152,6 +151,9 @@ export const CourtSurface = memo(function CourtSurface({
         </filter>
       </defs>
       <g transform={transform}>
+        {/* Tooltip provider lives inside the offset transform so hover
+            coordinates (court-local) line up with the rendered tooltip. */}
+        <SvgTooltipProvider bounds={{ height: svgHeight, width: svgWidth }} theme={theme}>
         <rect
           fill={surroundColor}
           height={courtH + margin * scales.meterWidth * 2}
@@ -218,8 +220,8 @@ export const CourtSurface = memo(function CourtSurface({
           })}
         </g>
         <g clipPath={`url(#${clipId})`}>{children}</g>
+        </SvgTooltipProvider>
       </g>
-      </SvgTooltipProvider>
     </CourtScalesProvider>
   );
 });

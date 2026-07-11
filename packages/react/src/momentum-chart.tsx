@@ -218,7 +218,6 @@ export const MomentumChart = memo(function MomentumChart({
             >
               <circle cx={cx} cy={cy} fill="none" opacity={0.5} r={5} stroke={theme.haloColor} strokeWidth={1} />
               <circle cx={cx} cy={cy} fill={color} r={3} stroke={theme.background} strokeWidth={1} />
-              <title>{tooltipLines.join(" · ")}</title>
             </g>
           );
         })}
@@ -241,9 +240,7 @@ export const MomentumChart = memo(function MomentumChart({
             onMouseEnter={() => show(cx, cy, tooltipLines)}
             r={6}
             style={{ cursor: "pointer" }}
-          >
-            <title>{tooltipLines.join(" · ")}</title>
-          </circle>
+          />
         );
       })}
 

@@ -144,9 +144,10 @@ export const HexbinLayer = memo(function HexbinLayer({
           (scales.y(hex.vertices[0]![1]) - cy) ** 2,
         );
         const winPct = colorScale === "efficiency" ? Math.round(hex.value * 100) : null;
+        const pointsWon = colorScale === "efficiency" ? Math.round(hex.value * hex.count) : null;
         const tooltipLines = [
-          `${hex.count} shots`,
-          winPct != null ? `${winPct}% win rate` : null,
+          `${hex.count} shots landed here`,
+          winPct != null ? `${winPct}% win rate (${pointsWon}/${hex.count} points)` : null,
         ].filter(Boolean) as string[];
 
         return (
@@ -188,7 +189,6 @@ export const HexbinLayer = memo(function HexbinLayer({
                 {hex.count}
               </text>
             )}
-            <title>{tooltipLines.join(" · ")}</title>
           </g>
         );
       })}

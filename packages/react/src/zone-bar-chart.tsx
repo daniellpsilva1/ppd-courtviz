@@ -85,7 +85,6 @@ export const ZoneBarChart = memo(function ZoneBarChart({
             >
               {Math.round(row.winRate * 100)}% ({row.total})
             </text>
-            <title>{tooltipLines.join(" · ")}</title>
           </g>
         );
       })}
