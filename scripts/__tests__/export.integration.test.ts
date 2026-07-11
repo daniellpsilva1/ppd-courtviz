@@ -22,24 +22,24 @@ const EXPECTED_DECK_SLIDES = [
   "slide-cta",
 ];
 
-const EXPECTED_DECK_FORMATS = ["portrait", "story"];
-
 describe("export artifacts", () => {
-  it("tracks coach deck exports in portrait and story formats", () => {
+  it("tracks vertical story deck exports in a flat deck folder", () => {
     const manifestPath = path.join(exportsRoot, "deck", "manifest.json");
     expect(fs.existsSync(manifestPath), "missing deck/manifest.json").toBe(true);
 
-    for (const format of EXPECTED_DECK_FORMATS) {
-      for (const slideId of EXPECTED_DECK_SLIDES) {
-        const pngPath = path.join(exportsRoot, "deck", format, `${slideId}.png`);
-        expect(fs.existsSync(pngPath), `missing deck/${format}/${slideId}.png`).toBe(true);
-      }
+    for (const slideId of EXPECTED_DECK_SLIDES) {
+      const pngPath = path.join(exportsRoot, "deck", `${slideId}.png`);
+      expect(fs.existsSync(pngPath), `missing deck/${slideId}.png`).toBe(true);
     }
+
+    expect(fs.existsSync(path.join(exportsRoot, "deck", "story"))).toBe(false);
+    expect(fs.existsSync(path.join(exportsRoot, "deck", "portrait"))).toBe(false);
 
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
     expect(manifest.slides?.length).toBe(EXPECTED_DECK_SLIDES.length);
-    expect(manifest.formats?.portrait?.platforms).toContain("instagram");
-    expect(manifest.formats?.story?.platforms).toContain("tiktok");
+    expect(manifest.format).toBe("story");
+    expect(manifest.platforms).toContain("instagram");
+    expect(manifest.platforms).toContain("tiktok");
   });
 
   it("tracks video exports when rendered", () => {

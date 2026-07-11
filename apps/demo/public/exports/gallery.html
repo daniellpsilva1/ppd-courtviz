@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Courtviz Exports — Boluda Match</title>
+    <title>Courtviz Match Recap</title>
     <style>
       :root {
         color-scheme: dark;
@@ -11,7 +11,7 @@
         background: #0b1220;
         color: #e2e8f0;
       }
-      body { margin: 0; padding: 24px; }
+      body { margin: 0; padding: 24px; max-width: 1200px; }
       h1, h2 { font-weight: 600; letter-spacing: -0.02em; }
       h1 { margin: 0 0 8px; font-size: 1.75rem; }
       p { color: #94a3b8; margin: 0 0 24px; }
@@ -49,98 +49,55 @@
         background: #0f172a;
       }
       a:hover { background: #172554; }
-      pre {
-        background: #111827;
-        border: 1px solid #1f2937;
-        border-radius: 12px;
-        padding: 16px;
-        overflow: auto;
-        white-space: pre-wrap;
-        font-size: 0.85rem;
-        line-height: 1.5;
-      }
     </style>
   </head>
   <body>
-    <h1>Courtviz Match Recap Exports</h1>
-    <p>Kaitlin Quevedo vs Ángela Boluda — deck, posters, videos, and captions</p>
+    <h1>Match Recap Exports</h1>
+    <p>Three deliverables: horizontal video, vertical video, and vertical post deck (9:16).</p>
 
     <div class="links">
-      <a href="http://127.0.0.1:5173/" target="_blank">Interactive demo</a>
-      <a href="http://localhost:3000/" target="_blank">Remotion studio</a>
       <a href="deck/manifest.json" target="_blank">Deck manifest</a>
-      <a href="captions/" target="_blank">Captions folder</a>
+      <a href="captions/instagram.txt" target="_blank">Instagram caption</a>
     </div>
 
     <section>
       <h2>Videos</h2>
       <div class="grid">
         <figure>
-          <video src="video/match-recap-social.mp4" controls playsinline></video>
-          <figcaption>Social vertical (~27s)</figcaption>
+          <video src="video/match-recap-landscape.mp4" controls playsinline></video>
+          <figcaption>Horizontal match recap</figcaption>
         </figure>
         <figure>
-          <video src="video/match-recap-landscape.mp4" controls playsinline></video>
-          <figcaption>Landscape recap</figcaption>
+          <video src="video/match-recap-social.mp4" controls playsinline></video>
+          <figcaption>Vertical match recap (Instagram / TikTok)</figcaption>
         </figure>
       </div>
     </section>
 
     <section>
-      <h2>Story deck (20 slides)</h2>
-      <div class="grid" id="story-deck"></div>
-    </section>
-
-    <section>
-      <h2>Portrait deck</h2>
-      <div class="grid" id="portrait-deck"></div>
-    </section>
-
-    <section>
-      <h2>Posters — story format</h2>
-      <div class="grid" id="story-posters"></div>
-    </section>
-
-    <section>
-      <h2>Instagram captions</h2>
-      <pre id="captions"></pre>
+      <h2>Vertical post deck (13 slides)</h2>
+      <div class="grid" id="deck"></div>
     </section>
 
     <script>
-      const storySlides = [
+      const slides = [
         "slide-cover","slide-serve","slide-placement","slide-zones","slide-patterns","slide-rally",
         "slide-momentum","slide-match-numbers","slide-shotmaking","slide-errors","slide-density",
         "slide-coach","slide-cta"
       ];
-      const posters = [
-        "court-dominance","hexbin-host","dotdensity","serve-host","rays-host","momentum","coach-insights"
-      ];
 
-      function addCards(containerId, base, items, ext = "png") {
-        const root = document.getElementById(containerId);
-        for (const item of items) {
-          const figure = document.createElement("figure");
-          const img = document.createElement("img");
-          img.loading = "lazy";
-          img.src = `${base}/${item}.${ext}`;
-          img.alt = item;
-          const cap = document.createElement("figcaption");
-          cap.textContent = item.replace(/^slide-/, "").replace(/-/g, " ");
-          figure.append(img, cap);
-          root.append(figure);
-        }
+      const root = document.getElementById("deck");
+      for (const slide of slides) {
+        const figure = document.createElement("figure");
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.src = `deck/${slide}.png`;
+        img.alt = slide;
+        const cap = document.createElement("figcaption");
+        cap.textContent = slide.replace(/^slide-/, "").replace(/-/g, " ");
+        figure.append(img, cap);
+        root.append(figure);
       }
-
-      addCards("story-deck", "deck/story", storySlides);
-      addCards("portrait-deck", "deck/portrait", storySlides);
-      addCards("story-posters", "story", posters);
-
-      fetch("captions/instagram.txt")
-        .then((r) => r.text())
-        .then((t) => { document.getElementById("captions").textContent = t; })
-        .catch(() => {
-          document.getElementById("captions").textContent = "Caption file not found.";
-        });
     </script>
   </body>
 </html>

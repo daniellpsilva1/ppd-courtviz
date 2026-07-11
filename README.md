@@ -68,13 +68,13 @@ const editorial = toCourtvizTheme("editorial");
 
 | Command | Output |
 |---------|--------|
-| `pnpm export` / `pnpm export:deck` | Coach deck in portrait + story (`exports/deck/`) |
-| `pnpm export:posters` | Optional standalone posters × 4 formats |
+| `pnpm export` / `pnpm export:deck` | Vertical post deck — 13 slides, 9:16 (`exports/deck/`) |
+| `pnpm export:posters` | Optional standalone posters × 4 formats (not part of default export) |
 | `pnpm export:captions` | Platform captions + hashtags (`exports/captions/`) |
-| `pnpm export:all` | Deck + posters + captions + video |
+| `pnpm export:all` | Deck + captions + video (add `--force-video` to re-render) |
 
-Coach deck lands in `apps/demo/public/exports/deck/{portrait,story}/` with `manifest.json`.
-Optional posters land in `apps/demo/public/exports/{square,portrait,story,landscape}/`.
+Default deliverables: `exports/video/` (2 mp4s), `exports/deck/` (13 vertical slides + `manifest.json`), and `exports/captions/`.
+Optional posters land in `apps/demo/public/exports/{square,portrait,story,landscape}/` only when you run `pnpm export:posters`.
 
 Pass `--matchId=<uuid>` or `--cache=path/to/match.json` to export a specific match (requires Supabase env for matchId).
 

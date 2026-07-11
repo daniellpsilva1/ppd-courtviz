@@ -1,5 +1,5 @@
 /**
- * Coach deck exporter — one cohesive slide sequence in portrait + story formats.
+ * Coach deck exporter — one vertical 9:16 slide sequence for Instagram/TikTok.
  */
 
 const fs = require("fs");
@@ -59,13 +59,32 @@ const SLIDES = [
   { id: "slide-cta", title: "Peak Performance Data", subtitle: "Full match intelligence on Tennis Bench" },
 ];
 
-const DECK_FORMATS = ["portrait", "story"];
+const DECK_FORMAT = "story";
 
 function parseArgs() {
   const formatArg = process.argv.find((a) => a.startsWith("--format="));
-  const format = formatArg ? formatArg.split("=")[1] : "all";
+  const format = formatArg ? formatArg.split("=")[1] : DECK_FORMAT;
   const svgOnly = process.argv.includes("--svg-only");
   return { format, svgOnly };
+}
+
+function cleanDeckOutput(outRoot, slideIds) {
+  fs.mkdirSync(outRoot, { recursive: true });
+
+  for (const legacyDir of ["portrait", "story"]) {
+    const legacyPath = path.join(outRoot, legacyDir);
+    if (fs.existsSync(legacyPath)) {
+      fs.rmSync(legacyPath, { force: true, recursive: true });
+    }
+  }
+
+  const keep = new Set(slideIds.flatMap((id) => [`${id}.png`, `${id}.svg`]));
+  for (const file of fs.readdirSync(outRoot)) {
+    if (!file.startsWith("slide-")) continue;
+    if (!keep.has(file)) {
+      fs.unlinkSync(path.join(outRoot, file));
+    }
+  }
 }
 
 function buildSlide(slideId, ctx) {
@@ -359,56 +378,56 @@ function buildSlide(slideId, ctx) {
 
 async function main() {
   const { format: formatFilter, svgOnly } = parseArgs();
+  const format = formatFilter === DECK_FORMAT ? DECK_FORMAT : DECK_FORMAT;
+  if (formatFilter !== DECK_FORMAT) {
+    console.warn(`[courtviz] Only "${DECK_FORMAT}" deck export is supported; ignoring --format=${formatFilter}`);
+  }
+
   const ctx = await loadMatchContext();
   const outRoot = path.resolve(__dirname, "..", "apps", "demo", "public", "exports", "deck");
-  const formats = formatFilter === "all" ? DECK_FORMATS : [formatFilter];
+  cleanDeckOutput(
+    outRoot,
+    SLIDES.map((slide) => slide.id),
+  );
 
-  console.log(`\n📱 Deck export — ${ctx.hostName} vs ${ctx.guestName}\n`);
+  console.log(`\n📱 Deck export — ${ctx.hostName} vs ${ctx.guestName} (${format} 9:16)\n`);
+
+  const preset = socialFormats[format];
+  const slidePaths = [];
+
+  for (const slide of SLIDES) {
+    const builder = buildSlide(slide.id, ctx);
+    const element = builder(format);
+    const svgPath = path.join(outRoot, `${slide.id}.svg`);
+    const pngPath = svgOnly ? undefined : path.join(outRoot, `${slide.id}.png`);
+    await exportGraphic(element, {
+      pngHeight: preset.height,
+      pngPath,
+      pngWidth: preset.width,
+      svgPath,
+    });
+    slidePaths.push({
+      id: slide.id,
+      png: pngPath ? path.basename(pngPath) : null,
+      svg: path.basename(svgPath),
+      title: slide.title,
+    });
+    console.log(`  ✓ deck/${slide.id}`);
+  }
 
   const manifest = {
-    formats: {},
+    format,
     guestName: ctx.guestName,
+    generatedAt: new Date().toISOString(),
+    height: preset.height,
     hostName: ctx.hostName,
     matchDate: ctx.matchDate,
     matchId: ctx.matchId,
+    platforms: ["instagram", "tiktok"],
     slides: SLIDES,
-    generatedAt: new Date().toISOString(),
+    slidePaths,
+    width: preset.width,
   };
-
-  for (const format of formats) {
-    if (!DECK_FORMATS.includes(format)) continue;
-    const outDir = path.join(outRoot, format);
-    fs.mkdirSync(outDir, { recursive: true });
-    const slidePaths = [];
-
-    for (const slide of SLIDES) {
-      const builder = buildSlide(slide.id, ctx);
-      const preset = socialFormats[format];
-      const element = builder(format);
-      const svgPath = path.join(outDir, `${slide.id}.svg`);
-      const pngPath = svgOnly ? undefined : path.join(outDir, `${slide.id}.png`);
-      await exportGraphic(element, {
-        pngHeight: preset.height,
-        pngPath,
-        pngWidth: preset.width,
-        svgPath,
-      });
-      slidePaths.push({
-        id: slide.id,
-        png: pngPath ? path.relative(outRoot, pngPath) : null,
-        svg: path.relative(outRoot, svgPath),
-        title: slide.title,
-      });
-      console.log(`  ✓ deck/${format}/${slide.id}`);
-    }
-
-    manifest.formats[format] = {
-      height: socialFormats[format].height,
-      platforms: format === "portrait" ? ["instagram", "twitter"] : ["tiktok"],
-      slides: slidePaths,
-      width: socialFormats[format].width,
-    };
-  }
 
   fs.writeFileSync(path.join(outRoot, "manifest.json"), JSON.stringify(manifest, null, 2), "utf-8");
   console.log(`\n✅ Deck exported to ${outRoot}\n`);

@@ -54,13 +54,14 @@ async function main() {
     .join(" ");
 
   const runDeck = mode === "default" || mode === "deck" || mode === "carousel" || mode === "all";
-  const runPosters = mode === "posters" || mode === "product" || mode === "all";
+  const runPosters = mode === "posters" || mode === "product";
   const runCaptions = mode === "default" || mode === "captions" || mode === "all";
   const runVideoData = mode === "video-data" || mode === "video-render" || mode === "all";
   const runVideoRender = mode === "video-render" || mode === "all";
+  const copyVideos = mode === "default" || mode === "all" || mode === "video-render";
 
   if (runDeck) {
-    console.log("\n📱 Deck export (portrait + story)\n");
+    console.log("\n📱 Deck export (story 9:16)\n");
     run(`node scripts/export-carousel.cjs ${forward}`);
   }
 
@@ -95,6 +96,9 @@ async function main() {
     }
 
     console.log("\n📁 Copy videos to exports/video\n");
+    copyVideosToExports();
+  } else if (copyVideos) {
+    console.log("\n📁 Copy videos to exports/video (if rendered)\n");
     copyVideosToExports();
   }
 }
