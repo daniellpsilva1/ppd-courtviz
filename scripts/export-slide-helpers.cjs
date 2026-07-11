@@ -27,6 +27,7 @@ const {
   computeBreakPointConversion,
   computeServePlacements,
   computeZoneWinRates,
+  computeZoneWinRatesByPoint,
   aggregateSideWinRatesByPoint,
   pointKeyFromShot,
   shotPlayerWonPoint,
@@ -147,7 +148,7 @@ function renderMiniDualCourt(ctx, theme, x, y, width, height) {
     "g",
     { transform: `translate(${x}, ${y})` },
     ["host", "guest"].map((player, index) => {
-      const scales = createCourtScales({ half, height: courtH, margin: 1.5, width: courtW });
+      const innerH = courtH - 24;
       const shots = ctx.enrichedShots.filter((s) => s.player === player && s.stroke !== "Serve");
       const name = player === "host" ? ctx.hostName : ctx.guestName;
       return React.createElement(
@@ -158,31 +159,36 @@ function renderMiniDualCourt(ctx, theme, x, y, width, height) {
           {
             fill: getPlayerColor(player, theme),
             fontFamily: theme.fonts.condensedFont,
-            fontSize: theme.fontSize.label,
+            fontSize: theme.fontSize.body,
             fontWeight: 700,
-            x: 0,
-            y: -6,
+            textAnchor: "middle",
+            x: courtW / 2,
+            y: 18,
           },
           name.split(" ").pop(),
         ),
         React.createElement(
-          CourtSurface,
-          { half, height: courtH, idPrefix: `slide-mini-${player}`, surface, theme, width: courtW },
-          React.createElement(HexbinLayer, {
-            colorScale: "efficiency",
-            gridsize,
-            half,
-            labelMinCount: 4,
-            minCount: HEX_MIN_COUNT,
-            player,
-            scales,
-            shots,
-            sizeRange: HEX_SIZE_RANGE,
-            theme,
-            useHalfCourtNormalization: true,
-            valueDomain,
-            extent,
-          }),
+          "g",
+          { transform: "translate(0, 24)" },
+          React.createElement(
+            CourtSurface,
+            { half, height: innerH, idPrefix: `slide-mini-${player}`, surface, theme, width: courtW },
+            React.createElement(HexbinLayer, {
+              colorScale: "efficiency",
+              gridsize,
+              half,
+              labelMinCount: 4,
+              minCount: HEX_MIN_COUNT,
+              player,
+              scales: createCourtScales({ half, height: innerH, margin: 1.5, width: courtW }),
+              shots,
+              sizeRange: HEX_SIZE_RANGE,
+              theme,
+              useHalfCourtNormalization: true,
+              valueDomain,
+              extent,
+            }),
+          ),
         ),
       );
     }),
@@ -785,16 +791,50 @@ function renderCompactCoachCard(insight, theme, width, height = 100) {
   );
 }
 
+function topPointZones(shots, player, limit = 4) {
+  return computeZoneWinRatesByPoint(shots, player)
+    .filter((zone) => zone.total >= 4)
+    .sort((a, b) => b.winRate * Math.log(b.total) - a.winRate * Math.log(a.total))
+    .slice(0, limit)
+    .map((zone) => ({
+      label: zone.zone.replace(/_/g, " "),
+      total: zone.total,
+      winRate: zone.winRate,
+      won: zone.won,
+    }));
+}
+
+function buildServeInsight(ctx) {
+  const hostZones = computeServeZones(ctx.enrichedShots, "host")
+    .filter((zone) => zone.inCount >= 3)
+    .sort((a, b) => b.winRate - a.winRate);
+  const top = hostZones[0];
+  if (!top) return null;
+  const firstServe = computeFirstServeInRate(ctx.enrichedShots, "host");
+  return {
+    action:
+      top.winRate >= 0.6
+        ? `Keep targeting ${top.side} ${top.zone} under pressure.`
+        : `Mix serve locations — ${top.side} ${top.zone} is underperforming.`,
+    category: "serve",
+    detail: `${Math.round(firstServe.rate * 100)}% first serves in (${firstServe.won}/${firstServe.total})`,
+    headline: `${ctx.hostName}: ${Math.round(top.winRate * 100)}% win rate serving ${top.side} ${top.zone}`,
+    id: "serve-slide-insight",
+  };
+}
+
 function renderZonesSlide(ctx, theme, layout) {
   const barW = layout.content.width;
-  const rowH = 88;
   const gap = 24;
-  const startY = 8;
-  const hostSides = aggregateSideWinRates(ctx.enrichedShots, "host");
-  const guestSides = aggregateSideWinRates(ctx.enrichedShots, "guest");
+  const hostZones = topPointZones(ctx.enrichedShots, "host");
+  const guestZones = topPointZones(ctx.enrichedShots, "guest");
+  const maxRows = Math.max(hostZones.length, guestZones.length, 1);
+  const rowH = Math.min(110, Math.max(72, Math.floor((layout.content.height - 56) / maxRows)));
+  const blockH = 40 + maxRows * rowH;
+  const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
   const columnW = (barW - gap) / 2;
 
-  function renderSideColumn(sides, player, x, title) {
+  function renderZoneColumn(zones, player, x, title) {
     return React.createElement(
       "g",
       { transform: `translate(${x}, 0)` },
@@ -810,15 +850,15 @@ function renderZonesSlide(ctx, theme, layout) {
         },
         title,
       ),
-      sides.map((entry, index) => {
+      zones.map((entry, index) => {
         const winRate = Number.isFinite(entry.winRate) ? entry.winRate : 0;
         const pct = Math.round(winRate * 100);
-        const trackW = columnW - 72;
+        const trackW = columnW - 80;
         const barWidth = Math.max(10, trackW * winRate);
-        const pctX = Math.min(trackW - 8, barWidth + 8);
+        const pctX = Math.min(trackW - 4, barWidth + 6);
         return React.createElement(
           "g",
-          { key: `${player}-${entry.side}`, transform: `translate(0, ${48 + index * rowH})` },
+          { key: `${player}-${entry.label}`, transform: `translate(0, ${48 + index * rowH})` },
           React.createElement(
             "text",
             {
@@ -827,35 +867,35 @@ function renderZonesSlide(ctx, theme, layout) {
               fontSize: theme.fontSize.body,
               fontWeight: 600,
               x: 0,
-              y: 18,
+              y: 20,
             },
-            `${entry.side} court`,
+            entry.label,
           ),
           React.createElement("rect", {
             fill: `${theme.inkMuted}33`,
-            height: 18,
-            rx: 9,
+            height: 22,
+            rx: 11,
             width: trackW,
             x: 0,
-            y: 28,
+            y: 30,
           }),
           React.createElement("rect", {
             fill: getPlayerColor(player, theme),
-            height: 18,
-            rx: 9,
+            height: 22,
+            rx: 11,
             width: barWidth,
             x: 0,
-            y: 28,
+            y: 30,
           }),
           React.createElement(
             "text",
             {
               fill: theme.ink,
               fontFamily: theme.fonts.condensedFont,
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: 700,
               x: pctX,
-              y: 44,
+              y: 48,
             },
             `${pct}%`,
           ),
@@ -865,8 +905,8 @@ function renderZonesSlide(ctx, theme, layout) {
               fill: theme.inkMuted,
               fontFamily: theme.fonts.bodyFont,
               fontSize: theme.fontSize.label,
-              x: trackW + 12,
-              y: 44,
+              x: trackW + 10,
+              y: 48,
             },
             `${entry.won}/${entry.total} pts`,
           ),
@@ -878,17 +918,19 @@ function renderZonesSlide(ctx, theme, layout) {
   return React.createElement(
     "g",
     { transform: `translate(0, ${startY})` },
-    renderSideColumn(hostSides, "host", 0, ctx.hostName),
-    renderSideColumn(guestSides, "guest", columnW + gap, ctx.guestName),
+    renderZoneColumn(hostZones, "host", 0, ctx.hostName),
+    renderZoneColumn(guestZones, "guest", columnW + gap, ctx.guestName),
   );
 }
 
 function renderCoachCards(ctx, theme, layout, insights) {
   const cards = insights.slice(0, 3);
-  const isStory = layout.content.height > 1200;
-  const cardH = isStory ? 200 : 148;
   const gap = 14;
   const cardW = layout.content.width;
+  const cardH = Math.min(
+    220,
+    Math.max(148, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
+  );
   const startY = Math.max(8, Math.floor((layout.content.height - cards.length * cardH - (cards.length - 1) * gap) / 2));
 
   return React.createElement(
@@ -1359,7 +1401,6 @@ function buildClutchStats(ctx) {
   }
 
   return [
-    clutchRate("Break Points Won", (point) => point.breakPoint),
     clutchRate("Deuce Points Won", (point) => point.deuce),
     clutchRate("Set Points Won", (point) => point.setPoint),
   ];
@@ -1395,8 +1436,12 @@ function buildShotmakingStats(ctx) {
 }
 
 function renderMomentumSlide(ctx, theme, layout) {
+  const footerH = 64;
   const chartW = layout.content.width;
-  const chartH = layout.content.height - 24;
+  const chartH = layout.content.height - footerH - 20;
+  const hostWin = computePointsWonRate(ctx.momentumPoints, "host");
+  const guestWin = computePointsWonRate(ctx.momentumPoints, "guest");
+  const bpCount = ctx.points.filter((point) => point.breakPoint).length;
   const points = ctx.momentumPoints.map((point) => ({
     gameNumber: point.gameNumber,
     isBreakPoint: Boolean(point.isBreakPoint ?? point.breakPoint),
@@ -1408,7 +1453,7 @@ function renderMomentumSlide(ctx, theme, layout) {
 
   return React.createElement(
     "g",
-    { transform: "translate(0, 12)" },
+    { transform: "translate(0, 8)" },
     React.createElement(MomentumChart, {
       height: chartH,
       hostPlayer: "host",
@@ -1419,6 +1464,33 @@ function renderMomentumSlide(ctx, theme, layout) {
       theme,
       width: chartW,
     }),
+    React.createElement(
+      "g",
+      { transform: `translate(0, ${chartH + 12})` },
+      React.createElement(StatCallout, {
+        accentColor: getPlayerColor("host", theme),
+        label: "points won",
+        theme,
+        value: `${Math.round(hostWin.rate * 100)}%`,
+        x: 0,
+        y: 0,
+      }),
+      React.createElement(StatCallout, {
+        accentColor: getPlayerColor("guest", theme),
+        label: "points won",
+        theme,
+        value: `${Math.round(guestWin.rate * 100)}%`,
+        x: chartW / 2,
+        y: 0,
+      }),
+      React.createElement(StatCallout, {
+        label: "break points played",
+        theme,
+        value: String(bpCount),
+        x: (chartW / 3) * 2,
+        y: 0,
+      }),
+    ),
   );
 }
 
@@ -1513,7 +1585,7 @@ function renderDensitySlide(ctx, theme, layout) {
 function renderErrorHeatmapSlide(ctx, theme, layout) {
   const posterLayout = resolvePosterContentLayout(layout, {
     analyticsBand: 56,
-    courtAspect: 1.05,
+    courtAspect: 1.1,
     insightBand: 0,
     legendBand: 0,
   });
@@ -1641,6 +1713,7 @@ module.exports = {
   buildMatchNumbersStats,
   buildReturnGameStats,
   buildRallyHighlightStats,
+  buildServeInsight,
   buildServeSpeedStats,
   buildSetBySetStats,
   buildShotmakingStats,

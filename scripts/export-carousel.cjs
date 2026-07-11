@@ -12,7 +12,7 @@ module.paths = [demoNodeModules, rootNodeModules, ...(module.paths || [])];
 const React = require("react");
 const { FigureFrame } = require("@courtviz/react");
 const { resolveFrameLayout } = require("@courtviz/core");
-const { ppd, getPlayerColor } = require("@courtviz/themes");
+const { ppd } = require("@courtviz/themes");
 const { exportGraphic } = require("@courtviz/render");
 const { socialFormats } = require("@ppd/tokens");
 const { generateCoachInsights } = require("@ppd/brand");
@@ -21,6 +21,7 @@ const { getLogoDataUri } = require("./logo-data.cjs");
 const { resolveBranding } = require("./brand-helpers.cjs");
 const {
   buildMatchNumbersStats,
+  buildServeInsight,
   buildShotmakingStats,
   renderCoachCards,
   renderDensitySlide,
@@ -78,10 +79,12 @@ function buildSlide(slideId, ctx) {
   const builders = {
     "slide-cover": (format) => {
       const layout = resolveFrameLayout(format);
-      const headerBlock = 132;
-      const availH = layout.content.height - headerBlock - 20;
+      const contentH = layout.content.height;
+      const scoreBlock = 56;
       const courtW = layout.content.width;
-      const courtH = Math.min(Math.floor(courtW * 0.44), availH);
+      const maxCourtH = contentH - scoreBlock - 20;
+      const courtH = Math.min(Math.floor(courtW * 0.55), Math.floor(maxCourtH * 0.95));
+      const courtY = scoreBlock + Math.floor((contentH - scoreBlock - courtH) / 2);
       const score = setScore(ctx.sets);
 
       return React.createElement(
@@ -104,60 +107,11 @@ function buildSlide(slideId, ctx) {
               fontSize: 52,
               fontWeight: 700,
               x: 0,
-              y: 52,
+              y: 48,
             },
             score,
           ),
-          React.createElement(
-            "text",
-            {
-              fill: getPlayerColor("host", theme),
-              fontFamily: theme.fonts.condensedFont,
-              fontSize: theme.fontSize.title,
-              fontWeight: 700,
-              x: 0,
-              y: 84,
-            },
-            ctx.hostName,
-          ),
-          React.createElement(
-            "text",
-            {
-              fill: getPlayerColor("guest", theme),
-              fontFamily: theme.fonts.condensedFont,
-              fontSize: theme.fontSize.title,
-              fontWeight: 700,
-              textAnchor: "end",
-              x: layout.content.width,
-              y: 84,
-            },
-            ctx.guestName,
-          ),
-          React.createElement(
-            "rect",
-            {
-              fill: `${theme.inkMuted}22`,
-              height: 28,
-              rx: 14,
-              stroke: `${theme.inkMuted}44`,
-              width: 200,
-              x: 0,
-              y: 100,
-            },
-          ),
-          React.createElement(
-            "text",
-            {
-              fill: theme.inkMuted,
-              fontFamily: theme.fonts.condensedFont,
-              fontSize: theme.fontSize.label,
-              fontWeight: 600,
-              x: 16,
-              y: 119,
-            },
-            `${ctx.surface.toUpperCase()} · ${ctx.matchDate}`,
-          ),
-          renderMiniDualCourt(ctx, theme, 0, 132, courtW, courtH),
+          renderMiniDualCourt(ctx, theme, 0, courtY, courtW, courtH),
         ),
       );
     },
@@ -176,7 +130,7 @@ function buildSlide(slideId, ctx) {
           ctx,
           theme,
           resolveFrameLayout(format),
-          insights.find((insight) => insight.category === "serve") ?? insights[0],
+          insights.find((insight) => insight.category === "serve") ?? buildServeInsight(ctx) ?? insights[0],
         ),
       ),
 
@@ -314,6 +268,8 @@ function buildSlide(slideId, ctx) {
       const layout = resolveFrameLayout(format);
       const centerX = layout.content.width / 2;
       const score = setScore(ctx.sets);
+      const blockH = 320;
+      const startY = Math.floor((layout.content.height - blockH) / 2);
 
       return React.createElement(
         FigureFrame,
@@ -326,7 +282,7 @@ function buildSlide(slideId, ctx) {
         },
         React.createElement(
           "g",
-          { transform: `translate(0, ${Math.floor(layout.content.height * 0.12)})` },
+          { transform: `translate(0, ${startY})` },
           React.createElement("rect", {
             fill: `${theme.inkMuted}18`,
             height: 44,
