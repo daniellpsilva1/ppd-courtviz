@@ -173,21 +173,25 @@ export function buildMatchStory(
       `${winnerName} won ${m.winnerSetsWon}–${m.loserSetsWon} on ${fixtures.surface} by controlling key court zones that converted into break-point pressure.`,
     headlineMetrics: [
       {
+        key: "pointsWon",
         label: "Points won",
         value: `${pct(m.winnerWin.rate)}%`,
         context: `vs ${pct(m.loserWin.rate)}% for ${loserName}`,
       },
       {
+        key: "bestZoneWinRate",
         label: "Best zone win rate",
         value: `${winnerTopZoneWinPct}%`,
         context: `Top zone with ≥8 shots (${winnerTopZoneLabel})`,
       },
       {
+        key: "breakPointConversion",
         label: "Break-point conversion",
         value: `${pct(m.winnerBP.rate)}%`,
         context: `${totalBreakPoints} break points in the match`,
       },
       {
+        key: "firstServeIn",
         label: "First serve in",
         value: `${pct(m.winnerFS.rate)}%`,
         context: `${loserName} ${pct(m.loserFS.rate)}% — serve quality context`,

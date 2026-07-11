@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const StoryMetricSchema = z.object({
+  key: z
+    .enum(["pointsWon", "bestZoneWinRate", "breakPointConversion", "firstServeIn"])
+    .optional(),
   label: z.string(),
   value: z.string(),
   context: z.string().optional(),

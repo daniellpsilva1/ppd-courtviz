@@ -139,6 +139,7 @@ export const Court = memo(function Court({
     <svg
       className={className}
       height={svgHeight}
+      preserveAspectRatio="xMidYMid meet"
       style={{ display: "block" }}
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       width={svgWidth}

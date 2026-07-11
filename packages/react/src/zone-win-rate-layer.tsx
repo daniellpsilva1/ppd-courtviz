@@ -130,17 +130,19 @@ export const ZoneWinRateLayer = memo(function ZoneWinRateLayer({
                     {Math.round(winRate * 100)}%
                   </text>
                 ) : null}
-                <text
-                  fill={theme.inkMuted}
-                  fontFamily={theme.fonts.condensedFont}
-                  fontSize={9}
-                  fontWeight={600}
-                  textAnchor="middle"
-                  x={labelX}
-                  y={courtBottomY + 14}
-                >
-                  {ZONE_CAPTIONS[rect.id] ?? rect.id}
-                </text>
+                {!isNarrow && rect.id !== "ad_alley" && rect.id !== "deuce_alley" ? (
+                  <text
+                    fill={theme.inkMuted}
+                    fontFamily={theme.fonts.condensedFont}
+                    fontSize={9}
+                    fontWeight={600}
+                    textAnchor="middle"
+                    x={labelX}
+                    y={courtBottomY + 14}
+                  >
+                    {ZONE_CAPTIONS[rect.id] ?? rect.id}
+                  </text>
+                ) : null}
               </>
             ) : null}
           </g>
