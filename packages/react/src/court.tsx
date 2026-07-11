@@ -23,6 +23,7 @@ import {
   ppd,
 } from "@courtviz/themes";
 import { createCourtScales, type CourtScales } from "@courtviz/core";
+import { SvgTooltipProvider } from "./svg-tooltip-context";
 
 export type DisplayRange = "full" | "near" | "serviceBoxes";
 
@@ -142,6 +143,7 @@ export const Court = memo(function Court({
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       width={svgWidth}
     >
+      <SvgTooltipProvider bounds={{ height: svgHeight, width: svgWidth }} theme={theme}>
       <defs>
         <clipPath id={clipId}>
           <rect height={courtH} width={courtW} x={courtX} y={courtY} />
@@ -256,6 +258,7 @@ export const Court = memo(function Court({
           {children}
         </g>
       </g>
+      </SvgTooltipProvider>
     </svg>
   );
 });

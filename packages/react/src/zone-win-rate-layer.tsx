@@ -12,6 +12,12 @@ import {
 } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
 
+const ZONE_LABELS: Record<string, string> = {
+  ad: "Ad",
+  deuce: "Deuce",
+  middle: "Middle",
+};
+
 export interface ZoneWinRateLayerProps {
   zones: ZoneWinRate[];
   scales: CourtScales;
@@ -45,12 +51,13 @@ export const ZoneWinRateLayer = memo(function ZoneWinRateLayer({
         const centroid = bounceZoneCentroid(rect.id);
         const labelX = centroid ? scales.x(centroid.cx) : svg.x + svg.w / 2;
         const labelY = centroid ? scales.y(centroid.cy) : svg.y + svg.h / 2;
+        const zoneLabel = ZONE_LABELS[rect.id] ?? rect.id;
 
         return (
           <g key={rect.id}>
             <rect
               fill={hasEnough ? playerColor : `url(#${hatchId})`}
-              fillOpacity={hasEnough ? 0.2 + winRate * 0.6 : 0.35}
+              fillOpacity={hasEnough ? Math.min(0.65, 0.22 + winRate * 0.43) : 0.35}
               height={svg.h}
               rx={2}
               stroke={hasEnough ? playerColor : theme.inkMuted}
@@ -62,29 +69,55 @@ export const ZoneWinRateLayer = memo(function ZoneWinRateLayer({
               y={svg.y}
             />
             {showLabels ? (
-              <text
-                fill={hasEnough ? theme.ink : theme.inkMuted}
-                fontFamily={theme.fonts.bodyFont}
-                fontSize={theme.fontSize.label}
-                fontWeight={700}
-                textAnchor="middle"
-                x={labelX}
-                y={labelY - 4}
-              >
-                {hasEnough ? `${Math.round(winRate * 100)}%` : "—"}
-              </text>
-            ) : null}
-            {showLabels && total > 0 ? (
-              <text
-                fill={theme.inkMuted}
-                fontFamily={theme.fonts.bodyFont}
-                fontSize={theme.fontSize.small}
-                textAnchor="middle"
-                x={labelX}
-                y={labelY + 10}
-              >
-                ({total})
-              </text>
+              <>
+                <text
+                  dominantBaseline="middle"
+                  fill={hasEnough ? theme.background : theme.inkMuted}
+                  fontFamily={theme.fonts.condensedFont}
+                  fontSize={11}
+                  fontWeight={700}
+                  paintOrder="stroke"
+                  stroke={hasEnough ? theme.ink : "none"}
+                  strokeWidth={hasEnough ? 3 : 0}
+                  textAnchor="middle"
+                  x={labelX}
+                  y={labelY - 8}
+                >
+                  {zoneLabel}
+                </text>
+                <text
+                  dominantBaseline="middle"
+                  fill={hasEnough ? theme.background : theme.inkMuted}
+                  fontFamily={theme.fonts.bodyFont}
+                  fontSize={13}
+                  fontWeight={700}
+                  paintOrder="stroke"
+                  stroke={hasEnough ? theme.ink : "none"}
+                  strokeWidth={hasEnough ? 3 : 0}
+                  textAnchor="middle"
+                  x={labelX}
+                  y={labelY + 8}
+                >
+                  {hasEnough ? `${Math.round(winRate * 100)}%` : "—"}
+                </text>
+                {total > 0 ? (
+                  <text
+                    dominantBaseline="middle"
+                    fill={hasEnough ? theme.background : theme.inkMuted}
+                    fontFamily={theme.fonts.bodyFont}
+                    fontSize={9}
+                    opacity={0.9}
+                    paintOrder="stroke"
+                    stroke={hasEnough ? theme.ink : "none"}
+                    strokeWidth={hasEnough ? 2 : 0}
+                    textAnchor="middle"
+                    x={labelX}
+                    y={labelY + 22}
+                  >
+                    n={total}
+                  </text>
+                ) : null}
+              </>
             ) : null}
           </g>
         );

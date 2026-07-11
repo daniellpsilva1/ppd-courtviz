@@ -24,6 +24,7 @@ import {
   ppd,
 } from "@courtviz/themes";
 import { CourtScalesProvider } from "./court-scales-context";
+import { SvgTooltipProvider } from "./svg-tooltip-context";
 
 export interface CourtSurfaceProps {
   idPrefix?: string;
@@ -141,7 +142,8 @@ export const CourtSurface = memo(function CourtSurface({
 
   return (
     <CourtScalesProvider scales={scales}>
-      <defs>
+      <SvgTooltipProvider bounds={{ height: svgHeight, width: svgWidth }} theme={theme}>
+        <defs>
         <clipPath id={clipId}>
           <rect height={courtH} width={courtW} x={courtX} y={courtY} />
         </clipPath>
@@ -217,6 +219,7 @@ export const CourtSurface = memo(function CourtSurface({
         </g>
         <g clipPath={`url(#${clipId})`}>{children}</g>
       </g>
+      </SvgTooltipProvider>
     </CourtScalesProvider>
   );
 });

@@ -3,7 +3,8 @@
 import { memo, useMemo } from "react";
 import { computeMomentum, type MomentumPoint } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
-import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
+import { useSvgTooltip } from "./svg-tooltip-context";
+import { SvgTooltip } from "./svg-tooltip";
 
 export interface MomentumChartProps {
   points: Array<{
@@ -246,7 +247,7 @@ export const MomentumChart = memo(function MomentumChart({
         );
       })}
 
-      <SvgTooltip theme={theme} tooltip={tooltip} />
+      <SvgTooltip bounds={{ height, width }} theme={theme} tooltip={tooltip} />
 
       {/* Y-axis labels */}
       <text

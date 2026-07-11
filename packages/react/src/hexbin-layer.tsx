@@ -15,7 +15,8 @@ import {
   efficiencyColorStops,
   getPlayerColor,
 } from "@courtviz/themes";
-import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
+import { useHasSvgTooltipProvider, useSvgTooltip } from "./svg-tooltip-context";
+import { SvgTooltip } from "./svg-tooltip";
 
 export type HexbinColorScale = "efficiency" | "speed" | "count";
 
@@ -77,6 +78,7 @@ export const HexbinLayer = memo(function HexbinLayer({
   valueDomain,
 }: HexbinLayerProps) {
   const { hide, show, tooltip } = useSvgTooltip();
+  const hasTooltipProvider = useHasSvgTooltipProvider();
 
   const hexbins = useMemo(() => {
     const filtered = shots.filter(
@@ -190,7 +192,7 @@ export const HexbinLayer = memo(function HexbinLayer({
           </g>
         );
       })}
-      <SvgTooltip theme={theme} tooltip={tooltip} />
+      {!hasTooltipProvider ? <SvgTooltip theme={theme} tooltip={tooltip} /> : null}
     </g>
   );
 });

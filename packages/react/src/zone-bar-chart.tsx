@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import type { CourtvizTheme } from "@courtviz/themes";
-import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
+import { SvgTooltipProvider, useSvgTooltip } from "./svg-tooltip-context";
 
 export interface ZoneBarDatum {
   zone: string;
@@ -27,16 +27,17 @@ export const ZoneBarChart = memo(function ZoneBarChart({
   theme,
   width = 520,
 }: ZoneBarChartProps) {
-  const { hide, show, tooltip } = useSvgTooltip();
+  const { hide, show } = useSvgTooltip();
   const rows = data.slice(0, maxBars);
   const pad = { bottom: 12, left: 120, right: 16, top: 12 };
   const innerW = width - pad.left - pad.right;
   const rowH = (height - pad.top - pad.bottom) / Math.max(rows.length, 1);
 
   return (
-    <svg height={height} onMouseLeave={hide} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
-      <title>Win rate by court zone</title>
-      {rows.map((row, i) => {
+    <SvgTooltipProvider bounds={{ height, width }} theme={theme}>
+      <svg height={height} onMouseLeave={hide} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
+        <title>Win rate by court zone</title>
+        {rows.map((row, i) => {
         const y = pad.top + i * rowH + rowH * 0.15;
         const barH = rowH * 0.55;
         const barW = innerW * Math.max(0, Math.min(1, row.winRate));
@@ -88,7 +89,7 @@ export const ZoneBarChart = memo(function ZoneBarChart({
           </g>
         );
       })}
-      <SvgTooltip theme={theme} tooltip={tooltip} />
-    </svg>
+      </svg>
+    </SvgTooltipProvider>
   );
 });

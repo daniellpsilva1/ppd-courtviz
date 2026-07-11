@@ -3,7 +3,8 @@
 import { memo, useMemo } from "react";
 import { type CourtScales, type EnrichedShot, COURT_LENGTH, hasValidServeCoords, NET_Y, normalizeShot, shouldDisplayServe } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
-import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
+import { useHasSvgTooltipProvider, useSvgTooltip } from "./svg-tooltip-context";
+import { SvgTooltip } from "./svg-tooltip";
 
 export type ServeType = "first_serve" | "second_serve" | "both";
 
@@ -53,6 +54,7 @@ export const ServeLayer = memo(function ServeLayer({
   theme,
 }: ServeLayerProps) {
   const { hide, show, tooltip } = useSvgTooltip();
+  const hasTooltipProvider = useHasSvgTooltipProvider();
 
   const serves = useMemo(() => {
     return shots
@@ -143,7 +145,7 @@ export const ServeLayer = memo(function ServeLayer({
           </g>
         );
       })}
-      <SvgTooltip theme={theme} tooltip={tooltip} />
+      {!hasTooltipProvider ? <SvgTooltip theme={theme} tooltip={tooltip} /> : null}
     </g>
   );
 });
