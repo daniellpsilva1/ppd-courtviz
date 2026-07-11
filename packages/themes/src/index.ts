@@ -263,30 +263,15 @@ export function getTheme(name: string = "ppd"): CourtvizTheme {
 }
 
 export function getSurfaceColor(surface: Surface, theme: CourtvizTheme = ppd): string {
-  const muted: Record<Surface, string> = {
-    clay: "#B8896A",
-    grass: "#7A9A72",
-    hard: "#4A6882",
-  };
-  return muted[surface] ?? theme.surfaceColors[surface] ?? theme.surfaceColors.hard!;
+  return theme.surfaceColors[surface] ?? theme.surfaceColors.hard!;
 }
 
 export function getSurfaceColorLight(surface: Surface, theme: CourtvizTheme = ppd): string {
-  const muted: Record<Surface, string> = {
-    clay: "#D4B59A",
-    grass: "#9BB896",
-    hard: "#6A8498",
-  };
-  return muted[surface] ?? theme.surfaceColorsLight[surface] ?? theme.surfaceColorsLight.hard!;
+  return theme.surfaceColorsLight[surface] ?? theme.surfaceColorsLight.hard!;
 }
 
 export function getSurroundColor(surface: Surface, theme: CourtvizTheme = ppd): string {
-  const muted: Record<Surface, string> = {
-    clay: "#A67A58",
-    grass: "#688A62",
-    hard: "#3A5568",
-  };
-  return muted[surface] ?? theme.surroundColors[surface] ?? theme.surroundColors.hard!;
+  return theme.surroundColors[surface] ?? theme.surroundColors.hard!;
 }
 
 export function getPlayerColor(player: string, theme: CourtvizTheme = ppd): string {
