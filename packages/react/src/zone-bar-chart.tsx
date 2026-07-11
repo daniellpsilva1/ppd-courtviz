@@ -1,9 +1,8 @@
-/**
- * Simple horizontal bar chart for zone win rates — SVG only.
- */
+'use client';
 
 import { memo } from "react";
 import type { CourtvizTheme } from "@courtviz/themes";
+import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
 
 export interface ZoneBarDatum {
   zone: string;
@@ -28,25 +27,37 @@ export const ZoneBarChart = memo(function ZoneBarChart({
   theme,
   width = 520,
 }: ZoneBarChartProps) {
+  const { hide, show, tooltip } = useSvgTooltip();
   const rows = data.slice(0, maxBars);
-  const pad = { left: 120, right: 16, top: 12, bottom: 12 };
+  const pad = { bottom: 12, left: 120, right: 16, top: 12 };
   const innerW = width - pad.left - pad.right;
   const rowH = (height - pad.top - pad.bottom) / Math.max(rows.length, 1);
 
   return (
-    <svg height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
+    <svg height={height} onMouseLeave={hide} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
       <title>Win rate by court zone</title>
       {rows.map((row, i) => {
         const y = pad.top + i * rowH + rowH * 0.15;
         const barH = rowH * 0.55;
         const barW = innerW * Math.max(0, Math.min(1, row.winRate));
         const label = row.zone.replace(/_/g, " ");
+        const tooltipLines = [
+          `${row.playerLabel}: ${label}`,
+          `${Math.round(row.winRate * 100)}% win rate`,
+          `${row.total} shots`,
+        ];
+
         return (
-          <g key={`${row.playerLabel}-${row.zone}`}>
+          <g
+            key={`${row.playerLabel}-${row.zone}`}
+            onMouseEnter={() => show(pad.left + barW, y + barH / 2, tooltipLines)}
+            style={{ cursor: "pointer" }}
+          >
             <text
               fill={theme.inkMuted}
               fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
               fontSize={10}
+              pointerEvents="none"
               x={pad.left - 8}
               y={y + barH * 0.75}
               textAnchor="end"
@@ -67,14 +78,17 @@ export const ZoneBarChart = memo(function ZoneBarChart({
               fontFamily={`${theme.fonts.bodyFont}, ${theme.fonts.bodyFontFallback}`}
               fontSize={10}
               fontWeight={600}
+              pointerEvents="none"
               x={pad.left + barW + 6}
               y={y + barH * 0.75}
             >
               {Math.round(row.winRate * 100)}% ({row.total})
             </text>
+            <title>{tooltipLines.join(" · ")}</title>
           </g>
         );
       })}
+      <SvgTooltip theme={theme} tooltip={tooltip} />
     </svg>
   );
 });

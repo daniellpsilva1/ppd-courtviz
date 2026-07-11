@@ -1,9 +1,4 @@
-/**
- * <HexbinLayer> — dual-encoded hexbin overlay for the Court component.
- *
- * Hexagon size = shot frequency, hexagon color = efficiency (win rate).
- * Renders as SVG polygons positioned using court scales.
- */
+'use client';
 
 import { memo, useMemo } from "react";
 import { interpolateRgb } from "d3-interpolate";
@@ -19,6 +14,7 @@ import {
   efficiencyColorStops,
   getPlayerColor,
 } from "@courtviz/themes";
+import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
 
 export type HexbinColorScale = "efficiency" | "speed" | "count";
 
@@ -32,11 +28,8 @@ export interface HexbinLayerProps {
   minCount?: number;
   colorScale?: HexbinColorScale;
   alpha?: number;
-  /** Show count labels inside hexagons (default true for hexes with count >= 4) */
   showLabels?: boolean;
-  /** Min count to show a label (default 4) */
   labelMinCount?: number;
-  /** Halo stroke width (default 1.5, set 0 to disable) */
   haloWidth?: number;
 }
 
@@ -67,6 +60,8 @@ export const HexbinLayer = memo(function HexbinLayer({
   shots,
   theme,
 }: HexbinLayerProps) {
+  const { hide, show, tooltip } = useSvgTooltip();
+
   const hexbins = useMemo(() => {
     const filtered = shots.filter(
       (s) =>
@@ -104,19 +99,10 @@ export const HexbinLayer = memo(function HexbinLayer({
     return { vmax: hexbins.reduce((m, h) => Math.max(m, h.count), 0), vmin: 0 };
   }, [colorScale, hexbins]);
 
-  const hexRadius = useMemo(() => {
-    if (hexbins.length === 0) return 0;
-    return Math.max(...hexbins.map((h) => {
-      const [vx, vy] = h.vertices[0] ?? [h.cx, h.cy];
-      return Math.sqrt((vx - h.cx) ** 2 + (vy - h.cy) ** 2);
-    }));
-  }, [hexbins]);
-
   const labelSize = theme.fontSize.label;
-  const labelThreshold = hexRadius * 0.5;
 
   return (
-    <g>
+    <g onMouseLeave={hide}>
       {hexbins.map((hex, i) => {
         const color = colorScale === "count"
           ? getPlayerColor(player ?? "host", theme)
@@ -132,10 +118,18 @@ export const HexbinLayer = memo(function HexbinLayer({
           (scales.x(hex.vertices[0]![0]) - cx) ** 2 +
           (scales.y(hex.vertices[0]![1]) - cy) ** 2,
         );
+        const winPct = colorScale === "efficiency" ? Math.round(hex.value * 100) : null;
+        const tooltipLines = [
+          `${hex.count} shots`,
+          winPct != null ? `${winPct}% win rate` : null,
+        ].filter(Boolean) as string[];
 
         return (
-          <g key={i}>
-            {/* Halo (warm white stroke around hex for separation) */}
+          <g
+            key={i}
+            onMouseEnter={() => show(cx, cy, tooltipLines)}
+            style={{ cursor: "pointer" }}
+          >
             {haloWidth > 0 && (
               <polygon
                 fill="none"
@@ -146,7 +140,6 @@ export const HexbinLayer = memo(function HexbinLayer({
               />
             )}
 
-            {/* Main hexagon */}
             <polygon
               fill={color}
               opacity={alpha}
@@ -155,14 +148,14 @@ export const HexbinLayer = memo(function HexbinLayer({
               strokeWidth={0.5}
             />
 
-            {/* Count label for larger hexagons */}
-            {showLabels && hex.count >= labelMinCount && r > labelThreshold && (
+            {showLabels && hex.count >= labelMinCount && r > r * 0.5 && (
               <text
                 dominantBaseline="middle"
                 fill={theme.haloColor}
                 fontFamily={`${theme.fonts.condensedFont}, ${theme.fonts.condensedFontFallback}`}
                 fontSize={labelSize}
                 fontWeight={700}
+                pointerEvents="none"
                 textAnchor="middle"
                 x={cx}
                 y={cy}
@@ -170,10 +163,11 @@ export const HexbinLayer = memo(function HexbinLayer({
                 {hex.count}
               </text>
             )}
+            <title>{tooltipLines.join(" · ")}</title>
           </g>
         );
       })}
-      {hexRadius > 0 && null}
+      <SvgTooltip theme={theme} tooltip={tooltip} />
     </g>
   );
 });

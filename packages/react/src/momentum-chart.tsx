@@ -1,14 +1,9 @@
-/**
- * <MomentumChart> — rolling point-win differential area chart.
- *
- * Standalone SVG chart (not a court overlay). Uses computeMomentum() from
- * @courtviz/core. Positive = host winning, negative = guest winning.
- * Dual fill: host color above zero, guest color below.
- */
+'use client';
 
 import { memo, useMemo } from "react";
 import { computeMomentum, type MomentumPoint } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
+import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
 
 export interface MomentumChartProps {
   points: Array<{
@@ -39,6 +34,7 @@ export const MomentumChart = memo(function MomentumChart({
   theme,
   width = 800,
 }: MomentumChartProps) {
+  const { hide, show, tooltip } = useSvgTooltip();
   const momentum = useMemo(
     () => computeMomentum(points, hostPlayer),
     [points, hostPlayer],
@@ -113,6 +109,7 @@ export const MomentumChart = memo(function MomentumChart({
   return (
     <svg
       height={height}
+      onMouseLeave={hide}
       style={{ display: "block" }}
       viewBox={`0 0 ${width} ${height}`}
       width={width}
@@ -200,28 +197,50 @@ export const MomentumChart = memo(function MomentumChart({
           const color = bp.pointWinner === hostPlayer ? hostColor : guestColor;
           const cx = xScale(bp.pointIndex);
           const cy = yScale(bp.cumulativeDiff);
+          const tooltipLines = [
+            `Point ${bp.pointIndex + 1}`,
+            `Set ${bp.setNumber} · Game ${bp.gameNumber}`,
+            `Diff: ${bp.cumulativeDiff > 0 ? "+" : ""}${bp.cumulativeDiff}`,
+            bp.isBreakPoint ? "Break point" : null,
+          ].filter(Boolean) as string[];
           return (
-            <g key={`bp-${i}`}>
-              <circle
-                cx={cx}
-                cy={cy}
-                fill="none"
-                opacity={0.5}
-                r={5}
-                stroke={theme.haloColor}
-                strokeWidth={1}
-              />
-              <circle
-                cx={cx}
-                cy={cy}
-                fill={color}
-                r={3}
-                stroke={theme.background}
-                strokeWidth={1}
-              />
+            <g
+              key={`bp-${i}`}
+              onMouseEnter={() => show(cx, cy, tooltipLines)}
+              style={{ cursor: "pointer" }}
+            >
+              <circle cx={cx} cy={cy} fill="none" opacity={0.5} r={5} stroke={theme.haloColor} strokeWidth={1} />
+              <circle cx={cx} cy={cy} fill={color} r={3} stroke={theme.background} strokeWidth={1} />
+              <title>{tooltipLines.join(" · ")}</title>
             </g>
           );
         })}
+
+      {momentum.map((point) => {
+        const cx = xScale(point.pointIndex);
+        const cy = yScale(point.cumulativeDiff);
+        const tooltipLines = [
+          `Point ${point.pointIndex + 1}`,
+          `Set ${point.setNumber} · Game ${point.gameNumber}`,
+          `Diff: ${point.cumulativeDiff > 0 ? "+" : ""}${point.cumulativeDiff}`,
+          point.isBreakPoint ? "Break point" : null,
+        ].filter(Boolean) as string[];
+        return (
+          <circle
+            cx={cx}
+            cy={cy}
+            fill="transparent"
+            key={`hover-${point.pointIndex}`}
+            onMouseEnter={() => show(cx, cy, tooltipLines)}
+            r={6}
+            style={{ cursor: "pointer" }}
+          >
+            <title>{tooltipLines.join(" · ")}</title>
+          </circle>
+        );
+      })}
+
+      <SvgTooltip theme={theme} tooltip={tooltip} />
 
       {/* Y-axis labels */}
       <text

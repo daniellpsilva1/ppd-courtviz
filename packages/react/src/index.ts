@@ -51,6 +51,9 @@ export type { AnnotationProps, CalloutCircleProps, ZonePercentageProps, InsightL
 export { ServeAnnotations } from "./serve-annotations";
 export type { ServeAnnotationsProps } from "./serve-annotations";
 
+export { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
+export type { SvgTooltipState } from "./svg-tooltip";
+
 export { StatCallout } from "./stat-callout";
 export type { StatCalloutProps } from "./stat-callout";
 

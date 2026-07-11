@@ -1,13 +1,9 @@
-/**
- * <ServeLayer> — serve placement with shape encoding and zone distinction.
- *
- * Half-court normalized. 1st serves = circles, 2nd serves = triangles.
- * In-serves get halo strokes; out-serves are faded.
- */
+'use client';
 
 import { memo, useMemo } from "react";
 import { type CourtScales, type EnrichedShot, hasValidSpatialCoords, normalizeShot } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
+import { SvgTooltip, useSvgTooltip } from "./svg-tooltip";
 
 export type ServeType = "first_serve" | "second_serve" | "both";
 
@@ -19,9 +15,7 @@ export interface ServeLayerProps {
   serveType?: ServeType;
   size?: number;
   alpha?: number;
-  /** Halo stroke width for in-serves (default 1) */
   haloWidth?: number;
-  /** Use different shapes for 1st vs 2nd serves (default true) */
   shapeEncode?: boolean;
 }
 
@@ -36,6 +30,8 @@ export const ServeLayer = memo(function ServeLayer({
   size = 6,
   theme,
 }: ServeLayerProps) {
+  const { hide, show, tooltip } = useSvgTooltip();
+
   const serves = useMemo(() => {
     return shots
       .filter((s) => {
@@ -59,16 +55,25 @@ export const ServeLayer = memo(function ServeLayer({
   };
 
   return (
-    <g>
-      {serves.map(({ isIn, isSecond, x, y }, i) => {
+    <g onMouseLeave={hide}>
+      {serves.map(({ isIn, isSecond, shot, x, y }, i) => {
         const cx = scales.x(x);
         const cy = scales.y(y);
         const useTriangle = shapeEncode && isSecond;
         const fillOpacity = isIn ? alpha : alpha * 0.25;
+        const tooltipLines = [
+          isSecond ? "Second serve" : "First serve",
+          `Result: ${shot.result ?? "—"}`,
+          shot.speedKmh != null ? `${Math.round(shot.speedKmh)} km/h` : null,
+          shot.bounceZone ? `Zone: ${shot.bounceZone.replace(/_/g, " ")}` : null,
+        ].filter(Boolean) as string[];
 
         return (
-          <g key={i}>
-            {/* Halo for in-serves */}
+          <g
+            key={i}
+            onMouseEnter={() => show(cx, cy, tooltipLines)}
+            style={{ cursor: "pointer" }}
+          >
             {isIn && haloWidth > 0 && (
               useTriangle ? (
                 <path
@@ -91,7 +96,6 @@ export const ServeLayer = memo(function ServeLayer({
               )
             )}
 
-            {/* Serve marker */}
             {useTriangle ? (
               <path
                 d={trianglePath(cx, cy, size)}
@@ -111,9 +115,11 @@ export const ServeLayer = memo(function ServeLayer({
                 strokeWidth={isIn ? 0.6 : 0}
               />
             )}
+            <title>{tooltipLines.join(" · ")}</title>
           </g>
         );
       })}
+      <SvgTooltip theme={theme} tooltip={tooltip} />
     </g>
   );
 });
