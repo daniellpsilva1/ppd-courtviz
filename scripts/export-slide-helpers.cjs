@@ -284,7 +284,11 @@ function renderServeSlide(ctx, theme, layout, insight) {
   }));
   const calloutY = 4;
   const calloutSpan = courtWidth / 3;
+  const calloutRowGap = 110;
   const zoneBarH = 64;
+  const hostLast = ctx.hostName.split(" ").pop();
+  const guestLast = ctx.guestName.split(" ").pop();
+  const zoneSectionY = calloutY + calloutRowGap + 82;
 
   return React.createElement(
     "g",
@@ -321,21 +325,21 @@ function renderServeSlide(ctx, theme, layout, insight) {
       "g",
       { transform: `translate(0, ${analyticsY - courtY})` },
       React.createElement(StatCallout, {
-        label: "host 1st serves",
+        label: `${hostLast} 1st serves`,
         theme,
         value: String(counts.first),
         x: 0,
         y: calloutY,
       }),
       React.createElement(StatCallout, {
-        label: "host 2nd serves",
+        label: `${hostLast} 2nd serves`,
         theme,
         value: String(counts.second),
         x: calloutSpan,
         y: calloutY,
       }),
       React.createElement(StatCallout, {
-        label: "host faults",
+        label: `${hostLast} faults`,
         theme,
         value: String(counts.faults),
         x: calloutSpan * 2,
@@ -347,7 +351,7 @@ function renderServeSlide(ctx, theme, layout, insight) {
         theme,
         value: `${hostAces} / ${guestAces}`,
         x: 0,
-        y: calloutY + 56,
+        y: calloutY + calloutRowGap,
       }),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("guest", theme),
@@ -355,14 +359,14 @@ function renderServeSlide(ctx, theme, layout, insight) {
         theme,
         value: `${hostDf} / ${guestDf}`,
         x: calloutSpan,
-        y: calloutY + 56,
+        y: calloutY + calloutRowGap,
       }),
       React.createElement(StatCallout, {
         label: "serve speed p50",
         theme,
         value: `${speedStats[0].hostValue} · ${speedStats[0].guestValue}`,
         x: calloutSpan * 2,
-        y: calloutY + 56,
+        y: calloutY + calloutRowGap,
       }),
       React.createElement(
         "text",
@@ -372,13 +376,13 @@ function renderServeSlide(ctx, theme, layout, insight) {
           fontSize: theme.fontSize.label,
           fontWeight: 700,
           x: 0,
-          y: calloutY + 112,
+          y: zoneSectionY - 8,
         },
-        ctx.hostName.split(" ").pop(),
+        hostLast,
       ),
       React.createElement(
         "g",
-        { transform: `translate(0, ${calloutY + 120})` },
+        { transform: `translate(0, ${zoneSectionY})` },
         React.createElement(ZoneBarChart, {
           data: hostZoneBarData,
           height: zoneBarH,
@@ -395,13 +399,13 @@ function renderServeSlide(ctx, theme, layout, insight) {
           fontSize: theme.fontSize.label,
           fontWeight: 700,
           x: 0,
-          y: calloutY + 120 + zoneBarH + 12,
+          y: zoneSectionY + zoneBarH + 28,
         },
-        ctx.guestName.split(" ").pop(),
+        guestLast,
       ),
       React.createElement(
         "g",
-        { transform: `translate(0, ${calloutY + 120 + zoneBarH + 20})` },
+        { transform: `translate(0, ${zoneSectionY + zoneBarH + 36})` },
         React.createElement(ZoneBarChart, {
           data: guestZoneBarData,
           height: zoneBarH,
@@ -491,11 +495,14 @@ function renderRallyBars(ctx, theme, layout) {
   const hostBuckets = computeRallyBucketStats(ctx.enrichedShots, "host");
   const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
   const highlights = buildRallyHighlightStats(ctx);
-  const highlightY = layout.content.height - 72;
-  const totalRows = hostBuckets.length + guestBuckets.length + 2;
-  const availableH = highlightY - 48;
-  const rowH = Math.max(36, Math.min(56, Math.floor(availableH / totalRows)));
-  const startY = 16;
+  const totalRows = hostBuckets.length + guestBuckets.length;
+  const footerH = 110;
+  const sectionGap = 56;
+  const rowH = Math.max(48, Math.min(88, Math.floor((layout.content.height * 0.55) / Math.max(totalRows, 1))));
+  const barsBlockH = 16 + hostBuckets.length * rowH + sectionGap + guestBuckets.length * rowH;
+  const highlightY = barsBlockH + 64;
+  const blockH = highlightY + footerH;
+  const startY = Math.max(16, Math.floor((layout.content.height - blockH) / 2));
   const barW = layout.content.width;
 
   return React.createElement(
@@ -506,7 +513,7 @@ function renderRallyBars(ctx, theme, layout) {
       {
         fill: getPlayerColor("host", theme),
         fontFamily: theme.fonts.condensedFont,
-        fontSize: theme.fontSize.body,
+        fontSize: theme.fontSize.title,
         fontWeight: 700,
         x: 0,
         y: 0,
@@ -514,17 +521,17 @@ function renderRallyBars(ctx, theme, layout) {
       ctx.hostName,
     ),
     hostBuckets.map((bucket, index) =>
-      renderRallyBarRow(bucket, getPlayerColor("host", theme), barW, 16 + index * rowH, theme),
+      renderRallyBarRow(bucket, getPlayerColor("host", theme), barW, 24 + index * rowH, theme),
     ),
     React.createElement(
       "text",
       {
         fill: getPlayerColor("guest", theme),
         fontFamily: theme.fonts.condensedFont,
-        fontSize: theme.fontSize.body,
+        fontSize: theme.fontSize.title,
         fontWeight: 700,
         x: 0,
-        y: 16 + hostBuckets.length * rowH + 16,
+        y: 24 + hostBuckets.length * rowH + sectionGap - 16,
       },
       ctx.guestName,
     ),
@@ -533,7 +540,7 @@ function renderRallyBars(ctx, theme, layout) {
         bucket,
         getPlayerColor("guest", theme),
         barW,
-        16 + hostBuckets.length * rowH + 32 + index * rowH,
+        24 + hostBuckets.length * rowH + sectionGap + 8 + index * rowH,
         theme,
       ),
     ),
@@ -562,10 +569,10 @@ function renderRallyBars(ctx, theme, layout) {
       {
         fill: theme.ink,
         fontFamily: theme.fonts.condensedFont,
-        fontSize: theme.fontSize.body,
+        fontSize: theme.fontSize.title,
         fontWeight: 600,
         x: 0,
-        y: highlightY + 32,
+        y: highlightY + 44,
       },
       `${highlights[0].title}: ${highlights[0].hostValue}`,
     ),
@@ -574,9 +581,9 @@ function renderRallyBars(ctx, theme, layout) {
       {
         fill: theme.inkMuted,
         fontFamily: theme.fonts.bodyFont,
-        fontSize: theme.fontSize.label,
+        fontSize: theme.fontSize.body,
         x: 0,
-        y: highlightY + 52,
+        y: highlightY + 76,
       },
       `${highlights[1].title}: ${highlights[1].hostValue} shots per point (match avg)`,
     ),
@@ -584,7 +591,8 @@ function renderRallyBars(ctx, theme, layout) {
 }
 
 function renderRallyBarRow(bucket, color, width, y, theme) {
-  const barW = width - 120;
+  const labelW = 150;
+  const barW = width - labelW - 110;
   const fillW = barW * (Number.isFinite(bucket.winRate) ? bucket.winRate : 0);
   return React.createElement(
     "g",
@@ -594,37 +602,38 @@ function renderRallyBarRow(bucket, color, width, y, theme) {
       {
         fill: theme.inkMuted,
         fontFamily: theme.fonts.condensedFont,
-        fontSize: theme.fontSize.label,
+        fontSize: theme.fontSize.body,
+        fontWeight: 600,
         x: 0,
-        y: 12,
+        y: 20,
       },
       `${bucket.bucket} shots`,
     ),
     React.createElement("rect", {
       fill: `${theme.inkMuted}33`,
-      height: 10,
-      rx: 5,
+      height: 20,
+      rx: 10,
       width: barW,
-      x: 110,
-      y: 2,
+      x: labelW,
+      y: 4,
     }),
     React.createElement("rect", {
       fill: color,
-      height: 10,
-      rx: 5,
+      height: 20,
+      rx: 10,
       width: fillW,
-      x: 110,
-      y: 2,
+      x: labelW,
+      y: 4,
     }),
     React.createElement(
       "text",
       {
         fill: color,
         fontFamily: theme.fonts.condensedFont,
-        fontSize: theme.fontSize.body,
+        fontSize: 28,
         fontWeight: 700,
-        x: width - 48,
-        y: 12,
+        x: labelW + barW + 16,
+        y: 24,
       },
       `${Math.round(bucket.winRate * 100)}%`,
     ),
@@ -634,13 +643,16 @@ function renderRallyBarRow(bucket, color, width, y, theme) {
 function renderDuelStats(ctx, theme, layout, stats) {
   const SECTION_H = 30;
   const MIN_ROW_H = 54;
-  const startY = 4;
+  const MAX_ROW_BONUS = 64;
   const contentH = layout.content.height - 8;
   const sectionCount = stats.filter((s) => s.section).length;
   const rowCount = stats.filter((s) => !s.section).length;
   const fixedH = sectionCount * SECTION_H + rowCount * MIN_ROW_H;
-  const bonus = rowCount > 0 ? Math.max(0, Math.floor((contentH - fixedH) / rowCount)) : 0;
+  const bonus =
+    rowCount > 0 ? Math.max(0, Math.min(MAX_ROW_BONUS, Math.floor((contentH - fixedH) / rowCount))) : 0;
   const rowH = MIN_ROW_H + bonus;
+  const blockH = sectionCount * SECTION_H + rowCount * rowH;
+  const startY = Math.max(4, Math.floor((contentH - blockH) / 2));
 
   let y = startY;
   const elements = [];
@@ -884,8 +896,8 @@ function renderZonesSlide(ctx, theme, layout) {
   const hostZones = topPointZones(ctx.enrichedShots, "host");
   const guestZones = topPointZones(ctx.enrichedShots, "guest");
   const maxRows = Math.max(hostZones.length, guestZones.length, 1);
-  const rowH = Math.min(110, Math.max(72, Math.floor((layout.content.height - 56) / maxRows)));
-  const blockH = 40 + maxRows * rowH;
+  const rowH = Math.min(150, Math.max(88, Math.floor((layout.content.height - 72) / maxRows)));
+  const blockH = 48 + maxRows * rowH;
   const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
   const columnW = (barW - gap) / 2;
 
@@ -980,11 +992,11 @@ function renderZonesSlide(ctx, theme, layout) {
 
 function renderCoachCards(ctx, theme, layout, insights) {
   const cards = insights.slice(0, 3);
-  const gap = 14;
+  const gap = 20;
   const cardW = layout.content.width;
   const cardH = Math.min(
-    220,
-    Math.max(148, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
+    240,
+    Math.max(200, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
   );
   const startY = Math.max(8, Math.floor((layout.content.height - cards.length * cardH - (cards.length - 1) * gap) / 2));
 
@@ -1018,11 +1030,11 @@ function renderCoachCards(ctx, theme, layout, insights) {
         }),
         React.createElement("rect", {
           fill: `${accent}28`,
-          height: 24,
-          rx: 12,
-          width: Math.min(110, insight.category.length * 9 + 28),
-          x: 16,
-          y: 14,
+          height: 26,
+          rx: 13,
+          width: Math.min(120, insight.category.length * 9 + 30),
+          x: 18,
+          y: 16,
         }),
         React.createElement(
           "text",
@@ -1031,8 +1043,8 @@ function renderCoachCards(ctx, theme, layout, insights) {
             fontFamily: theme.fonts.condensedFont,
             fontSize: theme.fontSize.label,
             fontWeight: 700,
-            x: 28,
-            y: 30,
+            x: 31,
+            y: 34,
           },
           insight.category.toUpperCase(),
         ),
@@ -1041,11 +1053,11 @@ function renderCoachCards(ctx, theme, layout, insights) {
           {
             fill: accent,
             fontFamily: theme.fonts.condensedFont,
-            fontSize: 36,
+            fontSize: 44,
             fontWeight: 700,
             textAnchor: "end",
-            x: cardW - 16,
-            y: 44,
+            x: cardW - 20,
+            y: 50,
           },
           hero,
         ),
@@ -1055,10 +1067,10 @@ function renderCoachCards(ctx, theme, layout, insights) {
           fontSize: theme.fontSize.title,
           fontWeight: 600,
           maxLines: 2,
-          maxWidth: cardW - 32,
+          maxWidth: cardW - 140,
           text: insight.headline,
-          x: 16,
-          y: 58,
+          x: 18,
+          y: 78,
         }),
         detail &&
           wrapSvgText({
@@ -1066,21 +1078,21 @@ function renderCoachCards(ctx, theme, layout, insights) {
             fontFamily: theme.fonts.bodyFont,
             fontSize: theme.fontSize.body,
             maxLines: 2,
-            maxWidth: cardW - 32,
+            maxWidth: cardW - 40,
             text: detail,
-            x: 16,
-            y: 108,
+            x: 18,
+            y: 130,
           }),
         wrapSvgText({
           fill: theme.ink,
           fontFamily: theme.fonts.bodyFont,
-          fontSize: theme.fontSize.label,
+          fontSize: theme.fontSize.body,
           fontWeight: 600,
           maxLines: 2,
-          maxWidth: cardW - 32,
+          maxWidth: cardW - 40,
           text: insight.action,
-          x: 16,
-          y: cardH - 42,
+          x: 18,
+          y: cardH - 44,
         }),
       );
     }),
@@ -1488,9 +1500,11 @@ function buildShotmakingStats(ctx) {
 }
 
 function renderMomentumSlide(ctx, theme, layout) {
-  const footerH = 64;
+  const footerH = 80;
   const chartW = layout.content.width;
-  const chartH = layout.content.height - footerH - 20;
+  const chartH = Math.min(layout.content.height - footerH - 20, Math.floor(chartW * 0.95));
+  const blockH = chartH + 12 + footerH;
+  const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
   const hostWin = computePointsWonRate(ctx.momentumPoints, "host");
   const guestWin = computePointsWonRate(ctx.momentumPoints, "guest");
   const bpCount = ctx.points.filter((point) => point.breakPoint).length;
@@ -1505,7 +1519,7 @@ function renderMomentumSlide(ctx, theme, layout) {
 
   return React.createElement(
     "g",
-    { transform: "translate(0, 8)" },
+    { transform: `translate(0, ${startY})` },
     React.createElement(MomentumChart, {
       height: chartH,
       hostPlayer: "host",
@@ -1518,10 +1532,10 @@ function renderMomentumSlide(ctx, theme, layout) {
     }),
     React.createElement(
       "g",
-      { transform: `translate(0, ${chartH + 12})` },
+      { transform: `translate(0, ${chartH + 24})` },
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("host", theme),
-        label: "points won",
+        label: `${ctx.hostName.split(" ").pop()} points won`,
         theme,
         value: `${Math.round(hostWin.rate * 100)}%`,
         x: 0,
@@ -1529,10 +1543,10 @@ function renderMomentumSlide(ctx, theme, layout) {
       }),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("guest", theme),
-        label: "points won",
+        label: `${ctx.guestName.split(" ").pop()} points won`,
         theme,
         value: `${Math.round(guestWin.rate * 100)}%`,
-        x: chartW / 2,
+        x: chartW / 3,
         y: 0,
       }),
       React.createElement(StatCallout, {
@@ -1579,10 +1593,14 @@ function errorShots(shots) {
 
 function renderDensitySlide(ctx, theme, layout) {
   const gap = 20;
-  const labelH = 36;
+  const labelH = 44;
   const courtW = Math.floor((layout.content.width - gap) / 2);
-  const courtH = Math.floor(layout.content.height - labelH - 16);
+  // Near-half court plus margins is ~1.07 taller than wide; don't hand CourtSurface
+  // a taller box or the court floats vertically away from the player label.
+  const courtH = Math.min(Math.floor(layout.content.height - labelH - 16), Math.floor(courtW * 1.07));
   const half = "near";
+  const blockH = labelH + courtH;
+  const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
 
   function renderPlayerDensity(player, x, name) {
     const scales = createCourtScales({ half, height: courtH, margin: 1.5, width: courtW });
@@ -1597,7 +1615,7 @@ function renderDensitySlide(ctx, theme, layout) {
           fontSize: theme.fontSize.title,
           fontWeight: 700,
           x: courtW / 2,
-          y: 24,
+          y: 28,
           textAnchor: "middle",
         },
         name,
@@ -1628,7 +1646,7 @@ function renderDensitySlide(ctx, theme, layout) {
 
   return React.createElement(
     "g",
-    { transform: "translate(0, 8)" },
+    { transform: `translate(0, ${startY})` },
     renderPlayerDensity("host", 0, ctx.hostName),
     renderPlayerDensity("guest", courtW + gap, ctx.guestName),
   );
@@ -1682,7 +1700,7 @@ function renderErrorHeatmapSlide(ctx, theme, layout) {
       { transform: `translate(0, ${analyticsY - courtY})` },
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("host", theme),
-        label: "host errors",
+        label: `${ctx.hostName.split(" ").pop()} errors`,
         theme,
         value: String(hostErrors),
         x: 0,
@@ -1690,7 +1708,7 @@ function renderErrorHeatmapSlide(ctx, theme, layout) {
       }),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("guest", theme),
-        label: "guest errors",
+        label: `${ctx.guestName.split(" ").pop()} errors`,
         theme,
         value: String(guestErrors),
         x: courtWidth / 2,
@@ -1717,6 +1735,18 @@ function renderServePlacementSlide(ctx, theme, layout) {
   return React.createElement(
     "g",
     { transform: `translate(${courtX}, ${courtY})` },
+    React.createElement(
+      "text",
+      {
+        fill: getPlayerColor("host", theme),
+        fontFamily: theme.fonts.condensedFont,
+        fontSize: theme.fontSize.label,
+        fontWeight: 700,
+        x: 0,
+        y: -10,
+      },
+      `${ctx.hostName.split(" ").pop()} first serves`,
+    ),
     React.createElement(
       CourtSurface,
       { half, height: courtHeight, idPrefix: "slide-placement", surface: BRAND_SURFACE, theme, width: courtWidth },

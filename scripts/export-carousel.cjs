@@ -82,11 +82,12 @@ function buildSlide(slideId, ctx) {
     "slide-cover": (format) => {
       const layout = resolveFrameLayout(format);
       const contentH = layout.content.height;
-      const scoreBlock = 56;
+      const scoreBlock = 120;
       const courtW = layout.content.width;
       const maxCourtH = contentH - scoreBlock - 20;
-      const courtH = Math.min(Math.floor(courtW * 0.55), Math.floor(maxCourtH * 0.95));
-      const courtY = scoreBlock + Math.floor((contentH - scoreBlock - courtH) / 2);
+      const courtH = Math.min(Math.floor(courtW * 0.58), Math.floor(maxCourtH * 0.95));
+      const blockH = scoreBlock + courtH;
+      const blockY = Math.max(0, Math.floor((contentH - blockH) / 2));
       const score = setScore(ctx.sets);
 
       return React.createElement(
@@ -100,20 +101,33 @@ function buildSlide(slideId, ctx) {
         },
         React.createElement(
           "g",
-          { transform: "translate(0, 4)" },
+          { transform: `translate(0, ${blockY})` },
           React.createElement(
             "text",
             {
               fill: theme.ink,
               fontFamily: theme.fonts.condensedFont,
-              fontSize: 52,
+              fontSize: 72,
               fontWeight: 700,
-              x: 0,
-              y: 48,
+              textAnchor: "middle",
+              x: courtW / 2,
+              y: 64,
             },
             score,
           ),
-          renderMiniDualCourt(ctx, theme, 0, courtY, courtW, courtH),
+          React.createElement(
+            "text",
+            {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: theme.fontSize.label,
+              textAnchor: "middle",
+              x: courtW / 2,
+              y: 96,
+            },
+            "SHOT EFFICIENCY BY COURT ZONE",
+          ),
+          renderMiniDualCourt(ctx, theme, 0, scoreBlock, courtW, courtH),
         ),
       );
     },
