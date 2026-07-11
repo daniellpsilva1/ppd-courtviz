@@ -7,12 +7,12 @@ import {
   computeZoneWinRatesByPoint,
   pointKeyFromShot,
 } from "@courtviz/core";
-import type { Point, PlayerStat, SetSummary } from "@courtviz/data";
+import type { Point, PlayerStat, SetSummary } from "@courtviz/data/schema";
 import {
   computeBreakPointConversionFromOfficial,
   computeFirstServeInFromOfficial,
   computePointsWonFromOfficial,
-} from "@courtviz/data";
+} from "@courtviz/data/official-stats";
 import {
   enrichedShots,
   guestName,

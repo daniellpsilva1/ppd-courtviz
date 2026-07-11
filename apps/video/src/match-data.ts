@@ -1,5 +1,5 @@
 import type { EnrichedShot } from "@courtviz/core";
-import type { Point, PlayerStat, SetSummary } from "@courtviz/data";
+import type { Point, PlayerStat, SetSummary } from "@courtviz/data/schema";
 import {
   enrichedShots as fixtureEnrichedShots,
   guestName as fixtureGuestName,

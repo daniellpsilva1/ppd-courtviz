@@ -46,6 +46,7 @@ const { generateCoachInsights, primaryCoachInsight } = require("@ppd/brand");
 const { loadMatchContext } = require("./load-match-data.cjs");
 const { getLogoDataUri } = require("./logo-data.cjs");
 const { resolveBranding } = require("./brand-helpers.cjs");
+const { BRAND_SURFACE } = require("./brand-surface.cjs");
 const { renderCoachCards, renderCompactCoachCard } = require("./export-slide-helpers.cjs");
 
 const DEFAULT_POSTERS = [
@@ -225,7 +226,7 @@ function coachInsightFromText(text) {
 function buildCourtDominancePoster() {
   return (format) => {
     const layout = resolveFrameLayout(format);
-    const surface = matchCtx.surface;
+    const surface = BRAND_SURFACE;
     const half = "near";
     const gridsize = 8;
     const valueDomain = dualEfficiencyDomain(["host", "guest"], half, gridsize);
@@ -459,7 +460,7 @@ function renderStackedCourt(x, y, width, height, player, name, valueDomain, grid
 function buildHexbinPoster(player, titleSuffix) {
   return (format) => {
     const layout = resolveFrameLayout(format);
-    const surface = matchCtx.surface;
+    const surface = BRAND_SURFACE;
     const half = format === "story" ? "full" : "near";
     const gridsize = format === "story" ? 12 : 9;
     const valueDomain = sharedEfficiencyDomain(player, half, gridsize);
@@ -546,7 +547,7 @@ function buildHexbinPoster(player, titleSuffix) {
 function buildDotDensityPoster() {
   return (format) => {
     const layout = resolveFrameLayout(format);
-    const surface = matchCtx.surface;
+    const surface = BRAND_SURFACE;
     const half = "full";
     const posterLayout = resolvePosterContentLayout(layout, {
       courtAspect: 0.75,
@@ -621,7 +622,7 @@ function serveCounts(shots, player) {
 function buildServePoster() {
   return (format) => {
     const layout = resolveFrameLayout(format);
-    const surface = matchCtx.surface;
+    const surface = BRAND_SURFACE;
     const half = "near";
     const posterLayout = resolvePosterContentLayout(layout, {
       analyticsBand: format === "story" ? 220 : 0,
@@ -735,7 +736,7 @@ function buildServePoster() {
 function buildRaysPoster() {
   return (format) => {
     const layout = resolveFrameLayout(format);
-    const surface = matchCtx.surface;
+    const surface = BRAND_SURFACE;
     const half = "full";
     const posterLayout = resolvePosterContentLayout(layout, {
       courtAspect: 0.75,

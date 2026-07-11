@@ -17,6 +17,16 @@
       "types": "./dist/fixtures/index.d.ts",
       "import": "./dist/fixtures/index.js",
       "require": "./dist/fixtures/index.cjs"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js",
+      "require": "./dist/schema.cjs"
+    },
+    "./official-stats": {
+      "types": "./dist/official-stats.d.ts",
+      "import": "./dist/official-stats.js",
+      "require": "./dist/official-stats.cjs"
     }
   },
   "files": ["dist"],

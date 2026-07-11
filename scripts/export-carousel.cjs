@@ -20,23 +20,14 @@ const { loadMatchContext } = require("./load-match-data.cjs");
 const { getLogoDataUri } = require("./logo-data.cjs");
 const { resolveBranding } = require("./brand-helpers.cjs");
 const {
-  buildAcesStats,
-  buildBreakPointBattleStats,
-  buildClutchStats,
-  buildErrorHeatmapStats,
-  buildKeyStats,
-  buildReturnGameStats,
-  buildRallyHighlightStats,
-  buildServeSpeedStats,
-  buildSetBySetStats,
-  buildSpinDirectionStats,
-  buildWinnersErrorStats,
+  buildMatchNumbersStats,
+  buildShotmakingStats,
   renderCoachCards,
   renderDensitySlide,
   renderDuelStats,
   renderErrorHeatmapSlide,
-  renderGenericDuelSlide,
   renderMiniDualCourt,
+  renderMomentumSlide,
   renderRallyBars,
   renderRaysSlide,
   renderServePlacementSlide,
@@ -53,23 +44,16 @@ const branding = resolveBranding({
 
 const SLIDES = [
   { id: "slide-cover", title: "Match Cover", subtitle: "Final score and court dominance preview" },
-  { id: "slide-serve", title: "Serve Report", subtitle: "Host court + zone win rates for both players" },
+  { id: "slide-serve", title: "Serve Report", subtitle: "Placement, aces, speed, and zone win rates" },
+  { id: "slide-placement", title: "Serve Placement", subtitle: "First-serve targets and in-rates" },
   { id: "slide-zones", title: "Zone Win Rates", subtitle: "Where each player wins points" },
   { id: "slide-patterns", title: "Shot Patterns", subtitle: "Hit-to-bounce tendencies" },
   { id: "slide-rally", title: "Rally Profile", subtitle: "Win rate by rally length" },
-  { id: "slide-stats", title: "Key Stats", subtitle: "Head-to-head key numbers" },
-  { id: "slide-breakpoints", title: "Break Point Battle", subtitle: "Chances, conversions, and saves" },
-  { id: "slide-winners", title: "Winners vs Errors", subtitle: "Forehand and backhand shot quality" },
-  { id: "slide-aces", title: "Aces & Double Faults", subtitle: "Serve firepower and leaks" },
-  { id: "slide-speed", title: "Serve Speed", subtitle: "P50, P90, and max tracked speeds" },
-  { id: "slide-sets", title: "Set by Set", subtitle: "Per-set score breakdown" },
-  { id: "slide-rally-highlights", title: "Rally Highlights", subtitle: "Longest rally and average length" },
-  { id: "slide-return", title: "Return Game", subtitle: "Return win rate and depth" },
-  { id: "slide-spin", title: "Spin & Direction", subtitle: "Best-performing shot profiles" },
-  { id: "slide-clutch", title: "Clutch Points", subtitle: "Break point, deuce, and set-point win rates" },
+  { id: "slide-momentum", title: "Match Momentum", subtitle: "Point differential and break points" },
+  { id: "slide-match-numbers", title: "Match Numbers", subtitle: "Overview, break points, clutch, and sets" },
+  { id: "slide-shotmaking", title: "Shotmaking", subtitle: "Winners, errors, and return game" },
   { id: "slide-errors", title: "Error Heatmap", subtitle: "Where out and net errors landed" },
   { id: "slide-density", title: "Shot Density", subtitle: "KDE contours of bounce locations" },
-  { id: "slide-placement", title: "Serve Placement", subtitle: "First-serve targets and in-rates" },
   { id: "slide-coach", title: "Coach Takeaway", subtitle: "Practice priorities" },
   { id: "slide-cta", title: "Peak Performance Data", subtitle: "Full match intelligence on Tennis Bench" },
 ];
@@ -94,8 +78,11 @@ function buildSlide(slideId, ctx) {
   const builders = {
     "slide-cover": (format) => {
       const layout = resolveFrameLayout(format);
-      const courtW = Math.min(layout.content.width, 520);
-      const courtH = Math.floor(courtW * 0.42);
+      const headerBlock = 132;
+      const availH = layout.content.height - headerBlock - 20;
+      const courtW = layout.content.width;
+      const courtH = Math.min(Math.floor(courtW * 0.44), availH);
+      const score = setScore(ctx.sets);
 
       return React.createElement(
         FigureFrame,
@@ -108,28 +95,28 @@ function buildSlide(slideId, ctx) {
         },
         React.createElement(
           "g",
-          { transform: "translate(0, 8)" },
+          { transform: "translate(0, 4)" },
           React.createElement(
             "text",
             {
               fill: theme.ink,
               fontFamily: theme.fonts.condensedFont,
-              fontSize: 56,
+              fontSize: 52,
               fontWeight: 700,
               x: 0,
-              y: 56,
+              y: 52,
             },
-            setScore(ctx.sets),
+            score,
           ),
           React.createElement(
             "text",
             {
               fill: getPlayerColor("host", theme),
               fontFamily: theme.fonts.condensedFont,
-              fontSize: theme.fontSize.subtitle,
+              fontSize: theme.fontSize.title,
               fontWeight: 700,
               x: 0,
-              y: 88,
+              y: 84,
             },
             ctx.hostName,
           ),
@@ -138,10 +125,11 @@ function buildSlide(slideId, ctx) {
             {
               fill: getPlayerColor("guest", theme),
               fontFamily: theme.fonts.condensedFont,
-              fontSize: theme.fontSize.subtitle,
+              fontSize: theme.fontSize.title,
               fontWeight: 700,
-              x: layout.content.width / 2,
-              y: 88,
+              textAnchor: "end",
+              x: layout.content.width,
+              y: 84,
             },
             ctx.guestName,
           ),
@@ -152,9 +140,9 @@ function buildSlide(slideId, ctx) {
               height: 28,
               rx: 14,
               stroke: `${theme.inkMuted}44`,
-              width: 180,
+              width: 200,
               x: 0,
-              y: 104,
+              y: 100,
             },
           ),
           React.createElement(
@@ -165,11 +153,11 @@ function buildSlide(slideId, ctx) {
               fontSize: theme.fontSize.label,
               fontWeight: 600,
               x: 16,
-              y: 123,
+              y: 119,
             },
             `${ctx.surface.toUpperCase()} · ${ctx.matchDate}`,
           ),
-          renderMiniDualCourt(ctx, theme, 0, 148, courtW, courtH),
+          renderMiniDualCourt(ctx, theme, 0, 132, courtW, courtH),
         ),
       );
     },
@@ -180,7 +168,7 @@ function buildSlide(slideId, ctx) {
         {
           branding,
           format,
-          subtitle: "Serve placement and in-rate by zone",
+          subtitle: "Placement, aces, speed, and zone win rates",
           theme,
           title: "Serve Report",
         },
@@ -190,6 +178,19 @@ function buildSlide(slideId, ctx) {
           resolveFrameLayout(format),
           insights.find((insight) => insight.category === "serve") ?? insights[0],
         ),
+      ),
+
+    "slide-placement": (format) =>
+      React.createElement(
+        FigureFrame,
+        {
+          branding,
+          format,
+          subtitle: "First-serve targets and in-rates",
+          theme,
+          title: "Serve Placement",
+        },
+        renderServePlacementSlide(ctx, theme, resolveFrameLayout(format)),
       ),
 
     "slide-zones": (format) =>
@@ -231,134 +232,43 @@ function buildSlide(slideId, ctx) {
         renderRallyBars(ctx, theme, resolveFrameLayout(format)),
       ),
 
-    "slide-stats": (format) =>
+    "slide-momentum": (format) =>
       React.createElement(
         FigureFrame,
         {
           branding,
           format,
-          subtitle: "Head-to-head key numbers",
+          subtitle: "Point differential and break points",
           theme,
-          title: "Key Stats",
+          title: "Match Momentum",
         },
-        renderDuelStats(ctx, theme, resolveFrameLayout(format), buildKeyStats(ctx)),
+        renderMomentumSlide(ctx, theme, resolveFrameLayout(format)),
       ),
 
-    "slide-breakpoints": (format) =>
+    "slide-match-numbers": (format) =>
       React.createElement(
         FigureFrame,
         {
           branding,
           format,
-          subtitle: "Chances, conversions, and saves",
+          subtitle: "Overview, break points, clutch, and sets",
           theme,
-          title: "Break Point Battle",
+          title: "Match Numbers",
         },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildBreakPointBattleStats(ctx)),
+        renderDuelStats(ctx, theme, resolveFrameLayout(format), buildMatchNumbersStats(ctx)),
       ),
 
-    "slide-winners": (format) =>
+    "slide-shotmaking": (format) =>
       React.createElement(
         FigureFrame,
         {
           branding,
           format,
-          subtitle: "Forehand and backhand shot quality",
+          subtitle: "Winners, errors, and return game",
           theme,
-          title: "Winners vs Errors",
+          title: "Shotmaking",
         },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildWinnersErrorStats(ctx)),
-      ),
-
-    "slide-aces": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "Serve firepower and leaks",
-          theme,
-          title: "Aces & Double Faults",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildAcesStats(ctx)),
-      ),
-
-    "slide-speed": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "P50, P90, and max tracked speeds",
-          theme,
-          title: "Serve Speed",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildServeSpeedStats(ctx)),
-      ),
-
-    "slide-sets": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "Per-set score breakdown",
-          theme,
-          title: "Set by Set",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildSetBySetStats(ctx)),
-      ),
-
-    "slide-rally-highlights": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "Longest rally and average length",
-          theme,
-          title: "Rally Highlights",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildRallyHighlightStats(ctx)),
-      ),
-
-    "slide-return": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "Return win rate and depth",
-          theme,
-          title: "Return Game",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildReturnGameStats(ctx)),
-      ),
-
-    "slide-spin": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "Best-performing shot profiles",
-          theme,
-          title: "Spin & Direction",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildSpinDirectionStats(ctx)),
-      ),
-
-    "slide-clutch": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "Break point, deuce, and set-point win rates",
-          theme,
-          title: "Clutch Points",
-        },
-        renderGenericDuelSlide(ctx, theme, resolveFrameLayout(format), buildClutchStats(ctx)),
+        renderDuelStats(ctx, theme, resolveFrameLayout(format), buildShotmakingStats(ctx)),
       ),
 
     "slide-errors": (format) =>
@@ -387,19 +297,6 @@ function buildSlide(slideId, ctx) {
         renderDensitySlide(ctx, theme, resolveFrameLayout(format)),
       ),
 
-    "slide-placement": (format) =>
-      React.createElement(
-        FigureFrame,
-        {
-          branding,
-          format,
-          subtitle: "First-serve targets and in-rates",
-          theme,
-          title: "Serve Placement",
-        },
-        renderServePlacementSlide(ctx, theme, resolveFrameLayout(format)),
-      ),
-
     "slide-coach": (format) =>
       React.createElement(
         FigureFrame,
@@ -416,7 +313,7 @@ function buildSlide(slideId, ctx) {
     "slide-cta": (format) => {
       const layout = resolveFrameLayout(format);
       const centerX = layout.content.width / 2;
-      const centerY = layout.content.height / 2;
+      const score = setScore(ctx.sets);
 
       return React.createElement(
         FigureFrame,
@@ -429,25 +326,46 @@ function buildSlide(slideId, ctx) {
         },
         React.createElement(
           "g",
-          { transform: `translate(${centerX}, ${centerY - 60})` },
-          React.createElement("image", {
-            height: 96,
-            href: branding.logoHref,
-            preserveAspectRatio: "xMidYMid meet",
-            width: 96,
-            x: -48,
-            y: -48,
+          { transform: `translate(0, ${Math.floor(layout.content.height * 0.12)})` },
+          React.createElement("rect", {
+            fill: `${theme.inkMuted}18`,
+            height: 44,
+            rx: 8,
+            width: layout.content.width,
+            x: 0,
+            y: 0,
           }),
           React.createElement(
             "text",
             {
               fill: theme.ink,
               fontFamily: theme.fonts.condensedFont,
-              fontSize: 28,
+              fontSize: theme.fontSize.title,
               fontWeight: 700,
               textAnchor: "middle",
-              x: 0,
-              y: 72,
+              x: centerX,
+              y: 28,
+            },
+            `${ctx.hostName} vs ${ctx.guestName} · ${score}`,
+          ),
+          React.createElement("image", {
+            height: 120,
+            href: branding.logoHref,
+            preserveAspectRatio: "xMidYMid meet",
+            width: 120,
+            x: centerX - 60,
+            y: 72,
+          }),
+          React.createElement(
+            "text",
+            {
+              fill: theme.ink,
+              fontFamily: theme.fonts.condensedFont,
+              fontSize: 32,
+              fontWeight: 700,
+              textAnchor: "middle",
+              x: centerX,
+              y: 228,
             },
             branding.handle,
           ),
@@ -458,10 +376,22 @@ function buildSlide(slideId, ctx) {
               fontFamily: theme.fonts.bodyFont,
               fontSize: theme.fontSize.body,
               textAnchor: "middle",
-              x: 0,
-              y: 104,
+              x: centerX,
+              y: 262,
             },
             "tennisbench.com",
+          ),
+          React.createElement(
+            "text",
+            {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: theme.fontSize.label,
+              textAnchor: "middle",
+              x: centerX,
+              y: 292,
+            },
+            "Track every shot. Coach every point.",
           ),
         ),
       );
