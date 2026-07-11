@@ -83,7 +83,8 @@ describe("MomentumChart", () => {
         width: 800,
       }),
     );
-    expect(markup).not.toContain("circle");
+    expect(markup).toContain('fill="transparent"');
+    expect(markup).not.toContain('opacity="0.5"');
   });
 
   it("renders set boundary lines when showSetBoundaries is true", () => {
