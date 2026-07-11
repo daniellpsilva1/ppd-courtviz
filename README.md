@@ -73,7 +73,9 @@ const editorial = toCourtvizTheme("editorial");
 | `pnpm export:captions` | Platform captions + hashtags (`exports/captions/`) |
 | `pnpm export:all` | Deck + captions + video (add `--force-video` to re-render) |
 
-Default deliverables: `exports/video/` (2 mp4s), `exports/deck/` (13 vertical slides + `manifest.json`), and `exports/captions/`.
+Default deliverables: `apps/demo/public/exports/video/` (2 mp4s), `apps/demo/public/exports/deck/` (13 vertical slides + `manifest.json`), and `apps/demo/public/exports/captions/`.
+
+Preview everything locally with `open apps/demo/public/exports/gallery.html` after running `pnpm export`.
 Optional posters land in `apps/demo/public/exports/{square,portrait,story,landscape}/` only when you run `pnpm export:posters`.
 
 Pass `--matchId=<uuid>` or `--cache=path/to/match.json` to export a specific match (requires Supabase env for matchId).

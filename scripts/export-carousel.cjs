@@ -19,6 +19,7 @@ const { generateCoachInsights } = require("@ppd/brand");
 const { loadMatchContext } = require("./load-match-data.cjs");
 const { getLogoDataUri } = require("./logo-data.cjs");
 const { resolveBranding } = require("./brand-helpers.cjs");
+const { DECK_FORMAT, SLIDES } = require("./deck-slides.cjs");
 const {
   buildMatchNumbersStats,
   buildServeInsight,
@@ -42,24 +43,6 @@ const branding = resolveBranding({
   logo: true,
   logoHref: getLogoDataUri(),
 });
-
-const SLIDES = [
-  { id: "slide-cover", title: "Match Cover", subtitle: "Final score and court dominance preview" },
-  { id: "slide-serve", title: "Serve Report", subtitle: "Placement, aces, speed, and zone win rates" },
-  { id: "slide-placement", title: "Serve Placement", subtitle: "First-serve targets and in-rates" },
-  { id: "slide-zones", title: "Zone Win Rates", subtitle: "Where each player wins points" },
-  { id: "slide-patterns", title: "Shot Patterns", subtitle: "Hit-to-bounce tendencies" },
-  { id: "slide-rally", title: "Rally Profile", subtitle: "Win rate by rally length" },
-  { id: "slide-momentum", title: "Match Momentum", subtitle: "Point differential and break points" },
-  { id: "slide-match-numbers", title: "Match Numbers", subtitle: "Overview, break points, clutch, and sets" },
-  { id: "slide-shotmaking", title: "Shotmaking", subtitle: "Winners, errors, and return game" },
-  { id: "slide-errors", title: "Error Heatmap", subtitle: "Where out and net errors landed" },
-  { id: "slide-density", title: "Shot Density", subtitle: "KDE contours of bounce locations" },
-  { id: "slide-coach", title: "Coach Takeaway", subtitle: "Practice priorities" },
-  { id: "slide-cta", title: "Peak Performance Data", subtitle: "Full match intelligence on Tennis Bench" },
-];
-
-const DECK_FORMAT = "story";
 
 function parseArgs() {
   const formatArg = process.argv.find((a) => a.startsWith("--format="));
@@ -354,7 +337,7 @@ function buildSlide(slideId, ctx) {
               x: centerX,
               y: 262,
             },
-            "tennisbench.com",
+            branding.website,
           ),
           React.createElement(
             "text",
@@ -366,7 +349,7 @@ function buildSlide(slideId, ctx) {
               x: centerX,
               y: 292,
             },
-            "Track every shot. Coach every point.",
+            branding.tagline,
           ),
         ),
       );
@@ -393,9 +376,9 @@ async function main() {
   console.log(`\n📱 Deck export — ${ctx.hostName} vs ${ctx.guestName} (${format} 9:16)\n`);
 
   const preset = socialFormats[format];
-  const slidePaths = [];
+  const exportedSlides = [];
 
-  for (const slide of SLIDES) {
+  for (const [index, slide] of SLIDES.entries()) {
     const builder = buildSlide(slide.id, ctx);
     const element = builder(format);
     const svgPath = path.join(outRoot, `${slide.id}.svg`);
@@ -406,16 +389,17 @@ async function main() {
       pngWidth: preset.width,
       svgPath,
     });
-    slidePaths.push({
-      id: slide.id,
+    exportedSlides.push({
+      ...slide,
+      index,
       png: pngPath ? path.basename(pngPath) : null,
       svg: path.basename(svgPath),
-      title: slide.title,
     });
     console.log(`  ✓ deck/${slide.id}`);
   }
 
   const manifest = {
+    aspectRatio: preset.aspectRatio,
     format,
     guestName: ctx.guestName,
     generatedAt: new Date().toISOString(),
@@ -423,9 +407,13 @@ async function main() {
     hostName: ctx.hostName,
     matchDate: ctx.matchDate,
     matchId: ctx.matchId,
+    platformNotes: {
+      instagram: { maxCarouselSlides: 10, slideCount: SLIDES.length },
+      tiktok: { slideCount: SLIDES.length },
+    },
     platforms: ["instagram", "tiktok"],
-    slides: SLIDES,
-    slidePaths,
+    schemaVersion: 1,
+    slides: exportedSlides,
     width: preset.width,
   };
 

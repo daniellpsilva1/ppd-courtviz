@@ -11,14 +11,15 @@
         background: #0b1220;
         color: #e2e8f0;
       }
-      body { margin: 0; padding: 24px; max-width: 1200px; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 24px; max-width: 1280px; }
       h1, h2 { font-weight: 600; letter-spacing: -0.02em; }
-      h1 { margin: 0 0 8px; font-size: 1.75rem; }
-      p { color: #94a3b8; margin: 0 0 24px; }
+      h1 { margin: 0 0 6px; font-size: 1.75rem; }
+      .meta { color: #94a3b8; margin: 0 0 20px; line-height: 1.5; }
       section { margin-bottom: 40px; }
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 16px;
       }
       figure {
@@ -39,65 +40,242 @@
         font-size: 0.85rem;
         color: #cbd5e1;
       }
-      .links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-      a {
+      figcaption strong {
+        display: block;
+        color: #f8fafc;
+        margin-bottom: 2px;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 24px;
+        align-items: center;
+      }
+      button, a.btn {
         color: #38bdf8;
         text-decoration: none;
         padding: 8px 12px;
         border: 1px solid #1e3a5f;
         border-radius: 8px;
         background: #0f172a;
+        font: inherit;
+        cursor: pointer;
       }
-      a:hover { background: #172554; }
+      button:hover, a.btn:hover { background: #172554; }
+      .deck-rail {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        scroll-snap-type: x mandatory;
+      }
+      .deck-rail figure {
+        flex: 0 0 min(280px, 72vw);
+        scroll-snap-align: start;
+      }
+      .deck-rail img { aspect-ratio: 9 / 16; object-fit: cover; }
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #172554;
+        color: #93c5fd;
+        font-size: 0.8rem;
+        margin-right: 8px;
+      }
+      .notice {
+        padding: 14px 16px;
+        border-radius: 10px;
+        border: 1px solid #334155;
+        background: #111827;
+        color: #cbd5e1;
+      }
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.92);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 20;
+      }
+      .lightbox.open { display: flex; }
+      .lightbox img {
+        max-height: 92vh;
+        max-width: min(480px, 92vw);
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      }
+      .lightbox button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+      .missing { border-color: #7f1d1d; }
     </style>
   </head>
   <body>
-    <h1>Match Recap Exports</h1>
-    <p>Three deliverables: horizontal video, vertical video, and vertical post deck (9:16).</p>
+    <h1 id="title">Match Recap Exports</h1>
+    <p class="meta" id="meta">Loading manifest…</p>
 
-    <div class="links">
-      <a href="deck/manifest.json" target="_blank">Deck manifest</a>
-      <a href="captions/instagram.txt" target="_blank">Instagram caption</a>
+    <div class="toolbar" id="toolbar" hidden>
+      <span class="badge" id="format-badge">9:16</span>
+      <a class="btn" href="deck/manifest.json" target="_blank">Deck manifest</a>
+      <button type="button" id="copy-instagram">Copy Instagram caption</button>
+      <button type="button" id="copy-tiktok">Copy TikTok caption</button>
+      <a class="btn" href="captions/captions.json" target="_blank">Captions JSON</a>
     </div>
 
-    <section>
+    <div class="notice" id="notice" hidden></div>
+
+    <section id="videos-section" hidden>
       <h2>Videos</h2>
-      <div class="grid">
-        <figure>
-          <video src="video/match-recap-landscape.mp4" controls playsinline></video>
-          <figcaption>Horizontal match recap</figcaption>
-        </figure>
-        <figure>
-          <video src="video/match-recap-social.mp4" controls playsinline></video>
-          <figcaption>Vertical match recap (Instagram / TikTok)</figcaption>
-        </figure>
-      </div>
+      <div class="grid" id="videos"></div>
     </section>
 
-    <section>
-      <h2>Vertical post deck (13 slides)</h2>
-      <div class="grid" id="deck"></div>
+    <section id="deck-section" hidden>
+      <h2 id="deck-heading">Vertical post deck</h2>
+      <div class="deck-rail" id="deck"></div>
     </section>
+
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <button type="button" id="lightbox-close">Close</button>
+      <img id="lightbox-img" alt="" />
+    </div>
 
     <script>
-      const slides = [
-        "slide-cover","slide-serve","slide-placement","slide-zones","slide-patterns","slide-rally",
-        "slide-momentum","slide-match-numbers","slide-shotmaking","slide-errors","slide-density",
-        "slide-coach","slide-cta"
-      ];
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
 
-      const root = document.getElementById("deck");
-      for (const slide of slides) {
-        const figure = document.createElement("figure");
-        const img = document.createElement("img");
-        img.loading = "lazy";
-        img.src = `deck/${slide}.png`;
-        img.alt = slide;
-        const cap = document.createElement("figcaption");
-        cap.textContent = slide.replace(/^slide-/, "").replace(/-/g, " ");
-        figure.append(img, cap);
-        root.append(figure);
+      function openLightbox(src, alt) {
+        lightboxImg.src = src;
+        lightboxImg.alt = alt;
+        lightbox.classList.add("open");
+        lightbox.setAttribute("aria-hidden", "false");
       }
+
+      function closeLightbox() {
+        lightbox.classList.remove("open");
+        lightbox.setAttribute("aria-hidden", "true");
+        lightboxImg.removeAttribute("src");
+      }
+
+      document.getElementById("lightbox-close").addEventListener("click", closeLightbox);
+      lightbox.addEventListener("click", (event) => {
+        if (event.target === lightbox) closeLightbox();
+      });
+
+      async function copyCaption(path, button) {
+        try {
+          const text = await fetch(path).then((res) => res.text());
+          await navigator.clipboard.writeText(text.trim());
+          const original = button.textContent;
+          button.textContent = "Copied!";
+          setTimeout(() => {
+            button.textContent = original;
+          }, 1400);
+        } catch {
+          window.open(path, "_blank");
+        }
+      }
+
+      async function assetExists(url) {
+        try {
+          const res = await fetch(url, { method: "HEAD" });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      }
+
+      async function init() {
+        const title = document.getElementById("title");
+        const meta = document.getElementById("meta");
+        const notice = document.getElementById("notice");
+        const toolbar = document.getElementById("toolbar");
+        const deckSection = document.getElementById("deck-section");
+        const videosSection = document.getElementById("videos-section");
+
+        let manifest;
+        try {
+          manifest = await fetch("deck/manifest.json").then((res) => {
+            if (!res.ok) throw new Error("missing manifest");
+            return res.json();
+          });
+        } catch {
+          notice.hidden = false;
+          notice.textContent = "No deck manifest found. Run pnpm export from the courtviz repo, then refresh this page.";
+          meta.textContent = "Three deliverables: horizontal video, vertical video, and vertical post deck.";
+          return;
+        }
+
+        const matchLabel = `${manifest.hostName} vs ${manifest.guestName}`;
+        title.textContent = matchLabel;
+        meta.textContent = `${manifest.matchDate || "Match recap"} · ${manifest.slides?.length || 0} slides · ${manifest.aspectRatio || "9:16"} vertical deck`;
+        document.getElementById("format-badge").textContent = manifest.aspectRatio || "9:16";
+        document.getElementById("deck-heading").textContent = `Vertical post deck (${manifest.slides?.length || 0} slides)`;
+        toolbar.hidden = false;
+
+        document.getElementById("copy-instagram").addEventListener("click", (event) => {
+          copyCaption("captions/instagram.txt", event.currentTarget);
+        });
+        document.getElementById("copy-tiktok").addEventListener("click", (event) => {
+          copyCaption("captions/tiktok.txt", event.currentTarget);
+        });
+
+        if (manifest.platformNotes?.instagram?.maxCarouselSlides < manifest.slides?.length) {
+          notice.hidden = false;
+          notice.textContent = `Instagram carousels support ${manifest.platformNotes.instagram.maxCarouselSlides} images; this deck has ${manifest.slides.length}. Post the first 10 slides or use TikTok for the full set.`;
+        }
+
+        const videos = [
+          { src: "video/match-recap-landscape.mp4", label: "Horizontal match recap" },
+          { src: "video/match-recap-social.mp4", label: "Vertical match recap (Instagram / TikTok)" },
+        ];
+
+        const videosRoot = document.getElementById("videos");
+        let hasVideo = false;
+        for (const video of videos) {
+          if (!(await assetExists(video.src))) continue;
+          hasVideo = true;
+          const figure = document.createElement("figure");
+          const element = document.createElement("video");
+          element.src = video.src;
+          element.controls = true;
+          element.playsInline = true;
+          const cap = document.createElement("figcaption");
+          cap.textContent = video.label;
+          figure.append(element, cap);
+          videosRoot.append(figure);
+        }
+        if (hasVideo) videosSection.hidden = false;
+
+        const deckRoot = document.getElementById("deck");
+        for (const slide of manifest.slides || []) {
+          const figure = document.createElement("figure");
+          const img = document.createElement("img");
+          const png = slide.png || `${slide.id}.png`;
+          img.loading = "lazy";
+          img.src = `deck/${png}`;
+          img.alt = slide.title || slide.id;
+          img.addEventListener("click", () => openLightbox(img.src, img.alt));
+          if (!(await assetExists(img.src))) figure.classList.add("missing");
+
+          const cap = document.createElement("figcaption");
+          const titleEl = document.createElement("strong");
+          titleEl.textContent = `${(slide.index ?? 0) + 1}. ${slide.title || slide.id}`;
+          cap.append(titleEl);
+          if (slide.subtitle) cap.append(document.createTextNode(slide.subtitle));
+
+          figure.append(img, cap);
+          deckRoot.append(figure);
+        }
+        deckSection.hidden = false;
+      }
+
+      init();
     </script>
   </body>
 </html>

@@ -12,6 +12,8 @@ module.paths = [demoNodeModules, rootNodeModules, ...(module.paths || [])];
 const { generateCoachInsights, primaryCoachInsight } = require("@ppd/brand");
 const { loadMatchContext } = require("./load-match-data.cjs");
 const { brandHashtag } = require("./brand-helpers.cjs");
+const { SLIDES } = require("./deck-slides.cjs");
+const { setScore } = require("./export-slide-helpers.cjs");
 
 function buildHashtags() {
   const brandTag = `#${brandHashtag()}`;
@@ -22,13 +24,10 @@ function buildHashtags() {
   };
 }
 
-function setScore(sets) {
-  return sets.map((s) => `${s.hostScore}-${s.guestScore}`).join(", ");
-}
-
 function buildCaptions(ctx) {
   const score = setScore(ctx.sets);
   const HASHTAGS = buildHashtags();
+  const deckHook = `Swipe through ${SLIDES.length} slides: serve report → patterns → coach takeaways.`;
   const insight = primaryCoachInsight({
     enrichedShots: ctx.enrichedShots,
     guestName: ctx.guestName,
@@ -48,8 +47,8 @@ function buildCaptions(ctx) {
     .join("\n");
 
   return {
-    instagram: `${ctx.hostName} vs ${ctx.guestName} (${score})\n\n${insight}\n\n${coachTips}\n\n${HASHTAGS.instagram.join(" ")}`,
-    tiktok: `${ctx.hostName} vs ${ctx.guestName} — ${score}. ${insight} ${HASHTAGS.tiktok.join(" ")}`,
+    instagram: `${ctx.hostName} vs ${ctx.guestName} (${score})\n\n${deckHook}\n\n${insight}\n\n${coachTips}\n\n${HASHTAGS.instagram.join(" ")}`,
+    tiktok: `${ctx.hostName} vs ${ctx.guestName} — ${score}. ${deckHook} ${insight} ${HASHTAGS.tiktok.join(" ")}`,
     twitter: `${ctx.hostName} def. ${ctx.guestName} ${score}. ${insight} ${HASHTAGS.twitter.join(" ")}`,
   };
 }
@@ -61,12 +60,14 @@ async function main() {
 
   const captions = buildCaptions(ctx);
   const manifest = {
+    deckSlideCount: SLIDES.length,
     guestName: ctx.guestName,
     hostName: ctx.hostName,
     matchDate: ctx.matchDate,
     matchId: ctx.matchId,
     platforms: captions,
     generatedAt: new Date().toISOString(),
+    schemaVersion: 1,
   };
 
   fs.writeFileSync(path.join(outDir, "captions.json"), JSON.stringify(manifest, null, 2), "utf-8");

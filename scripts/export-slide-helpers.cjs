@@ -57,11 +57,54 @@ function singlesClipBounds(scales, half = "near") {
 }
 
 const CATEGORY_COLORS = {
-  pattern: "#38BDF8",
-  rally: "#38BDF8",
-  serve: "#38BDF8",
+  pattern: "#34D399",
+  rally: "#A78BFA",
+  serve: "#F59E0B",
   zone: "#38BDF8",
 };
+
+function wrapSvgText({
+  fill,
+  fontFamily,
+  fontSize,
+  fontWeight = 400,
+  lineHeight = 1.35,
+  maxLines = 2,
+  maxWidth,
+  text,
+  x,
+  y,
+}) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const charWidth = fontSize * 0.52;
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length * charWidth > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+
+  const clipped = lines.slice(0, maxLines);
+  if (lines.length > maxLines && clipped.length > 0) {
+    const last = clipped[clipped.length - 1];
+    clipped[clipped.length - 1] = last.length > 3 ? `${last.slice(0, -1)}…` : `${last}…`;
+  }
+
+  return React.createElement(
+    "text",
+    { fill, fontFamily, fontSize, fontWeight, x, y },
+    clipped.map((line, index) =>
+      React.createElement("tspan", { key: index, dy: index === 0 ? 0 : fontSize * lineHeight, x }, line),
+    ),
+  );
+}
 
 function insightAccent(theme, category, index = 0) {
   return CATEGORY_COLORS[category] ?? getPlayerColor(index % 2 === 0 ? "host" : "guest", theme);
@@ -209,7 +252,7 @@ function aggregateSideWinRates(shots, player) {
 function renderServeSlide(ctx, theme, layout, insight) {
   const hasInsight = Boolean(insight);
   const posterLayout = resolvePosterContentLayout(layout, {
-    analyticsBand: 300,
+    analyticsBand: 400,
     courtAspect: 1,
     insightBand: hasInsight ? 100 : 0,
     legendBand: 0,
@@ -247,6 +290,18 @@ function renderServeSlide(ctx, theme, layout, insight) {
     "g",
     { transform: `translate(${courtX}, ${courtY})` },
     React.createElement(
+      "text",
+      {
+        fill: getPlayerColor("host", theme),
+        fontFamily: theme.fonts.condensedFont,
+        fontSize: theme.fontSize.label,
+        fontWeight: 700,
+        x: 0,
+        y: -10,
+      },
+      `${ctx.hostName.split(" ").pop()} serve court`,
+    ),
+    React.createElement(
       CourtSurface,
       { half, height: courtHeight, idPrefix: "slide-serve", surface: BRAND_SURFACE, theme, width: courtWidth },
       React.createElement(ServeLayer, {
@@ -266,21 +321,21 @@ function renderServeSlide(ctx, theme, layout, insight) {
       "g",
       { transform: `translate(0, ${analyticsY - courtY})` },
       React.createElement(StatCallout, {
-        label: "first serves",
+        label: "host 1st serves",
         theme,
         value: String(counts.first),
         x: 0,
         y: calloutY,
       }),
       React.createElement(StatCallout, {
-        label: "second serves",
+        label: "host 2nd serves",
         theme,
         value: String(counts.second),
         x: calloutSpan,
         y: calloutY,
       }),
       React.createElement(StatCallout, {
-        label: "faults",
+        label: "host faults",
         theme,
         value: String(counts.faults),
         x: calloutSpan * 2,
@@ -523,7 +578,7 @@ function renderRallyBars(ctx, theme, layout) {
         x: 0,
         y: highlightY + 52,
       },
-      `${highlights[1].title}: ${highlights[1].hostValue} shots per point`,
+      `${highlights[1].title}: ${highlights[1].hostValue} shots per point (match avg)`,
     ),
   );
 }
@@ -994,42 +1049,39 @@ function renderCoachCards(ctx, theme, layout, insights) {
           },
           hero,
         ),
-        React.createElement(
-          "text",
-          {
-            fill: theme.ink,
-            fontFamily: theme.fonts.condensedFont,
-            fontSize: theme.fontSize.title,
-            fontWeight: 600,
-            x: 16,
-            y: 58,
-          },
-          insight.headline.length > 72 ? `${insight.headline.slice(0, 72)}…` : insight.headline,
-        ),
+        wrapSvgText({
+          fill: theme.ink,
+          fontFamily: theme.fonts.condensedFont,
+          fontSize: theme.fontSize.title,
+          fontWeight: 600,
+          maxLines: 2,
+          maxWidth: cardW - 32,
+          text: insight.headline,
+          x: 16,
+          y: 58,
+        }),
         detail &&
-          React.createElement(
-            "text",
-            {
-              fill: theme.inkMuted,
-              fontFamily: theme.fonts.bodyFont,
-              fontSize: theme.fontSize.body,
-              x: 16,
-              y: 88,
-            },
-            detail.length > 96 ? `${detail.slice(0, 96)}…` : detail,
-          ),
-        React.createElement(
-          "text",
-          {
-            fill: theme.ink,
+          wrapSvgText({
+            fill: theme.inkMuted,
             fontFamily: theme.fonts.bodyFont,
-            fontSize: theme.fontSize.label,
-            fontWeight: 600,
+            fontSize: theme.fontSize.body,
+            maxLines: 2,
+            maxWidth: cardW - 32,
+            text: detail,
             x: 16,
-            y: cardH - 18,
-          },
-          insight.action.length > 100 ? `${insight.action.slice(0, 100)}…` : insight.action,
-        ),
+            y: 108,
+          }),
+        wrapSvgText({
+          fill: theme.ink,
+          fontFamily: theme.fonts.bodyFont,
+          fontSize: theme.fontSize.label,
+          fontWeight: 600,
+          maxLines: 2,
+          maxWidth: cardW - 32,
+          text: insight.action,
+          x: 16,
+          y: cardH - 42,
+        }),
       );
     }),
   );
