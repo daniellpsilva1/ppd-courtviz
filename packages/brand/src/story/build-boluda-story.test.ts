@@ -2,7 +2,7 @@ import {
   computeBreakPointConversion,
   computeFirstServeInRate,
   computePointsWonRate,
-  computeZoneWinRates,
+  computeZoneWinRatesByPoint,
 } from "@courtviz/core";
 import {
   enrichedShots,
@@ -21,7 +21,7 @@ describe("buildBoludaStory frozen metrics", () => {
     const guestFS = computeFirstServeInRate(enrichedShots, "guest");
     const hostBP = computeBreakPointConversion(enrichedShots, "host");
     const guestBP = computeBreakPointConversion(enrichedShots, "guest");
-    const hostZones = computeZoneWinRates(enrichedShots, "host")
+    const hostZones = computeZoneWinRatesByPoint(enrichedShots, "host")
       .filter((z) => z.total >= 8)
       .sort((a, b) => b.winRate - a.winRate);
 
