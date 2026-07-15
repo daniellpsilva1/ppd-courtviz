@@ -103,10 +103,12 @@ function patternInsight(shots: EnrichedShot[], player: "host" | "guest", name: s
   const top = flows[0];
   if (!top) return null;
 
+  const lane = `${top.fromZone.replace(/_/g, " ")} → ${top.toZone.replace(/_/g, " ")}`;
+
   return {
     id: `${player}-top-pattern`,
     category: "pattern",
-    headline: `Top pattern: ${top.count} shots, ${pct(top.winRate)}% win rate`,
+    headline: `Top pattern: ${lane}, ${pct(top.winRate)}% win rate (${top.count} rallies)`,
     detail: `${name}'s most repeated hit-to-bounce lane this match.`,
     action:
       top.winRate >= 0.55

@@ -30,6 +30,15 @@ Unified dark "data brand" identity for app, court graphics, social exports, and 
 - `@peakperformancedata` center-right
 - Source line bottom-right
 
+## Signature graphic devices
+
+Brand-consistent visual motifs encoded in `@ppd/tokens` (`layout.signatureDevices`):
+
+- **Baseline rule**: A thick court-line-inspired underline rendered beneath figure titles and as a bottom bar in broadcast shells. The rule features a short accent segment (12% of frame width) in the primary brand color that sweeps in on appear. Used in `FigureFrame` (`showBaselineRule`) and `BroadcastShell`.
+- **Corner-notch**: L-shaped corner marks at each frame corner, evoking court boundary markers. Available via `FigureFrame` (`showCornerNotch`). Subtle by default — use for standalone posters and hero graphics.
+
+Both devices use existing palette colors only (no new accent introduced).
+
 ## Integration
 
 Regenerate cross-project artifacts: `pnpm --filter @ppd/tokens build`

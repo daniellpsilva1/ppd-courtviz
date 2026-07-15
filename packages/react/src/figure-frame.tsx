@@ -4,7 +4,7 @@
 
 import { memo, type ReactNode } from "react";
 import { resolveFrameLayout, type FrameLayout } from "@courtviz/core";
-import { type SocialFormat } from "@ppd/tokens";
+import { type SocialFormat, signatureDevices } from "@ppd/tokens";
 import { type CourtvizTheme, ppd } from "@courtviz/themes";
 import { BrandMark } from "./brand-mark";
 
@@ -29,6 +29,10 @@ export interface FigureFrameProps {
   format?: SocialFormat;
   background?: string;
   branding?: FigureBranding;
+  /** Show baseline rule motif under the title */
+  showBaselineRule?: boolean;
+  /** Show corner-notch frame device */
+  showCornerNotch?: boolean;
   children?: ReactNode;
 }
 
@@ -107,6 +111,8 @@ export const FigureFrame = memo(function FigureFrame({
   height,
   id = "figure",
   padding,
+  showBaselineRule = true,
+  showCornerNotch = false,
   source,
   subtitle,
   theme = ppd,
@@ -171,6 +177,26 @@ export const FigureFrame = memo(function FigureFrame({
         </text>
       )}
 
+      {/* Baseline rule motif — thick court-line-inspired underline */}
+      {showBaselineRule && title && (
+        <BaselineRule
+          accentColor={theme.playerHost ?? theme.ink}
+          theme={theme}
+          width={layout.width}
+          x={titleX}
+          y={subtitleY + 8}
+        />
+      )}
+
+      {/* Corner-notch frame device */}
+      {showCornerNotch && (
+        <CornerNotch
+          color={theme.border}
+          height={layout.height}
+          width={layout.width}
+        />
+      )}
+
       <defs>
         <clipPath id={`${id}-content-clip`}>
           <rect height={contentRegion.height} width={contentRegion.width} x={0} y={0} />
@@ -203,3 +229,61 @@ export const FigureFrame = memo(function FigureFrame({
     </svg>
   );
 });
+
+// ---------------------------------------------------------------------------
+// Signature graphic devices
+// ---------------------------------------------------------------------------
+
+function BaselineRule({
+  accentColor,
+  theme,
+  width: frameWidth,
+  x,
+  y,
+}: {
+  accentColor: string;
+  theme: CourtvizTheme;
+  width: number;
+  x: number;
+  y: number;
+}) {
+  const { height, accentWidth } = signatureDevices.baselineRule;
+  const accentW = frameWidth * accentWidth;
+
+  return (
+    <g>
+      <rect fill={theme.border} height={height} width={frameWidth - x} x={x} y={y} />
+      <rect fill={accentColor} height={height} width={accentW} x={x} y={y} />
+    </g>
+  );
+}
+
+function CornerNotch({
+  color,
+  height: frameHeight,
+  width: frameWidth,
+}: {
+  color: string;
+  height: number;
+  width: number;
+}) {
+  const { inset, size, strokeWidth } = signatureDevices.cornerNotch;
+
+  const corners = [
+    [inset, inset, 1, 1],
+    [frameWidth - inset, inset, -1, 1],
+    [inset, frameHeight - inset, 1, -1],
+    [frameWidth - inset, frameHeight - inset, -1, -1],
+  ] as const;
+
+  return (
+    <g fill="none" stroke={color} strokeWidth={strokeWidth}>
+      {corners.map(([cx, cy, dx, dy], i) => (
+        <path
+          d={`M ${cx + dx * size} ${cy} L ${cx} ${cy} L ${cx} ${cy + dy * size}`}
+          key={`notch-${i}`}
+        />
+      ))}
+    </g>
+  );
+}

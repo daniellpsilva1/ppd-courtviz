@@ -48,7 +48,9 @@ describe("pattern-stats", () => {
 
   it("computes first-strike points won in rallies of four shots or fewer", () => {
     const shots = [
-      shot({ gameNumber: 1, player: "host", pointNumber: 1, pointWinner: "host", rallyLength: 3, setNumber: 1, shotNumber: 3 }),
+      shot({ gameNumber: 1, player: "host", pointNumber: 1, pointWinner: "host", rallyLength: 3, setNumber: 1, shotNumber: 1, stroke: "Serve", type: "first_serve" }),
+      shot({ gameNumber: 1, player: "guest", pointNumber: 1, pointWinner: "host", rallyLength: 3, setNumber: 1, shotNumber: 2, stroke: "Backhand" }),
+      shot({ gameNumber: 1, player: "host", pointNumber: 1, pointWinner: "host", rallyLength: 3, setNumber: 1, shotNumber: 3, stroke: "Forehand" }),
       shot({ gameNumber: 1, player: "guest", pointNumber: 2, pointWinner: "guest", rallyLength: 8, setNumber: 1, shotNumber: 8 }),
     ];
 

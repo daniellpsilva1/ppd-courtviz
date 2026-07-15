@@ -5,8 +5,8 @@
  */
 
 import { type EnrichedShot, pointKeyFromShot, shotPlayerWonPoint } from "./stats";
-import { NET_Y, SERVICE_LINE_FAR, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
-import { isValidHitY, normalizeShot } from "./normalize";
+import { COURT_LENGTH, NET_Y, SERVICE_LINE_FAR, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
+import { hasValidServeCoords, normalizeShot } from "./normalize";
 
 export const SERVICE_BOX_TOLERANCE = 0.35;
 
@@ -28,11 +28,13 @@ export function shouldDisplayServe(
   serve: EnrichedShot,
   maxFaultDistance = 2.0,
 ): boolean {
-  if (serve.bounceX == null || serve.bounceY == null || serve.hitY == null || !isValidHitY(serve.hitY)) {
+  if (!hasValidServeCoords(serve)) {
     return false;
   }
-  const [nx, ny] = normalizeShot(serve.bounceX, serve.bounceY, serve.hitY);
-  if (serve.result === "In") return isInServiceBox(nx, ny);
+  const [nx, ny] = normalizeShot(serve.bounceX!, serve.bounceY!, serve.hitY ?? COURT_LENGTH);
+  if (serve.result === "In") {
+    return isInServiceBox(nx, ny, SERVICE_BOX_TOLERANCE * 3);
+  }
 
   const distY =
     ny < SERVICE_LINE_NEAR

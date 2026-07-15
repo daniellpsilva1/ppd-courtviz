@@ -21,6 +21,19 @@ export const strokes = {
   broadcast: 2,
 } as const;
 
+export const signatureDevices = {
+  baselineRule: {
+    height: 4,
+    inset: 0,
+    accentWidth: 0.12,
+  },
+  cornerNotch: {
+    size: 16,
+    strokeWidth: 2,
+    inset: 8,
+  },
+} as const;
+
 export const layout = {
   spacing,
   radii,
@@ -30,4 +43,5 @@ export const layout = {
     leaderWidth: 1,
     leaderWidthBroadcast: 1.5,
   },
+  signatureDevices,
 } as const;

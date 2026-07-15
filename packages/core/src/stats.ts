@@ -390,33 +390,39 @@ export function computeRallyBucketStats(
   shots: EnrichedShot[],
   player: string,
 ): RallyBucketStat[] {
-  const playerShots = shots.filter(
-    (s) => s.player === player && s.rallyLength != null,
-  );
+  // Build a map of point key → rally length using ALL shots (not just the
+  // player's), so both players share the same denominator per bucket.
+  const pointRallyLength = new Map<string, number>();
+  for (const shot of shots) {
+    if (shot.rallyLength == null) continue;
+    const key = pointKeyFromShot(shot);
+    const prev = pointRallyLength.get(key);
+    if (prev == null || shot.rallyLength > prev) {
+      pointRallyLength.set(key, shot.rallyLength);
+    }
+  }
+
+  // Resolve the point winner for each unique point.
+  const pointWinnerMap = new Map<string, string | null>();
+  for (const shot of shots) {
+    const key = pointKeyFromShot(shot);
+    if (!pointWinnerMap.has(key)) pointWinnerMap.set(key, shot.pointWinner);
+  }
 
   return RALLY_BUCKETS.map((bucket) => {
-    const bucketShots = playerShots.filter(
-      (s) => s.rallyLength! >= bucket.min && s.rallyLength! <= bucket.max,
-    );
-    // Count unique points (a point may have multiple shots)
-    const pointKeys = new Set(
-      bucketShots.map((s) => `${s.setNumber}-${s.gameNumber}-${s.pointNumber}`),
-    );
-    // For win rate, check if the player won each unique point
+    let total = 0;
     let won = 0;
-    const seenPoints = new Set<string>();
-    for (const shot of bucketShots) {
-      const key = `${shot.setNumber}-${shot.gameNumber}-${shot.pointNumber}`;
-      if (seenPoints.has(key)) continue;
-      seenPoints.add(key);
-      if (shotPlayerWonPoint(shot)) won++;
+    for (const [key, rallyLen] of pointRallyLength) {
+      if (rallyLen < bucket.min || rallyLen > bucket.max) continue;
+      total++;
+      if (pointWinnerMap.get(key) === player) won++;
     }
 
     return {
       bucket: bucket.label,
-      total: pointKeys.size,
+      total,
       won,
-      winRate: pointKeys.size > 0 ? won / pointKeys.size : 0,
+      winRate: total > 0 ? won / total : 0,
     };
   });
 }

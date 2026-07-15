@@ -110,7 +110,9 @@ export function resolvePosterContentLayout(
     blockHeight = courtHeight + reservedHeight;
   }
 
-  const courtY = Math.max(0, Math.round((region.height - blockHeight) / 2));
+  const courtY = layout.format === "landscape"
+    ? Math.max(0, Math.round((region.height - blockHeight) / 2))
+    : 0;
   const courtX = Math.round((region.width - courtWidth) / 2);
   let cursor = courtY + courtHeight + gap;
 

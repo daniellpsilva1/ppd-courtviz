@@ -174,7 +174,7 @@ export const HexbinLayer = memo(function HexbinLayer({
               strokeWidth={0.5}
             />
 
-            {showLabels && hex.count >= labelMinCount && r > r * 0.5 && (
+            {showLabels && hex.count >= labelMinCount && r > labelSize * 0.9 && (
               <text
                 dominantBaseline="middle"
                 fill={theme.haloColor}

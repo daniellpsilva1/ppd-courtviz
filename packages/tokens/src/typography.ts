@@ -16,11 +16,11 @@ export const fontSizeRamp = {
   figureTitle: 34,
   figureSubtitle: 14,
   title: 22,
-  subtitle: 11,
-  body: 11,
-  small: 9,
+  subtitle: 12,
+  body: 12,
+  small: 10,
   label: 10,
-  source: 8,
+  source: 9,
 } as const;
 
 export const fontSizeRampBroadcast = {

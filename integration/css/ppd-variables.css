@@ -1,10 +1,29 @@
-/* Generated from @ppd/tokens — courtviz-only tokens not defined in globals.css */
+/* Generated from @ppd/tokens */
 :root {
-  --ppd-marketing: 221 100% 50%;
-  --ppd-canvas-dark: 222 47% 11%;
+  --radius: 0.75rem;
+  --primary-rgb: 37, 99, 235;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --accent: 161 94% 30%;
+  --border: 214 32% 91%;
+  --chart-1: 221 83% 53%;
+  --chart-2: 161 94% 30%;
+  --chart-3: 262 83% 58%;
+  --chart-4: 32 95% 44%;
+  --chart-5: 192 91% 36%;
 }
 
 .dark {
-  --ppd-marketing: 217 91% 60%;
-  --ppd-canvas-dark: 222 47% 11%;
+  --primary-rgb: 59, 130, 246;
+  --background: 222 47% 11%;
+  --foreground: 217 44% 96%;
+  --primary: 217 91% 60%;
+  --accent: 225 30% 25%;
+  --border: 223 31% 24%;
+  --chart-1: 217 91% 60%;
+  --chart-2: 160 84% 39%;
+  --chart-3: 271 91% 65%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 189 94% 43%;
 }

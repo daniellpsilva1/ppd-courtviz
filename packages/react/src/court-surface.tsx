@@ -2,7 +2,7 @@
  * Court surface as an SVG <g> — for composition inside FigureDocument without nested <svg>.
  */
 
-import { memo, useMemo, type ReactNode } from "react";
+import { memo, useId, useMemo, type ReactNode } from "react";
 import {
   NET_Y,
   SERVICE_LINE_FAR,
@@ -119,8 +119,9 @@ export const CourtSurface = memo(function CourtSurface({
   const surroundColor = getSurroundColor(surface, theme);
   const lineColor = theme.courtLine;
 
-  const clipId = `${idPrefix}-clip`;
-  const shadowId = `${idPrefix}-shadow`;
+  const reactId = useId().replace(/:/g, "");
+  const clipId = `${idPrefix}-${reactId}-clip`;
+  const shadowId = `${idPrefix}-${reactId}-shadow`;
 
   const courtX = scales.x(fillRect[0]);
   const courtY = scales.y(fillRect[1] + fillRect[3]);

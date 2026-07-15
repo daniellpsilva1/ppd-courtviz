@@ -7,7 +7,7 @@
  * Uses @courtviz/core for geometry + scales, @courtviz/themes for styling.
  */
 
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import {
   type CourtHalf,
   type Orientation,
@@ -50,6 +50,8 @@ export interface CourtProps {
   lineWidth?: number;
   /** Additional className */
   className?: string;
+  /** Accessible summary for screen readers */
+  accessibleSummary?: string;
   /** Children rendered inside the SVG (for overlaying shots, hexbins, etc.) */
   children?: React.ReactNode;
 }
@@ -65,6 +67,7 @@ export interface CourtProps {
  * ```
  */
 export const Court = memo(function Court({
+  accessibleSummary,
   className,
   children,
   displayRange,
@@ -109,11 +112,11 @@ export const Court = memo(function Court({
     ? `rotate(90 ${svgWidth / 2} ${svgHeight / 2})`
     : undefined;
 
-  // Clip path ID for overlay clipping to court bounds
-  const clipId = useMemo(
-    () => `court-clip-${Math.random().toString(36).slice(2, 9)}`,
-    [],
-  );
+  // Clip path ID for overlay clipping to court bounds (SSR-safe)
+  const reactId = useId().replace(/:/g, "");
+  const clipId = `court-clip-${reactId}`;
+  const titleId = `court-title-${reactId}`;
+  const descId = `court-desc-${reactId}`;
 
   const courtX = scales.x(fillRect[0]);
   const courtY = scales.y(fillRect[1] + fillRect[3]);
@@ -137,19 +140,24 @@ export const Court = memo(function Court({
 
   return (
     <svg
+      aria-describedby={accessibleSummary ? descId : undefined}
+      aria-labelledby={titleId}
       className={className}
       height={svgHeight}
       preserveAspectRatio="xMidYMid meet"
+      role="img"
       style={{ display: "block" }}
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       width={svgWidth}
     >
+      <title id={titleId}>{`Tennis court${surface !== "hard" ? ` (${surface})` : ""}`}</title>
+      {accessibleSummary && <desc id={descId}>{accessibleSummary}</desc>}
       <SvgTooltipProvider bounds={{ height: svgHeight, width: svgWidth }} theme={theme}>
       <defs>
         <clipPath id={clipId}>
           <rect height={courtH} width={courtW} x={courtX} y={courtY} />
         </clipPath>
-        <filter id="court-shadow" x="-5%" y="-5%" width="110%" height="110%">
+        <filter id={`court-shadow-${reactId}`} x="-5%" y="-5%" width="110%" height="110%">
           <feDropShadow dx={0} dy={2} floodColor="#000000" floodOpacity={0.15} stdDeviation={3} />
         </filter>
       </defs>
@@ -176,7 +184,7 @@ export const Court = memo(function Court({
         {/* Court surface fill with subtle shadow */}
         <rect
           fill={surfaceColor}
-          filter="url(#court-shadow)"
+          filter={`url(#court-shadow-${reactId})`}
           height={courtH}
           width={courtW}
           x={courtX}

@@ -62,19 +62,24 @@ export function computeFirstStrikeStats(
   shots: EnrichedShot[],
   player: string,
 ): RateStat {
-  const pointMap = new Map<string, EnrichedShot>();
+  const pointMap = new Map<string, EnrichedShot[]>();
 
   for (const shot of shots) {
     if (shot.rallyLength == null || shot.rallyLength > 4) continue;
     const key = pointKeyFromShot(shot);
-    if (!pointMap.has(key)) pointMap.set(key, shot);
+    const bucket = pointMap.get(key) ?? [];
+    bucket.push(shot);
+    pointMap.set(key, bucket);
   }
 
   let total = 0;
   let won = 0;
-  for (const shot of pointMap.values()) {
+  for (const [key, pointShots] of pointMap) {
+    const server = inferPointServer(shots, key);
+    if (server !== player) continue;
     total++;
-    if (shot.pointWinner === player) won++;
+    const pointWinner = pointShots[0]?.pointWinner;
+    if (pointWinner === player) won++;
   }
 
   return {
@@ -106,6 +111,63 @@ export function computeReturnInPlayRate(
     total,
     won: inPlay,
   };
+}
+
+export interface ServePlusOneChain {
+  serveZone: string;
+  plusOneStroke: string;
+  plusOneZone: string;
+  count: number;
+  won: number;
+  winRate: number;
+}
+
+export function computeServePlusOneChains(
+  shots: EnrichedShot[],
+  player: string,
+): ServePlusOneChain[] {
+  const byPoint = new Map<string, EnrichedShot[]>();
+  for (const shot of shots) {
+    const key = pointKeyFromShot(shot);
+    const bucket = byPoint.get(key) ?? [];
+    bucket.push(shot);
+    byPoint.set(key, bucket);
+  }
+
+  const chainMap = new Map<string, { count: number; plusOneStroke: string; plusOneZone: string; serveZone: string; won: number }>();
+
+  for (const [key, pointShots] of byPoint) {
+    const server = inferPointServer(shots, key);
+    if (server !== player) continue;
+
+    const serve = pointShots.find((s) => s.stroke === "Serve" && (s.type === "first_serve" || s.type === "First Serve"));
+    if (!serve || serve.result !== "In") continue;
+
+    const plusOne = pointShots.find((s) => s.shotNumber === 3);
+    if (!plusOne) continue;
+
+    const serveZone = serve.direction || "Unknown";
+    const plusOneStroke = plusOne.stroke || "Unknown";
+    const plusOneZone = plusOne.bounceZone || "Unknown";
+    const chainKey = `${serveZone}|${plusOneStroke}|${plusOneZone}`;
+
+    const entry = chainMap.get(chainKey) ?? { count: 0, plusOneStroke, plusOneZone, serveZone, won: 0 };
+    entry.count++;
+    if (plusOne.pointWinner === player) entry.won++;
+    chainMap.set(chainKey, entry);
+  }
+
+  return [...chainMap.values()]
+    .map((e) => ({
+      count: e.count,
+      plusOneStroke: e.plusOneStroke,
+      plusOneZone: e.plusOneZone,
+      serveZone: e.serveZone,
+      winRate: e.count > 0 ? e.won / e.count : 0,
+      won: e.won,
+    }))
+    .filter((c) => c.count >= 2)
+    .sort((a, b) => b.winRate * Math.log(b.count + 1) - a.winRate * Math.log(a.count + 1));
 }
 
 export function computePatternStats(
