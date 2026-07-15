@@ -17,7 +17,6 @@ Inspired by [The SprawlBall](https://www.basketballanalyticsbook.com/) and [Hoop
 - **Motion identity**: Named spring presets (snappy, smooth, bouncy, gentle) in `@ppd/tokens` for consistent animation
 - **Kinetic numbers**: `<KineticNumber>` / `<KineticStat>` count-up animated statistics for video scenes
 - **Branded stinger**: `<BrandedStinger>` intro/outro animation with logo and baseline-rule sweep
-- **3D hero visuals**: `<CourtHero3D>` Three.js court scene with animated camera and tennis ball
 - **True point-winner attribution**: Shots↔points join replaces the old `is_terminal` approximation
 - **Supabase integration**: Direct loading from SwingVision match data
 - **Static + animated + interactive**: Single codebase powers editorial graphics, Remotion videos, and Vite demo components
@@ -95,7 +94,7 @@ pnpm --filter @courtviz/video render
 pnpm --filter @courtviz/video render:benchmark
 ```
 
-Compositions: `MatchRecap` (landscape broadcast), `MatchRecapSocial` (9:16), `BenchmarkStorySocial`, `CourtHero3D` (3D hero).
+Compositions: `MatchRecap` (landscape broadcast), `MatchRecapSocial` (9:16), `BenchmarkStorySocial`.
 
 `MatchRecapSocial` scenes: title → heatmaps → trajectories → shot patterns → key stats → coach insights → momentum (short) → outro.
 

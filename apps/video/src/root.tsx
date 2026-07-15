@@ -1,6 +1,5 @@
 import { Composition } from "remotion";
 import { FPS, HEIGHT, TOTAL_DURATION, WIDTH } from "./constants";
-import { CourtHero3D } from "./scenes/court-hero-3d";
 import { MatchRecap } from "./match-recap";
 import { MatchRecapSocial } from "./match-recap-social";
 import {
@@ -42,14 +41,6 @@ export function RemotionRoot() {
         height={BENCHMARK_HEIGHT}
         id="BenchmarkStorySocial"
         width={BENCHMARK_WIDTH}
-      />
-      <Composition
-        component={CourtHero3D}
-        durationInFrames={120}
-        fps={FPS}
-        height={HEIGHT}
-        id="CourtHero3D"
-        width={WIDTH}
       />
     </>
   );
