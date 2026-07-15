@@ -31,6 +31,10 @@ apps/gallery/build/
 # Demo dev cache
 apps/demo/.vite/
 
+# Playwright visual regression (snapshots are committed; reports are not)
+apps/gallery/visual-report/
+apps/gallery/test-results/
+
 # Generated export artifacts (regenerate via pnpm export)
 apps/demo/public/exports/deck/
 apps/demo/public/exports/carousel/

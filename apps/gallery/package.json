@@ -8,7 +8,9 @@
     "dev": "ladle serve",
     "build": "ladle build",
     "preview": "ladle preview",
-    "clean": "rm -rf .ladle dist .turbo"
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "clean": "rm -rf .ladle dist .turbo visual-report visual-snapshots"
   },
   "dependencies": {
     "@courtviz/core": "workspace:*",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@ladle/react": "^5.0.0",
+    "@playwright/test": "^1.49.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0"
   }

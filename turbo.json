@@ -14,7 +14,11 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": []
+    },
+    "test:visual": {
+      "dependsOn": ["^build"],
+      "outputs": ["visual-report/**", "visual-snapshots/**/*.png"]
     },
     "test:watch": {
       "cache": false,
