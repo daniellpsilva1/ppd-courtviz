@@ -28,28 +28,31 @@ function buildCaptions(ctx) {
   const score = setScore(ctx.sets);
   const HASHTAGS = buildHashtags();
   const deckHook = `Swipe through ${SLIDES.length} slides: serve report → patterns → coach takeaways.`;
-  const insight = primaryCoachInsight({
+  const primaryInsight = primaryCoachInsight({
     enrichedShots: ctx.enrichedShots,
     guestName: ctx.guestName,
     hostName: ctx.hostName,
     points: ctx.points,
   });
-  const coachTips = generateCoachInsights(
+  const allInsights = generateCoachInsights(
     {
       enrichedShots: ctx.enrichedShots,
       guestName: ctx.guestName,
       hostName: ctx.hostName,
       points: ctx.points,
     },
-    3,
-  )
+    4,
+  );
+  // Exclude the primary insight from bullets to avoid duplication.
+  const bulletInsights = allInsights.filter((item) => `${item.headline} — ${item.action}` !== primaryInsight).slice(0, 3);
+  const coachTips = bulletInsights
     .map((item) => `• ${item.headline}`)
     .join("\n");
 
   return {
-    instagram: `${ctx.hostName} vs ${ctx.guestName} (${score})\n\n${deckHook}\n\n${insight}\n\n${coachTips}\n\n${HASHTAGS.instagram.join(" ")}`,
-    tiktok: `${ctx.hostName} vs ${ctx.guestName} — ${score}. ${deckHook} ${insight} ${HASHTAGS.tiktok.join(" ")}`,
-    twitter: `${ctx.hostName} def. ${ctx.guestName} ${score}. ${insight} ${HASHTAGS.twitter.join(" ")}`,
+    instagram: `${ctx.hostName} vs ${ctx.guestName} (${score})\n\n${deckHook}\n\n${primaryInsight}\n\n${coachTips}\n\n${HASHTAGS.instagram.join(" ")}`,
+    tiktok: `${ctx.hostName} vs ${ctx.guestName} — ${score}. ${deckHook} ${primaryInsight} ${HASHTAGS.tiktok.join(" ")}`,
+    twitter: `${ctx.hostName} def. ${ctx.guestName} ${score}. ${primaryInsight} ${HASHTAGS.twitter.join(" ")}`,
   };
 }
 
@@ -74,6 +77,10 @@ async function main() {
   for (const [platform, text] of Object.entries(captions)) {
     fs.writeFileSync(path.join(outDir, `${platform}.txt`), `${text}\n`, "utf-8");
   }
+
+  // Remove stale platform files no longer generated.
+  const staleFile = path.join(outDir, "linkedin.txt");
+  if (fs.existsSync(staleFile)) fs.unlinkSync(staleFile);
 
   console.log(`✅ Captions written to ${outDir}`);
 }

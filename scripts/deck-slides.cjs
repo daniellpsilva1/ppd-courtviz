@@ -12,7 +12,7 @@ const SLIDES = [
   {
     id: "slide-placement",
     title: "Serve Placement",
-    subtitle: "Host first-serve targets and in-rates",
+    subtitle: "First and second serve targets with zone win rates",
   },
   { id: "slide-zones", title: "Zone Win Rates", subtitle: "Where each player wins points" },
   {

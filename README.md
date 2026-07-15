@@ -12,15 +12,21 @@ Inspired by [The SprawlBall](https://www.basketballanalyticsbook.com/) and [Hoop
 - **React SVG components**: `<Court>`, composable `<CourtSurface>`, branded `<FigureFrame>`, layers, charts
 - **Themes**: `ppd` (default dark), `ppdLight`, `broadcast`, legacy `sprawlball`
 - **Dual-encoded hexbins**: Size = frequency, color = efficiency (win rate vs. corpus baseline)
+- **KDE density contours**: `<DensityLayer>` with d3-contour for shot concentration heatmaps
+- **Smart annotations**: `<CentroidAnnotation>` auto-places labels at polygon centroids using d3-polygon
+- **Motion identity**: Named spring presets (snappy, smooth, bouncy, gentle) in `@ppd/tokens` for consistent animation
+- **Kinetic numbers**: `<KineticNumber>` / `<KineticStat>` count-up animated statistics for video scenes
+- **Branded stinger**: `<BrandedStinger>` intro/outro animation with logo and baseline-rule sweep
+- **3D hero visuals**: `<CourtHero3D>` Three.js court scene with animated camera and tennis ball
 - **True point-winner attribution**: Shots↔points join replaces the old `is_terminal` approximation
 - **Supabase integration**: Direct loading from SwingVision match data
-- **Static + animated + interactive**: Single codebase powers editorial graphics, Remotion videos, and Next.js components
+- **Static + animated + interactive**: Single codebase powers editorial graphics, Remotion videos, and Vite demo components
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| `@ppd/tokens` | Canonical PPD design tokens (colors, typography, social formats) |
+| `@ppd/tokens` | Canonical PPD design tokens (colors, typography, social formats, motion, signature devices) |
 | `@ppd/brand` | Editorial modes, theme adapters, match story builder |
 | `@courtviz/core` | Court geometry, scales, stats, `resolveFrameLayout()` |
 | `@courtviz/data` | Zod schemas, Supabase loader, shots↔points join |
@@ -89,9 +95,29 @@ pnpm --filter @courtviz/video render
 pnpm --filter @courtviz/video render:benchmark
 ```
 
-Compositions: `MatchRecap` (landscape broadcast), `MatchRecapSocial` (9:16), `BenchmarkStorySocial`.
+Compositions: `MatchRecap` (landscape broadcast), `MatchRecapSocial` (9:16), `BenchmarkStorySocial`, `CourtHero3D` (3D hero).
 
 `MatchRecapSocial` scenes: title → heatmaps → trajectories → shot patterns → key stats → coach insights → momentum (short) → outro.
+
+### Motion tokens
+
+All spring animations use named presets from `@ppd/tokens`:
+
+```ts
+import { motionTokens } from "@ppd/tokens";
+
+spring({ config: motionTokens.springs.snappy, fps, frame });
+```
+
+Presets: `snappy` (damping 200), `smooth` (damping 28, stiffness 200), `bouncy` (damping 14, stiffness 120), `gentle` (damping 18, stiffness 80).
+
+### Visual regression
+
+```bash
+pnpm --filter @courtviz/gallery test:visual
+```
+
+Playwright snapshots are stored in `apps/gallery/visual-snapshots/`. Run `test:visual:update` to regenerate.
 
 ## Architecture
 

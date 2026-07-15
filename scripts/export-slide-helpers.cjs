@@ -137,14 +137,41 @@ function extractHeroStat(headline) {
 
 function serveCounts(shots, player) {
   const serves = shots.filter((s) => s.player === player && s.stroke === "Serve");
-  const first = serves.filter((s) => s.type !== "second_serve").length;
-  const second = serves.filter((s) => s.type === "second_serve").length;
-  const faults = serves.filter((s) => s.result !== "In").length;
-  return { first, second, faults, total: serves.length };
+  const byPoint = new Map();
+  for (const serve of serves) {
+    const key = `${serve.setNumber}-${serve.gameNumber}-${serve.pointNumber}`;
+    const entry = byPoint.get(key) ?? { first: 0, second: 0, faults: 0, hasSecond: false };
+    if (serve.type === "second_serve") {
+      entry.second++;
+      entry.hasSecond = true;
+    } else {
+      entry.first++;
+    }
+    if (serve.result !== "In") entry.faults++;
+    byPoint.set(key, entry);
+  }
+  let first = 0;
+  let second = 0;
+  let faults = 0;
+  for (const entry of byPoint.values()) {
+    // Each point has at most one first serve attempt and optionally a second.
+    first += entry.hasSecond ? 1 : Math.min(entry.first, 1);
+    second += entry.hasSecond ? 1 : 0;
+    // Faults = missed first serves (each point can have at most 1 first-serve fault).
+    if (entry.hasSecond) faults++;
+  }
+  return { first, second, faults, total: byPoint.size };
 }
 
 function setScore(sets) {
-  return sets.map((s) => `${s.hostScore}-${s.guestScore}`).join(" · ");
+  return sets
+    .map((s) => {
+      if (s.hostTiebreakScore != null && s.guestTiebreakScore != null) {
+        return `${s.hostScore}-${s.guestScore} (${s.hostTiebreakScore}-${s.guestTiebreakScore})`;
+      }
+      return `${s.hostScore}-${s.guestScore}`;
+    })
+    .join(" · ");
 }
 
 function sharedEfficiencyDomain(shots, player, half, gridsize, theme) {
@@ -179,13 +206,15 @@ function dualEfficiencyDomain(shots, players, half, gridsize) {
 
 function renderMiniDualCourt(ctx, theme, x, y, width, height) {
   const half = "near";
-  const gridsize = 6;
+  const gridsize = 5;
   const gap = 8;
   const courtW = Math.floor((width - gap) / 2);
   const courtH = height;
   const valueDomain = dualEfficiencyDomain(ctx.enrichedShots, ["host", "guest"], half, gridsize);
   const extent = singlesExtent(half);
   const surface = BRAND_SURFACE;
+  const miniHexMin = 2;
+  const miniHexSize = [0.25, 0.55];
 
   return React.createElement(
     "g",
@@ -221,11 +250,11 @@ function renderMiniDualCourt(ctx, theme, x, y, width, height) {
               gridsize,
               half,
               labelMinCount: 4,
-              minCount: HEX_MIN_COUNT,
+              minCount: miniHexMin,
               player,
               scales: createCourtScales({ half, height: innerH, margin: 1.5, width: courtW }),
               shots,
-              sizeRange: HEX_SIZE_RANGE,
+              sizeRange: miniHexSize,
               theme,
               useHalfCourtNormalization: true,
               valueDomain,
@@ -355,9 +384,9 @@ function renderServeSlide(ctx, theme, layout, insight) {
       }),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("guest", theme),
-        label: "double faults",
+        label: hostDf + guestDf > 0 ? "double faults" : "1st serve in",
         theme,
-        value: `${hostDf} / ${guestDf}`,
+        value: hostDf + guestDf > 0 ? `${hostDf} / ${guestDf}` : `${Math.round((counts.first / Math.max(counts.first + counts.second, 1)) * 100)}%`,
         x: calloutSpan,
         y: calloutY + calloutRowGap,
       }),
@@ -436,7 +465,7 @@ function renderRaysSlide(ctx, theme, layout) {
   const scales = createCourtScales({ half, height: courtHeight, margin: 1.5, width: courtWidth });
   const shots = ctx.enrichedShots.filter((s) => s.player === "host" && s.stroke !== "Serve");
   const clipBounds = singlesClipBounds(scales, half);
-  const topFlow = computeShotFlows(shots, { minCount: 2, player: "host" })
+  const topFlow = computeShotFlows(shots, { minCount: 5, player: "host" })
     .sort((a, b) => b.count - a.count)[0];
 
   return React.createElement(
@@ -466,7 +495,7 @@ function renderRaysSlide(ctx, theme, layout) {
         curved: true,
         curvature: 0.03,
         flowMaxWidth: 6,
-        flowMinCount: 2,
+        flowMinCount: 5,
         flowMode: true,
         player: "host",
         scales,
@@ -481,9 +510,9 @@ function renderRaysSlide(ctx, theme, layout) {
         { transform: `translate(0, ${analyticsY - courtY})` },
         React.createElement(StatCallout, {
           accentColor: getPlayerColor("host", theme),
-          label: "top pattern win rate",
+          label: `top pattern: ${topFlow.fromZone.replace(/_/g, " ")} → ${topFlow.toZone.replace(/_/g, " ")}`,
           theme,
-          value: `${Math.round(topFlow.winRate * 100)}%`,
+          value: `${Math.round(topFlow.winRate * 100)}% (${topFlow.count} rallies)`,
           x: 0,
           y: 0,
         }),
@@ -502,7 +531,7 @@ function renderRallyBars(ctx, theme, layout) {
   const barsBlockH = 16 + hostBuckets.length * rowH + sectionGap + guestBuckets.length * rowH;
   const highlightY = barsBlockH + 64;
   const blockH = highlightY + footerH;
-  const startY = Math.max(16, Math.floor((layout.content.height - blockH) / 2));
+  const startY = 16;
   const barW = layout.content.width;
 
   return React.createElement(
@@ -652,7 +681,7 @@ function renderDuelStats(ctx, theme, layout, stats) {
     rowCount > 0 ? Math.max(0, Math.min(MAX_ROW_BONUS, Math.floor((contentH - fixedH) / rowCount))) : 0;
   const rowH = MIN_ROW_H + bonus;
   const blockH = sectionCount * SECTION_H + rowCount * rowH;
-  const startY = Math.max(4, Math.floor((contentH - blockH) / 2));
+  const startY = 8;
 
   let y = startY;
   const elements = [];
@@ -860,7 +889,7 @@ function renderCompactCoachCard(insight, theme, width, height = 100) {
 
 function topPointZones(shots, player, limit = 4) {
   return computeZoneWinRatesByPoint(shots, player)
-    .filter((zone) => zone.total >= 4)
+    .filter((zone) => zone.total >= 8)
     .sort((a, b) => b.winRate * Math.log(b.total) - a.winRate * Math.log(a.total))
     .slice(0, limit)
     .map((zone) => ({
@@ -898,7 +927,7 @@ function renderZonesSlide(ctx, theme, layout) {
   const maxRows = Math.max(hostZones.length, guestZones.length, 1);
   const rowH = Math.min(150, Math.max(88, Math.floor((layout.content.height - 72) / maxRows)));
   const blockH = 48 + maxRows * rowH;
-  const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
+  const startY = 16;
   const columnW = (barW - gap) / 2;
 
   function renderZoneColumn(zones, player, x, title) {
@@ -995,10 +1024,10 @@ function renderCoachCards(ctx, theme, layout, insights) {
   const gap = 20;
   const cardW = layout.content.width;
   const cardH = Math.min(
-    240,
-    Math.max(200, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
+    320,
+    Math.max(220, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
   );
-  const startY = Math.max(8, Math.floor((layout.content.height - cards.length * cardH - (cards.length - 1) * gap) / 2));
+  const startY = 8;
 
   return React.createElement(
     "g",
@@ -1454,7 +1483,8 @@ function buildClutchStats(ctx) {
       if (point.pointWinner === "host") hostWon++;
       else if (point.pointWinner === "guest") guestWon++;
     }
-    const total = Math.max(hostWon + guestWon, 1);
+    if (hostWon + guestWon === 0) return null;
+    const total = hostWon + guestWon;
     return {
       guestShare: guestWon / total,
       guestValue: `${Math.round((guestWon / total) * 100)}%`,
@@ -1467,7 +1497,7 @@ function buildClutchStats(ctx) {
   return [
     clutchRate("Deuce Points Won", (point) => point.deuce),
     clutchRate("Set Points Won", (point) => point.setPoint),
-  ];
+  ].filter(Boolean);
 }
 
 function sectionHeader(title) {
@@ -1502,9 +1532,9 @@ function buildShotmakingStats(ctx) {
 function renderMomentumSlide(ctx, theme, layout) {
   const footerH = 80;
   const chartW = layout.content.width;
-  const chartH = Math.min(layout.content.height - footerH - 20, Math.floor(chartW * 0.95));
+  const chartH = Math.min(layout.content.height - footerH - 16, Math.floor(chartW * 1.1));
   const blockH = chartH + 12 + footerH;
-  const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
+  const startY = 12;
   const hostWin = computePointsWonRate(ctx.momentumPoints, "host");
   const guestWin = computePointsWonRate(ctx.momentumPoints, "guest");
   const bpCount = ctx.points.filter((point) => point.breakPoint).length;
@@ -1561,14 +1591,9 @@ function renderMomentumSlide(ctx, theme, layout) {
 }
 
 function buildErrorHeatmapStats(ctx) {
-  function errorCount(player) {
-    return ctx.enrichedShots.filter(
-      (s) => s.player === player && (s.result === "Out" || s.result === "Net" || s.endedBy === "unforced_error"),
-    ).length;
-  }
-
-  const hostErrors = errorCount("host");
-  const guestErrors = errorCount("guest");
+  const errors = errorShots(ctx.enrichedShots);
+  const hostErrors = errors.filter((s) => s.player === "host").length;
+  const guestErrors = errors.filter((s) => s.player === "guest").length;
   const total = Math.max(hostErrors + guestErrors, 1);
 
   return [
@@ -1577,7 +1602,7 @@ function buildErrorHeatmapStats(ctx) {
       guestValue: String(guestErrors),
       hostShare: hostErrors / total,
       hostValue: String(hostErrors),
-      title: "Errors (Out/Net/UE)",
+      title: "Errors with Location (Out/Net/UE)",
     },
   ];
 }
@@ -1600,7 +1625,7 @@ function renderDensitySlide(ctx, theme, layout) {
   const courtH = Math.min(Math.floor(layout.content.height - labelH - 16), Math.floor(courtW * 1.07));
   const half = "near";
   const blockH = labelH + courtH;
-  const startY = Math.max(8, Math.floor((layout.content.height - blockH) / 2));
+  const startY = 12;
 
   function renderPlayerDensity(player, x, name) {
     const scales = createCourtScales({ half, height: courtH, margin: 1.5, width: courtW });
@@ -1728,7 +1753,9 @@ function renderServePlacementSlide(ctx, theme, layout) {
   const { analyticsY, courtHeight, courtWidth, courtX, courtY } = posterLayout;
   const half = "near";
   const scales = createCourtScales({ half, height: courtHeight, margin: 1.5, width: courtWidth });
-  const hostPlacements = computeServePlacements(ctx.enrichedShots, "host").slice(0, 4);
+  const hostPlacements = computeServePlacements(ctx.enrichedShots, "host")
+    .filter((p) => p.total >= 5)
+    .slice(0, 4);
   const colW = courtWidth / 2;
   const rowH = 76;
 
@@ -1745,7 +1772,7 @@ function renderServePlacementSlide(ctx, theme, layout) {
         x: 0,
         y: -10,
       },
-      `${ctx.hostName.split(" ").pop()} first serves`,
+      `${ctx.hostName.split(" ").pop()} serves`,
     ),
     React.createElement(
       CourtSurface,
@@ -1753,11 +1780,11 @@ function renderServePlacementSlide(ctx, theme, layout) {
       React.createElement(ServeLayer, {
         haloWidth: 1.5,
         highContrast: true,
-        includeFaults: false,
-        inBoxOnly: true,
+        includeFaults: true,
         player: "host",
         scales,
-        serveType: "first_serve",
+        serveType: "both",
+        shapeEncode: true,
         shots: ctx.enrichedShots,
         size: 7,
         theme,
@@ -1769,7 +1796,7 @@ function renderServePlacementSlide(ctx, theme, layout) {
       hostPlacements.map((placement, index) =>
         React.createElement(StatCallout, {
           key: placement.zone,
-          label: `${placement.side} ${placement.zone}`,
+          label: `${placement.side} ${placement.zone} (n=${placement.total})`,
           theme,
           value: `${Math.round(placement.inRate * 100)}% in`,
           x: (index % 2) * colW,

@@ -39,10 +39,11 @@ const {
 } = require("./export-slide-helpers.cjs");
 
 const theme = ppd;
-const branding = resolveBranding({
-  logo: true,
-  logoHref: getLogoDataUri(),
-});
+
+function matchAttribution(ctx) {
+  const score = setScore(ctx.sets);
+  return `${ctx.hostName} vs ${ctx.guestName} · ${score} · ${ctx.matchDate}`;
+}
 
 function parseArgs() {
   const formatArg = process.argv.find((a) => a.startsWith("--format="));
@@ -70,7 +71,7 @@ function cleanDeckOutput(outRoot, slideIds) {
   }
 }
 
-function buildSlide(slideId, ctx) {
+function buildSlide(slideId, ctx, branding) {
   const insights = generateCoachInsights({
     enrichedShots: ctx.enrichedShots,
     guestName: ctx.guestName,
@@ -84,10 +85,10 @@ function buildSlide(slideId, ctx) {
       const contentH = layout.content.height;
       const scoreBlock = 120;
       const courtW = layout.content.width;
-      const maxCourtH = contentH - scoreBlock - 20;
-      const courtH = Math.min(Math.floor(courtW * 0.58), Math.floor(maxCourtH * 0.95));
+      const maxCourtH = contentH - scoreBlock - 16;
+      const courtH = Math.min(Math.floor(courtW * 0.72), maxCourtH);
       const blockH = scoreBlock + courtH;
-      const blockY = Math.max(0, Math.floor((contentH - blockH) / 2));
+      const blockY = 0;
       const score = setScore(ctx.sets);
 
       return React.createElement(
@@ -292,7 +293,7 @@ function buildSlide(slideId, ctx) {
         {
           branding,
           format,
-          subtitle: "Full match intelligence on Tennis Bench",
+          subtitle: `${ctx.hostName} vs ${ctx.guestName} · ${setScore(ctx.sets)} · ${ctx.matchDate}`,
           theme,
           title: "Peak Performance Data",
         },
@@ -381,6 +382,11 @@ async function main() {
   }
 
   const ctx = await loadMatchContext();
+  const branding = resolveBranding({
+    logo: true,
+    logoHref: getLogoDataUri(),
+    source: matchAttribution(ctx),
+  });
   const outRoot = path.resolve(__dirname, "..", "apps", "demo", "public", "exports", "deck");
   cleanDeckOutput(
     outRoot,
@@ -393,7 +399,7 @@ async function main() {
   const exportedSlides = [];
 
   for (const [index, slide] of SLIDES.entries()) {
-    const builder = buildSlide(slide.id, ctx);
+    const builder = buildSlide(slide.id, ctx, branding);
     const element = builder(format);
     const svgPath = path.join(outRoot, `${slide.id}.svg`);
     const pngPath = svgOnly ? undefined : path.join(outRoot, `${slide.id}.png`);
