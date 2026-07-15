@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont, condensedFont } from "../fonts";
 import { PPD, theme } from "../ppd-tokens";
@@ -23,7 +24,7 @@ export function StatCard({
   const { fps } = useVideoConfig();
 
   const enter = spring({
-    config: { damping: 200 },
+    config: motionTokens.springs.snappy,
     delay,
     fps,
     frame,

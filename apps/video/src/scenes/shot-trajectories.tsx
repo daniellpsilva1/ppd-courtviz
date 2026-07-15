@@ -1,4 +1,5 @@
-import { enrichedShots, guestName, hostName } from "@courtviz/data/fixtures";
+import { motionTokens } from "@ppd/tokens";
+import { computeServePlusOneChains } from "@courtviz/core";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -16,31 +17,43 @@ import {
   defaultCourtScales,
   getEfficiencyColor,
 } from "../court-viz-utils";
-import { bodyFont } from "../fonts";
-import { sceneInsight } from "../match-stats";
+import { bodyFont, condensedFont } from "../fonts";
+import { getVideoMatchContext } from "../match-data";
+import { getMatchStats, sceneInsightForStats } from "../match-stats";
+import { chromeOffsets, landscapeContentLayout } from "../scene-layout";
 
 const COURT_W = 540;
 const COURT_H = 560;
 const GAP = 48;
-const TOTAL_W = COURT_W * 2 + GAP + 64;
-const LEFT = (1920 - TOTAL_W) / 2;
-const TOP = 220;
 
-const hostFlows = buildPlayerFlows(enrichedShots, "host");
-const guestFlows = buildPlayerFlows(enrichedShots, "guest");
 const hostScales = defaultCourtScales(COURT_W, COURT_H, "full");
 const guestScales = defaultCourtScales(COURT_W, COURT_H, "full");
 const hostBounds = courtPixelBounds(hostScales, "full");
 const guestBounds = courtPixelBounds(guestScales, "full");
-const maxFlowCount = Math.max(
-  ...hostFlows.map((f) => f.count),
-  ...guestFlows.map((f) => f.count),
-  1,
-);
 
 export function ShotTrajectoriesScene() {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, height, width } = useVideoConfig();
+  const ctx = getVideoMatchContext();
+  const stats = getMatchStats();
+  const layout = landscapeContentLayout(height);
+  const { legendBottom } = chromeOffsets("landscape");
+
+  const hostFlows = buildPlayerFlows(ctx.enrichedShots, "host")
+    .sort((a, b) => b.winRate * Math.log(b.count + 1) - a.winRate * Math.log(a.count + 1))
+    .slice(0, 5);
+  const guestFlows = buildPlayerFlows(ctx.enrichedShots, "guest")
+    .sort((a, b) => b.winRate * Math.log(b.count + 1) - a.winRate * Math.log(a.count + 1))
+    .slice(0, 5);
+  const maxFlowCount = Math.max(
+    ...hostFlows.map((f) => f.count),
+    ...guestFlows.map((f) => f.count),
+    1,
+  );
+  const hostChains = computeServePlusOneChains(ctx.enrichedShots, "host").slice(0, 3);
+  const guestChains = computeServePlusOneChains(ctx.enrichedShots, "guest").slice(0, 3);
+  const TOTAL_W = COURT_W * 2 + GAP + 64;
+  const LEFT = (width - TOTAL_W) / 2;
 
   const legendOpacity = interpolate(frame, [180, 210], [0, 1], {
     extrapolateLeft: "clamp",
@@ -50,30 +63,34 @@ export function ShotTrajectoriesScene() {
   return (
     <BroadcastShell>
       <SceneHeader
-        subtitle="Top patterns · arrow = ball direction · color = win rate"
-        title="Shot Patterns"
+        subtitle="Top rally flows & serve+1 chains · color = win rate"
+        title="Tactical Patterns"
       />
 
-      <div style={{ display: "flex", gap: GAP, left: LEFT, position: "absolute", top: TOP }}>
+      <div style={{ display: "flex", gap: GAP, left: LEFT, position: "absolute", top: layout.contentTop }}>
         <FlowPanel
           bounds={hostBounds}
+          chains={hostChains}
           clipId="flow-clip-host"
           color={getPlayerColor("host", darkCourt)}
           flows={hostFlows}
           frame={frame}
           fps={fps}
-          name={hostName}
+          maxFlowCount={maxFlowCount}
+          name={ctx.hostName}
           scales={hostScales}
           sideDelay={14}
         />
         <FlowPanel
           bounds={guestBounds}
+          chains={guestChains}
           clipId="flow-clip-guest"
           color={getPlayerColor("guest", darkCourt)}
           flows={guestFlows}
           frame={frame}
           fps={fps}
-          name={guestName}
+          maxFlowCount={maxFlowCount}
+          name={ctx.guestName}
           scales={guestScales}
           sideDelay={26}
         />
@@ -81,66 +98,52 @@ export function ShotTrajectoriesScene() {
 
       <div
         style={{
-          bottom: 200,
+          bottom: legendBottom,
           color: darkCourt.inkMuted,
           fontFamily: bodyFont,
-          fontSize: 16,
-          left: 80,
+          fontSize: 14,
+          left: "50%",
           opacity: legendOpacity,
           position: "absolute",
+          transform: "translateX(-50%)",
         }}
       >
-        Top 8 patterns per player
+        Top 5 rally flows per player · arrow width = frequency
       </div>
 
-      <div style={{ bottom: 200, opacity: legendOpacity, position: "absolute", right: 80 }}>
-        <svg height={36} width={260}>
-          <defs>
-            <linearGradient id="flow-grad-dual" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stopColor={darkCourt.diverging.low} />
-              <stop offset="50%" stopColor={darkCourt.diverging.midLight} />
-              <stop offset="100%" stopColor={darkCourt.diverging.peak} />
-            </linearGradient>
-          </defs>
-          <rect fill="url(#flow-grad-dual)" height={10} rx={2} width={260} x={0} y={0} />
-          <text fill={darkCourt.inkMuted} fontSize={11} x={0} y={26}>
-            Low win rate
-          </text>
-          <text fill={darkCourt.inkMuted} fontSize={11} textAnchor="end" x={260} y={26}>
-            High win rate
-          </text>
-        </svg>
-      </div>
-
-      <InsightCallout delay={60} text={sceneInsight("trajectories")} />
-      <MatchScoreBar guestName={guestName} hostName={hostName} />
+      <InsightCallout delay={60} text={sceneInsightForStats(stats, "trajectories")} />
+      <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} />
     </BroadcastShell>
   );
 }
 
 function FlowPanel({
   bounds,
+  chains,
   clipId,
   color,
   flows,
   frame,
   fps,
+  maxFlowCount,
   name,
   scales,
   sideDelay,
 }: {
   bounds: ReturnType<typeof courtPixelBounds>;
+  chains: ReturnType<typeof computeServePlusOneChains>;
   clipId: string;
   color: string;
   flows: ReturnType<typeof buildPlayerFlows>;
   frame: number;
   fps: number;
+  maxFlowCount: number;
   name: string;
   scales: ReturnType<typeof defaultCourtScales>;
   sideDelay: number;
 }) {
   const labelSpring = spring({
-    config: { damping: 200 },
+    config: motionTokens.springs.snappy,
     delay: sideDelay,
     fps,
     frame,
@@ -162,7 +165,7 @@ function FlowPanel({
         <g clipPath={`url(#${clipId})`}>
         {flows.map((flow, index) => {
           const progress = spring({
-            config: { damping: 200 },
+            config: motionTokens.springs.snappy,
             delay: sideDelay + index * 2.5,
             fps,
             frame,
@@ -201,11 +204,53 @@ function FlowPanel({
                 stroke={darkCourt.haloColor}
                 strokeWidth={0.5}
               />
+              {progress > 0.8 && flow.count >= 3 ? (
+                <text
+                  dominantBaseline="middle"
+                  fill={darkCourt.ink}
+                  fontFamily={condensedFont}
+                  fontSize={10}
+                  fontWeight={700}
+                  opacity={(progress - 0.8) * 5}
+                  textAnchor="middle"
+                  x={(x1 + x2) / 2}
+                  y={(y1 + y2) / 2 - 8}
+                >
+                  {Math.round(flow.winRate * 100)}% · n={flow.count}
+                </text>
+              ) : null}
             </g>
           );
         })}
         </g>
       </Court>
+      {chains.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+          <div style={{ color: darkCourt.inkMuted, fontFamily: condensedFont, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Serve + 1 chains
+          </div>
+          {chains.map((chain, i) => (
+            <div
+              key={i}
+              style={{
+                alignItems: "center",
+                color: darkCourt.ink,
+                display: "flex",
+                fontFamily: bodyFont,
+                fontSize: 12,
+                gap: 6,
+                justifyContent: "space-between",
+                opacity: spring({ config: motionTokens.springs.snappy, delay: sideDelay + 30 + i * 8, fps, frame }),
+              }}
+            >
+              <span>{chain.serveZone} → {chain.plusOneStroke} {chain.plusOneZone}</span>
+              <span style={{ color: getEfficiencyColor(chain.winRate, true), fontFamily: condensedFont, fontWeight: 700 }}>
+                {Math.round(chain.winRate * 100)}% · n={chain.count}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </CourtCard>
   );
 }

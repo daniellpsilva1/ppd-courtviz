@@ -1,9 +1,10 @@
-import { guestName, hostName, matchDate, sets } from "@courtviz/data/fixtures";
+import { motionTokens } from "@ppd/tokens";
 import { Court } from "@courtviz/react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BRAND_SURFACE } from "../brand-surface";
 import { bodyFont, condensedFont } from "../fonts";
-import { formatMatchResult, formatSetScoreDetailed } from "../match-stats";
+import { formatMatchResultFromContext, formatSetScoreDetailedFromSets } from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
 import { PPD, theme } from "../ppd-tokens";
 
 function formatDate(dateStr: string): string {
@@ -20,6 +21,7 @@ function formatDate(dateStr: string): string {
 export function TitleScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const ctx = getVideoMatchContext();
 
   const courtOpacity = interpolate(frame, [0, 40], [0, 0.14], {
     extrapolateLeft: "clamp",
@@ -29,17 +31,17 @@ export function TitleScene() {
     extrapolateRight: "clamp",
   });
 
-  const eyebrowOpacity = spring({ config: { damping: 200 }, fps, frame });
-  const hostSlide = spring({ config: { damping: 200 }, delay: 10, fps, frame });
-  const guestSlide = spring({ config: { damping: 200 }, delay: 18, fps, frame });
-  const scoreOpacity = spring({ config: { damping: 200 }, delay: 35, fps, frame });
+  const eyebrowOpacity = spring({ config: motionTokens.springs.snappy, fps, frame });
+  const hostSlide = spring({ config: motionTokens.springs.snappy, delay: 10, fps, frame });
+  const guestSlide = spring({ config: motionTokens.springs.snappy, delay: 18, fps, frame });
+  const scoreOpacity = spring({ config: motionTokens.springs.snappy, delay: 35, fps, frame });
   const metaOpacity = interpolate(frame, [55, 80], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const hostSetsWon = sets.filter((s) => s.hostScore > s.guestScore).length;
-  const surfaceLabel = "Hard Court";
+  const hostSetsWon = ctx.sets.filter((s) => s.hostScore > s.guestScore).length;
+  const surfaceLabel = ctx.surface === "clay" ? "Clay Court" : ctx.surface === "grass" ? "Grass Court" : "Hard Court";
 
   return (
     <AbsoluteFill style={{ backgroundColor: theme.background, overflow: "hidden" }}>
@@ -114,7 +116,7 @@ export function TitleScene() {
             transform: `translateX(${(1 - hostSlide) * -40}px)`,
           }}
         >
-          {hostName}
+          {ctx.hostName}
         </div>
 
         <div
@@ -147,7 +149,7 @@ export function TitleScene() {
             transform: `translateX(${(1 - guestSlide) * 40}px)`,
           }}
         >
-          {guestName}
+          {ctx.guestName}
         </div>
 
         <div
@@ -170,17 +172,17 @@ export function TitleScene() {
               letterSpacing: "0.06em",
             }}
           >
-            {formatSetScoreDetailed()}
+            {formatSetScoreDetailedFromSets(ctx.sets)}
           </div>
           <div
             style={{
-              color: hostSetsWon === sets.length ? theme.playerHost : theme.playerGuest,
+              color: hostSetsWon === ctx.sets.length ? theme.playerHost : theme.playerGuest,
               fontFamily: bodyFont,
               fontSize: 18,
               marginTop: 8,
             }}
           >
-            {formatMatchResult()}
+            {formatMatchResultFromContext(ctx)}
           </div>
         </div>
 
@@ -195,7 +197,7 @@ export function TitleScene() {
             textTransform: "uppercase",
           }}
         >
-          {surfaceLabel} · {formatDate(matchDate)}
+          {surfaceLabel} · {formatDate(ctx.matchDate)}
         </div>
 
         <div

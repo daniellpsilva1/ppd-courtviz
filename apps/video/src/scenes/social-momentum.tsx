@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { useMemo } from "react";
 import { computeMomentum } from "@courtviz/core";
 import { MomentumChart } from "@courtviz/react";
@@ -30,8 +31,8 @@ export function SocialMomentumScene() {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const chartSpring = spring({ config: { damping: 28, stiffness: 200 }, delay: 6, fps, frame });
-  const annotSpring = spring({ config: { damping: 28, stiffness: 200 }, delay: 40, fps, frame });
+  const chartSpring = spring({ config: motionTokens.springs.smooth, delay: 6, fps, frame });
+  const annotSpring = spring({ config: motionTokens.springs.smooth, delay: 40, fps, frame });
 
   return (
     <BroadcastShell>
@@ -53,7 +54,6 @@ export function SocialMomentumScene() {
         <MomentumChart
           height={chartH}
           hostPlayer="host"
-          monoBlue
           points={ctx.momentumPoints}
           showBreakPoints
           showSetBoundaries

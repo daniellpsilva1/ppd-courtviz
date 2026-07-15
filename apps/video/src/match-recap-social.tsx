@@ -12,8 +12,7 @@ import { SocialStatsScene } from "./scenes/social-stats";
 import { SocialCoachInsightsScene } from "./scenes/social-coach-insights";
 import { SocialShotPatternsScene } from "./scenes/social-shot-patterns";
 import { SocialTrajectoriesScene } from "./scenes/social-trajectories";
-import { SocialBreakPointsScene } from "./scenes/social-break-points";
-import { SocialServeSpeedScene } from "./scenes/social-serve-speed";
+import { SocialClutchSpeedScene } from "./scenes/social-clutch-speed";
 import { SocialSetBySetScene } from "./scenes/social-set-by-set";
 import {
   SOCIAL_DURATIONS,
@@ -57,14 +56,8 @@ export function MatchRecapSocial() {
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.breakpoints}>
-          <SocialBreakPointsScene />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
-
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.serveSpeed}>
-          <SocialServeSpeedScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.clutchSpeed}>
+          <SocialClutchSpeedScene />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />

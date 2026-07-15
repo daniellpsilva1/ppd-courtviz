@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { computeRallyBucketStats } from "@courtviz/core";
 import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -18,7 +19,7 @@ export function SocialShotPatternsScene() {
   const layout = verticalContentLayout(height);
   const hostBuckets = computeRallyBucketStats(ctx.enrichedShots, "host");
   const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
-  const enter = spring({ config: { damping: 28, stiffness: 200 }, delay: 10, fps, frame });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 10, fps, frame });
 
   return (
     <BroadcastShell>
@@ -81,7 +82,7 @@ function PatternColumn({
   name: string;
   startDelay: number;
 }) {
-  const enter = spring({ config: { damping: 28, stiffness: 200 }, delay: startDelay, fps, frame });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: startDelay, fps, frame });
 
   return (
     <div
@@ -112,7 +113,7 @@ function PatternColumn({
       </div>
       {buckets.map((bucket, index) => {
         const bar = spring({
-          config: { damping: 28, stiffness: 200 },
+          config: motionTokens.springs.smooth,
           delay: startDelay + 6 + index * 4,
           fps,
           frame,

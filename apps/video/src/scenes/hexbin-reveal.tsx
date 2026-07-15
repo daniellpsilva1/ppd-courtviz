@@ -1,4 +1,4 @@
-import { enrichedShots, guestName, hostName } from "@courtviz/data/fixtures";
+import { motionTokens } from "@ppd/tokens";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
 import type { ZoneWinRate } from "@courtviz/core";
@@ -20,7 +20,9 @@ import {
   sharedEfficiencyDomain,
 } from "../court-viz-utils";
 import { condensedFont } from "../fonts";
-import { guestZones, hostZones, sceneInsight } from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
+import { getMatchStats, sceneInsightForStats } from "../match-stats";
+import { chromeOffsets, landscapeContentLayout } from "../scene-layout";
 
 const HEX_OPTS = { minCount: 1, sizeRange: [0.3, 0.8] as [number, number] };
 
@@ -28,41 +30,44 @@ const COURT_W = 540;
 const COURT_H = 560;
 const GAP = 40;
 const CHIP_W = 108;
-const LEGEND_W = 148;
-const TOTAL_W = CHIP_W + COURT_W + GAP + COURT_W + GAP + CHIP_W + GAP + LEGEND_W;
-const LEFT = (1920 - TOTAL_W) / 2;
-const TOP = 200;
 
-const hostHexbins = buildPlayerHexbins(enrichedShots, "host", "near", HEX_OPTS);
-const guestHexbins = buildPlayerHexbins(enrichedShots, "guest", "near", HEX_OPTS);
-const efficiencyDomain = sharedEfficiencyDomain([hostHexbins, guestHexbins]);
 const hostScales = defaultCourtScales(COURT_W, COURT_H, "near");
 const guestScales = defaultCourtScales(COURT_W, COURT_H, "near");
-const maxCount = Math.max(
-  ...hostHexbins.map((h) => h.count),
-  ...guestHexbins.map((h) => h.count),
-  1,
-);
 
 export function HexbinRevealScene() {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, height, width } = useVideoConfig();
+  const ctx = getVideoMatchContext();
+  const stats = getMatchStats();
+  const layout = landscapeContentLayout(height);
+
+  const hostHexbins = buildPlayerHexbins(ctx.enrichedShots, "host", "near", HEX_OPTS);
+  const guestHexbins = buildPlayerHexbins(ctx.enrichedShots, "guest", "near", HEX_OPTS);
+  const efficiencyDomain = sharedEfficiencyDomain([hostHexbins, guestHexbins]);
+  const maxCount = Math.max(
+    ...hostHexbins.map((h) => h.count),
+    ...guestHexbins.map((h) => h.count),
+    1,
+  );
+  const TOTAL_W = CHIP_W + COURT_W + GAP + COURT_W + GAP + CHIP_W;
+  const LEFT = (width - TOTAL_W) / 2;
+  const { legendBottom } = chromeOffsets("landscape");
 
   return (
     <BroadcastShell>
       <SceneHeader subtitle="Size = frequency · color = win rate" title="Court Dominance" />
 
-      <div style={{ left: LEFT, position: "absolute", top: TOP }}>
+      <div style={{ left: LEFT, position: "absolute", top: layout.contentTop }}>
         <CourtZoom durationInFrames={SCENE_DURATIONS.hexbinReveal}>
           <div style={{ alignItems: "flex-start", display: "flex", gap: GAP }}>
-            <ZoneChips accentColor={getPlayerColor("host", darkCourt)} zones={hostZones} />
+            <ZoneChips accentColor={getPlayerColor("host", darkCourt)} zones={stats.hostZones} />
             <PlayerPanel
               color={getPlayerColor("host", darkCourt)}
               efficiencyDomain={efficiencyDomain}
               frame={frame}
               fps={fps}
               hexbins={hostHexbins}
-              name={hostName}
+              name={ctx.hostName}
               scales={hostScales}
               sideDelay={12}
             />
@@ -72,26 +77,31 @@ export function HexbinRevealScene() {
               frame={frame}
               fps={fps}
               hexbins={guestHexbins}
-              name={guestName}
+              name={ctx.guestName}
               scales={guestScales}
               sideDelay={28}
             />
-            <ZoneChips accentColor={getPlayerColor("guest", darkCourt)} zones={guestZones} />
-            <LegendBar />
+            <ZoneChips accentColor={getPlayerColor("guest", darkCourt)} zones={stats.guestZones} />
           </div>
         </CourtZoom>
       </div>
 
-      <InsightCallout delay={50} text={sceneInsight("hexbin")} />
-      <MatchScoreBar guestName={guestName} hostName={hostName} />
+      <div style={{ bottom: legendBottom, display: "flex", gap: 60, left: "50%", opacity: spring({ config: motionTokens.springs.snappy, delay: 40, fps, frame }), position: "absolute", transform: "translateX(-50%)" }}>
+        <LegendBar maxCount={maxCount} />
+      </div>
+
+      <InsightCallout delay={50} text={sceneInsightForStats(stats, "hexbin")} />
+      <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} />
     </BroadcastShell>
   );
 }
 
 function zoneRate(zones: ZoneWinRate[], side: "deuce" | "ad"): number | null {
-  const match = zones.find((zone) => zone.zone.toLowerCase().includes(side));
-  if (!match || match.total < 3) return null;
-  return match.winRate;
+  const matching = zones.filter((z) => z.zone.startsWith(`${side}_`));
+  const total = matching.reduce((sum, z) => sum + z.total, 0);
+  const won = matching.reduce((sum, z) => sum + z.won, 0);
+  if (total < 3) return null;
+  return won / total;
 }
 
 function ZoneChips({ accentColor, zones }: { accentColor: string; zones: ZoneWinRate[] }) {
@@ -176,7 +186,7 @@ function PlayerPanel({
   sideDelay: number;
 }) {
   const labelSpring = spring({
-    config: { damping: 200 },
+    config: motionTokens.springs.snappy,
     delay: sideDelay,
     fps,
     frame,
@@ -212,7 +222,7 @@ function PlayerPanel({
       <Court half="near" height={COURT_H} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_W}>
         {sortedHexbins.map((hex, index) => {
           const progress = spring({
-            config: { damping: 200 },
+            config: motionTokens.springs.snappy,
             delay: sideDelay + index * 2,
             fps,
             frame,
@@ -258,47 +268,34 @@ function PlayerPanel({
   );
 }
 
-function LegendBar() {
+function LegendBar({ maxCount }: { maxCount: number }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 28,
-        paddingTop: 72,
-        width: LEGEND_W,
-      }}
-    >
-      <svg height={120} width={LEGEND_W}>
+    <>
+      <svg height={36} width={200}>
         <defs>
-          <linearGradient id="hex-eff-grad" x1="0%" x2="0%" y1="0%" y2="100%">
+          <linearGradient id="hex-eff-grad" x1="0%" x2="100%" y1="0%" y2="0%">
             {darkStops.map(([offset, color], i) => (
               <stop key={i} offset={`${offset * 100}%`} stopColor={color} />
             ))}
           </linearGradient>
         </defs>
-        <text fill={darkCourt.ink} fontSize={12} textAnchor="middle" x={LEGEND_W / 2} y={12}>
-          Win rate
-        </text>
-        <rect fill="url(#hex-eff-grad)" height={72} rx={3} width={14} x={18} y={20} />
-        <text fill={darkCourt.inkMuted} fontSize={10} x={38} y={28}>
-          Hot
-        </text>
-        <text fill={darkCourt.inkMuted} fontSize={10} x={38} y={88}>
+        <rect fill="url(#hex-eff-grad)" height={10} rx={2} width={180} x={10} y={0} />
+        <text fill={darkCourt.inkMuted} fontSize={10} x={10} y={26}>
           Cold
         </text>
-      </svg>
-      <svg height={100} width={LEGEND_W}>
-        <text fill={darkCourt.ink} fontSize={12} textAnchor="middle" x={LEGEND_W / 2} y={12}>
-          Frequency
-        </text>
-        <circle cx={28} cy={52} fill={darkCourt.playerHost} opacity={0.5} r={5} />
-        <circle cx={58} cy={52} fill={darkCourt.playerHost} r={9} />
-        <circle cx={96} cy={52} fill={darkCourt.playerHost} r={13} />
-        <text fill={darkCourt.inkMuted} fontSize={10} textAnchor="middle" x={LEGEND_W / 2} y={86}>
-          max {maxCount}
+        <text fill={darkCourt.inkMuted} fontSize={10} textAnchor="end" x={190} y={26}>
+          Hot
         </text>
       </svg>
-    </div>
+      <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
+        <span style={{ color: darkCourt.inkMuted, fontFamily: condensedFont, fontSize: 12 }}>Frequency</span>
+        <svg height={26} width={80}>
+          <circle cx={10} cy={13} fill={darkCourt.playerHost} opacity={0.5} r={5} />
+          <circle cx={40} cy={13} fill={darkCourt.playerHost} r={9} />
+          <circle cx={70} cy={13} fill={darkCourt.playerHost} r={13} />
+        </svg>
+        <span style={{ color: darkCourt.inkMuted, fontFamily: condensedFont, fontSize: 10, marginLeft: 4 }}>max {maxCount}</span>
+      </div>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { useMemo } from "react";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
@@ -15,16 +16,7 @@ export function SocialStatsScene() {
   const ctx = getVideoMatchContext();
   const stats = useMemo(() => getMatchStats(), []);
   const layout = verticalContentLayout(height);
-  const enter = spring({ config: { damping: 28, stiffness: 200 }, delay: 8, fps, frame });
-
-  const hostTopZoneRate =
-    stats.hostZones
-      .filter((zone) => zone.total >= 5)
-      .sort((a, b) => b.winRate - a.winRate)[0]?.winRate ?? 0;
-  const guestTopZoneRate =
-    stats.guestZones
-      .filter((zone) => zone.total >= 5)
-      .sort((a, b) => b.winRate - a.winRate)[0]?.winRate ?? 0;
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
 
   const longTotal = Math.max(stats.longRallyBattle.hostWon + stats.longRallyBattle.guestWon, 1);
 
@@ -43,7 +35,7 @@ export function SocialStatsScene() {
       guestValue: `${Math.round(stats.guestServiceStats.servePlusOneRate * 100)}%`,
       hostShare: stats.hostServiceStats.servePlusOneRate,
       hostValue: `${Math.round(stats.hostServiceStats.servePlusOneRate * 100)}%`,
-      title: "Serve +1",
+      title: "Short Rallies Won (1-3)",
     },
     {
       delay: 24,
@@ -71,11 +63,11 @@ export function SocialStatsScene() {
     },
     {
       delay: 42,
-      guestShare: guestTopZoneRate,
-      guestValue: `${Math.round(guestTopZoneRate * 100)}%`,
-      hostShare: hostTopZoneRate,
-      hostValue: `${Math.round(hostTopZoneRate * 100)}%`,
-      title: "Top Zone Win Rate",
+      guestShare: stats.guestWinRate.rate,
+      guestValue: `${Math.round(stats.guestWinRate.rate * 100)}%`,
+      hostShare: stats.hostWinRate.rate,
+      hostValue: `${Math.round(stats.hostWinRate.rate * 100)}%`,
+      title: "Total Points Won",
     },
   ];
 
@@ -87,7 +79,9 @@ export function SocialStatsScene() {
         style={{
           display: "flex",
           flexDirection: "column",
+          gap: 16,
           height: layout.contentHeight,
+          justifyContent: "space-evenly",
           left: layout.sidePadding,
           opacity: enter,
           position: "absolute",

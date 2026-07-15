@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
@@ -14,7 +15,7 @@ export function SocialSetBySetScene() {
   const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = verticalContentLayout(height);
-  const enter = spring({ config: { damping: 28, stiffness: 200 }, delay: 8, fps, frame });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
 
   return (
     <BroadcastShell>
@@ -36,7 +37,7 @@ export function SocialSetBySetScene() {
       >
         {ctx.sets.map((set, index) => {
           const rowEnter = spring({
-            config: { damping: 28, stiffness: 200 },
+            config: motionTokens.springs.smooth,
             delay: 12 + index * 8,
             fps,
             frame,
@@ -80,6 +81,9 @@ export function SocialSetBySetScene() {
                   }}
                 >
                   {ctx.hostName.split(" ").pop()} {set.hostScore}
+                  {set.hostTiebreakScore != null && set.guestTiebreakScore != null && (
+                    <span style={{ fontSize: 18, opacity: 0.7 }}> ({set.hostTiebreakScore})</span>
+                  )}
                 </div>
               </div>
               <div style={{ flex: 1, textAlign: "right" }}>
@@ -92,6 +96,9 @@ export function SocialSetBySetScene() {
                   }}
                 >
                   {set.guestScore} {ctx.guestName.split(" ").pop()}
+                  {set.hostTiebreakScore != null && set.guestTiebreakScore != null && (
+                    <span style={{ fontSize: 18, opacity: 0.7 }}> ({set.guestTiebreakScore})</span>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { theme } from "../court-viz-utils";
@@ -26,8 +27,8 @@ export function DuelStatRow({
 }: DuelStatRowProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const enter = spring({ config: { damping: 200 }, delay, fps, frame });
-  const bar = spring({ config: { damping: 200 }, delay: delay + 6, fps, frame });
+  const enter = spring({ config: motionTokens.springs.snappy, delay, fps, frame });
+  const bar = spring({ config: motionTokens.springs.snappy, delay: delay + 6, fps, frame });
 
   const hostColor = getPlayerColor("host", theme);
   const guestColor = getPlayerColor("guest", theme);

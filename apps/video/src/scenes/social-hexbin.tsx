@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { useMemo } from "react";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
@@ -104,7 +105,7 @@ function PlayerBlock({
   startDelay: number;
   surface: string;
 }) {
-  const label = spring({ config: { damping: 28, stiffness: 200 }, delay: startDelay, fps, frame });
+  const label = spring({ config: motionTokens.springs.smooth, delay: startDelay, fps, frame });
   const colorT = (value: number) => {
     const span = Math.max(0.001, efficiencyDomain.vmax - efficiencyDomain.vmin);
     return getEfficiencyColor((value - efficiencyDomain.vmin) / span, true);
@@ -128,7 +129,7 @@ function PlayerBlock({
       <Court half="near" height={COURT_H} surface={surface as "clay" | "hard" | "grass"} theme={darkCourt} width={COURT_W}>
         {sortedHexbins.map((hex, index) => {
           const progress = spring({
-            config: { damping: 28, stiffness: 200 },
+            config: motionTokens.springs.smooth,
             delay: startDelay + index,
             fps,
             frame,

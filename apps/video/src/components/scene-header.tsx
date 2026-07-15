@@ -1,23 +1,36 @@
+import { motionTokens } from "@ppd/tokens";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont, condensedFont } from "../fonts";
 import { PPD, theme } from "../ppd-tokens";
-import { verticalContentLayout } from "../scene-layout";
+import { landscapeContentLayout, verticalContentLayout } from "../scene-layout";
 
 type SceneHeaderProps = {
+  orientation?: "vertical" | "landscape";
   subtitle?: string;
   title: string;
 };
 
-export function SceneHeader({ subtitle, title }: SceneHeaderProps) {
+export function SceneHeader({ orientation = "landscape", subtitle, title }: SceneHeaderProps) {
   const frame = useCurrentFrame();
-  const { fps, height } = useVideoConfig();
-  const layout = verticalContentLayout(height);
+  const { durationInFrames, fps, height } = useVideoConfig();
+  const layout =
+    orientation === "vertical"
+      ? verticalContentLayout(height)
+      : landscapeContentLayout(height);
 
   const progress = spring({
-    config: { damping: 28, stiffness: 200 },
+    config: motionTokens.springs.smooth,
     fps,
     frame,
   });
+
+  const exitFade =
+    durationInFrames > 0
+      ? interpolate(frame, [durationInFrames - 12, durationInFrames - 1], [1, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        })
+      : 1;
 
   const lineWidth = interpolate(progress, [0, 1], [0, 48]);
 
@@ -25,7 +38,7 @@ export function SceneHeader({ subtitle, title }: SceneHeaderProps) {
     <div
       style={{
         left: layout.sidePadding,
-        opacity: progress,
+        opacity: progress * exitFade,
         position: "absolute",
         top: layout.headerTop,
         transform: `translateY(${(1 - progress) * -16}px)`,

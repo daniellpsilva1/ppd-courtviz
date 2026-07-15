@@ -1,5 +1,6 @@
+import { motionTokens } from "@ppd/tokens";
 import { createCourtScales, hasValidSpatialCoords, shotPlayerWonPoint } from "@courtviz/core";
-import { enrichedShots, guestName, hostName } from "@courtviz/data/fixtures";
+import type { EnrichedShot } from "@courtviz/core";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -13,28 +14,16 @@ import { SetFlash } from "../components/set-flash";
 import { SCENE_DURATIONS } from "../constants";
 import { darkCourt } from "../court-viz-utils";
 import { bodyFont, condensedFont } from "../fonts";
-import { sceneInsight } from "../match-stats";
-
-const orderedShots = enrichedShots
-  .filter(
-    (shot) =>
-      shot.stroke !== "Serve" &&
-      hasValidSpatialCoords(shot) &&
-      shot.result === "In",
-  )
-  .sort((a, b) => {
-    if (a.setNumber !== b.setNumber) return a.setNumber - b.setNumber;
-    if (a.gameNumber !== b.gameNumber) return a.gameNumber - b.gameNumber;
-    if (a.pointNumber !== b.pointNumber) return a.pointNumber - b.pointNumber;
-    return (a.shotNumber ?? 0) - (b.shotNumber ?? 0);
-  });
+import { getVideoMatchContext } from "../match-data";
+import { getMatchStats, sceneInsightForStats } from "../match-stats";
+import { chromeOffsets, landscapeContentLayout } from "../scene-layout";
 
 const REVEAL_START = 30;
 const REVEAL_END = 270;
-const COURT_WIDTH = 760;
-const COURT_HEIGHT = 920;
-const COURT_LEFT = (1920 - COURT_WIDTH) / 2;
-const COURT_TOP = 180;
+const COURT_WIDTH = 580;
+const COURT_HEIGHT = 720;
+const PANEL_W = 280;
+const TOTAL_W = PANEL_W + 48 + COURT_WIDTH + 48 + PANEL_W;
 
 const scales = createCourtScales({
   half: "full",
@@ -43,27 +32,46 @@ const scales = createCourtScales({
   width: COURT_WIDTH,
 });
 
-const setChangeFrames = (() => {
-  const changes: Array<{ frame: number; setNumber: number }> = [];
-  let lastSet = -1;
-  const total = orderedShots.length;
-  for (let i = 0; i < total; i++) {
-    const set = orderedShots[i]!.setNumber;
-    if (set !== lastSet && i > 0) {
-      changes.push({
-        frame: REVEAL_START + (i / total) * (REVEAL_END - REVEAL_START),
-        setNumber: set,
-      });
-      lastSet = set;
-    } else if (i === 0) {
-      lastSet = set;
-    }
-  }
-  return changes;
-})();
-
 export function ShotRainScene() {
   const frame = useCurrentFrame();
+  const ctx = getVideoMatchContext();
+  const stats = getMatchStats();
+  const { legendBottom } = chromeOffsets("landscape");
+  const layout = landscapeContentLayout(1080);
+  const COURT_TOP = layout.contentTop + (layout.contentHeight - COURT_HEIGHT) / 2;
+
+  const orderedShots = ctx.enrichedShots
+    .filter(
+      (shot) =>
+        shot.stroke !== "Serve" &&
+        hasValidSpatialCoords(shot) &&
+        shot.result === "In",
+    )
+    .sort((a, b) => {
+      if (a.setNumber !== b.setNumber) return a.setNumber - b.setNumber;
+      if (a.gameNumber !== b.gameNumber) return a.gameNumber - b.gameNumber;
+      if (a.pointNumber !== b.pointNumber) return a.pointNumber - b.pointNumber;
+      return (a.shotNumber ?? 0) - (b.shotNumber ?? 0);
+    });
+
+  const setChangeFrames = (() => {
+    const changes: Array<{ frame: number; setNumber: number }> = [];
+    let lastSet = -1;
+    const total = orderedShots.length;
+    for (let i = 0; i < total; i++) {
+      const set = orderedShots[i]!.setNumber;
+      if (set !== lastSet && i > 0) {
+        changes.push({
+          frame: REVEAL_START + (i / total) * (REVEAL_END - REVEAL_START),
+          setNumber: set,
+        });
+        lastSet = set;
+      } else if (i === 0) {
+        lastSet = set;
+      }
+    }
+    return changes;
+  })();
   const totalShots = orderedShots.length;
   const revealProgress = interpolate(
     frame,
@@ -74,7 +82,7 @@ export function ShotRainScene() {
   const visibleCount = Math.floor(revealProgress);
   const currentSet = orderedShots[Math.max(0, visibleCount - 1)]?.setNumber ?? 1;
   const counterSpring = spring({
-    config: { damping: 200 },
+    config: motionTokens.springs.snappy,
     fps: 30,
     frame: frame - REVEAL_START,
   });
@@ -107,50 +115,85 @@ export function ShotRainScene() {
         Set {currentSet}
       </div>
 
-      <div style={{ left: COURT_LEFT, position: "absolute", top: COURT_TOP }}>
-        <CourtZoom durationInFrames={SCENE_DURATIONS.shotRain} from={1} to={1.04}>
-          <Court half="full" height={COURT_HEIGHT} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_WIDTH}>
-            <defs>
-              <filter id="dot-glow">
-                <feGaussianBlur result="blur" stdDeviation="2" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-            <AnimatedDots frame={frame} visibleCount={visibleCount} />
-          </Court>
-        </CourtZoom>
+      <div style={{ display: "flex", gap: 48, left: (1920 - TOTAL_W) / 2, position: "absolute", top: COURT_TOP }}>
+        <SidePanel
+          frame={frame}
+          name={ctx.hostName}
+          player="host"
+          shots={orderedShots}
+          visibleCount={visibleCount}
+        />
+        <div>
+          <CourtZoom durationInFrames={SCENE_DURATIONS.shotRain} from={1} to={1.04}>
+            <Court half="full" height={COURT_HEIGHT} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_WIDTH}>
+              <defs>
+                <filter id="dot-glow">
+                  <feGaussianBlur result="blur" stdDeviation="2" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <AnimatedDots frame={frame} orderedShots={orderedShots} visibleCount={visibleCount} />
+            </Court>
+          </CourtZoom>
+        </div>
+        <SidePanel
+          frame={frame}
+          name={ctx.guestName}
+          player="guest"
+          shots={orderedShots}
+          visibleCount={visibleCount}
+        />
       </div>
 
-      <div
-        style={{
-          bottom: 200,
-          color: darkCourt.ink,
-          fontFamily: condensedFont,
-          fontSize: 32,
-          fontWeight: 700,
-          left: 80,
-          opacity: counterSpring,
-          position: "absolute",
-        }}
-      >
-        {visibleCount.toLocaleString()}
-        <span style={{ color: darkCourt.inkMuted, fontFamily: bodyFont, fontSize: 18, marginLeft: 8 }}>
-          / {totalShots.toLocaleString()} shots
-        </span>
-      </div>
-
-      <div style={{ bottom: 200, display: "flex", gap: 28, position: "absolute", right: 80 }}>
-        <LegendSwatch color={getPlayerColor("host", darkCourt)} label={hostName} />
-        <LegendSwatch color={getPlayerColor("guest", darkCourt)} label={guestName} />
+      <div style={{ bottom: legendBottom, display: "flex", gap: 28, left: "50%", opacity: counterSpring, position: "absolute", transform: "translateX(-50%)" }}>
+        <LegendSwatch color={getPlayerColor("host", darkCourt)} label={ctx.hostName} />
+        <LegendSwatch color={getPlayerColor("guest", darkCourt)} label={ctx.guestName} />
         <LegendSwatch color={darkCourt.ink} label="Bright = point won" muted />
       </div>
 
-      <InsightCallout delay={40} text={sceneInsight("shotRain")} />
-      <MatchScoreBar guestName={guestName} hostName={hostName} />
+      <InsightCallout delay={40} text={sceneInsightForStats(stats, "shotRain")} />
+      <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} />
     </BroadcastShell>
+  );
+}
+
+function SidePanel({ frame, name, player, shots, visibleCount }: {
+  frame: number;
+  name: string;
+  player: "host" | "guest";
+  shots: EnrichedShot[];
+  visibleCount: number;
+}) {
+  const playerShots = shots.filter((s) => s.player === player);
+  const visiblePlayerShots = playerShots.slice(0, Math.min(visibleCount, playerShots.length));
+  const wonCount = visiblePlayerShots.filter((s) => shotPlayerWonPoint(s)).length;
+  const winRate = visiblePlayerShots.length > 0 ? wonCount / visiblePlayerShots.length : 0;
+  const accent = getPlayerColor(player, darkCourt);
+  const enter = spring({ config: motionTokens.springs.snappy, delay: 20, fps: 30, frame });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16, justifyContent: "center", opacity: enter, width: PANEL_W }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 10 }}>
+        <div style={{ backgroundColor: accent, borderRadius: "50%", height: 12, width: 12 }} />
+        <span style={{ color: darkCourt.ink, fontFamily: condensedFont, fontSize: 20, fontWeight: 700, textTransform: "uppercase" }}>{name}</span>
+      </div>
+      <StatRow label="Shots shown" value={`${Math.min(visibleCount, playerShots.length)}`} />
+      <StatRow label="Points won" value={`${wonCount}`} />
+      <StatRow label="Win rate" value={`${Math.round(winRate * 100)}%`} />
+      <StatRow label="Total shots" value={`${playerShots.length}`} />
+    </div>
+  );
+}
+
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}>
+      <span style={{ color: darkCourt.inkMuted, fontFamily: bodyFont, fontSize: 14 }}>{label}</span>
+      <span style={{ color: darkCourt.ink, fontFamily: condensedFont, fontSize: 24, fontWeight: 700 }}>{value}</span>
+    </div>
   );
 }
 
@@ -179,7 +222,7 @@ function LegendSwatch({
   );
 }
 
-function AnimatedDots({ frame, visibleCount }: { frame: number; visibleCount: number }) {
+function AnimatedDots({ frame, orderedShots, visibleCount }: { frame: number; orderedShots: EnrichedShot[]; visibleCount: number }) {
   const { fps } = useVideoConfig();
   const totalShots = orderedShots.length;
 

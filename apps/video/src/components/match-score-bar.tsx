@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont, condensedFont } from "../fonts";
 import { formatSetScoreFromSets } from "../match-stats";
@@ -23,7 +24,7 @@ export function MatchScoreBar({
   const { scoreBottom } = chromeOffsets(orientation);
 
   const slideIn = spring({
-    config: { damping: 28, stiffness: 200 },
+    config: motionTokens.springs.smooth,
     delay: 10,
     fps,
     frame,

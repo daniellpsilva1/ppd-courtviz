@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { condensedFont } from "../fonts";
 import { PPD, theme } from "../ppd-tokens";
@@ -20,7 +21,7 @@ export function SetFlash({ setNumber, triggerFrame }: SetFlashProps) {
   });
 
   const scale = spring({
-    config: { damping: 14, stiffness: 120 },
+    config: motionTokens.springs.bouncy,
     fps,
     frame: localFrame,
   });

@@ -1,21 +1,17 @@
-import { guestName, hostName } from "@courtviz/data/fixtures";
-import { getPlayerColor } from "@courtviz/themes";
-import { spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { DuelStatRow } from "../components/duel-stat-row";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
-import { theme } from "../court-viz-utils";
-import { bodyFont, condensedFont } from "../fonts";
-import { PPD } from "../ppd-tokens";
-import {
-  guestServiceStats,
-  hostServiceStats,
-  longRallyBattle,
-  sceneInsight,
-} from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
+import { getMatchStats, sceneInsightForStats } from "../match-stats";
+import { landscapeContentLayout } from "../scene-layout";
 
 export function StatsSpotlightScene() {
+  const ctx = getVideoMatchContext();
+  const stats = getMatchStats();
+  const layout = landscapeContentLayout(1080);
+
   return (
     <BroadcastShell>
       <SceneHeader subtitle="How the match was won" title="By The Numbers" />
@@ -24,113 +20,60 @@ export function StatsSpotlightScene() {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 20,
+          gap: 24,
+          height: layout.contentHeight,
+          justifyContent: "space-evenly",
           left: "50%",
           position: "absolute",
-          top: 240,
+          top: layout.contentTop,
           transform: "translateX(-50%)",
-          width: 900,
+          width: 1000,
         }}
       >
-        <StoryCard
+        <DuelStatRow
           delay={8}
-          guestLabel={`${Math.round(guestServiceStats.serviceWinRate * 100)}%`}
-          guestName={guestName}
-          headline="Service Points Won"
-          hostLabel={`${Math.round(hostServiceStats.serviceWinRate * 100)}%`}
-          hostName={hostName}
-          narrative={`${hostName} won ${hostServiceStats.serviceWon} of ${hostServiceStats.servicePoints} service points — return game decided the match`}
+          guestLabel={ctx.guestName}
+          guestShare={stats.guestServiceStats.serviceWinRate}
+          guestValue={`${Math.round(stats.guestServiceStats.serviceWinRate * 100)}%`}
+          hostLabel={ctx.hostName}
+          hostShare={stats.hostServiceStats.serviceWinRate}
+          hostValue={`${Math.round(stats.hostServiceStats.serviceWinRate * 100)}%`}
+          title="Service Points Won"
         />
-        <StoryCard
+        <DuelStatRow
           delay={20}
-          guestLabel={`${Math.round(guestServiceStats.servePlusOneRate * 100)}%`}
-          guestName={guestName}
-          headline="Serve +1"
-          hostLabel={`${Math.round(hostServiceStats.servePlusOneRate * 100)}%`}
-          hostName={hostName}
-          narrative={`Points won in 3 shots or fewer on own serve — ${hostName} converted ${hostServiceStats.servePlusOneWon}/${hostServiceStats.servePlusOne}`}
+          guestLabel={ctx.guestName}
+          guestShare={stats.guestServiceStats.servePlusOneRate}
+          guestValue={`${Math.round(stats.guestServiceStats.servePlusOneRate * 100)}%`}
+          hostLabel={ctx.hostName}
+          hostShare={stats.hostServiceStats.servePlusOneRate}
+          hostValue={`${Math.round(stats.hostServiceStats.servePlusOneRate * 100)}%`}
+          title="Short Rallies Won (1-3)"
         />
-        <StoryCard
+        <DuelStatRow
           delay={32}
-          guestLabel={`${longRallyBattle.guestWon}`}
-          guestName={guestName}
-          headline="Long Rallies (7+)"
-          hostLabel={`${longRallyBattle.hostWon}`}
-          hostName={hostName}
-          narrative={`Points won in extended exchanges — ${hostName} edged ${longRallyBattle.hostWon}–${longRallyBattle.guestWon} in the attrition battle`}
+          guestLabel={ctx.guestName}
+          guestShare={stats.longRallyBattle.guestWon}
+          guestValue={`${stats.longRallyBattle.guestWon}`}
+          hostLabel={ctx.hostName}
+          hostShare={stats.longRallyBattle.hostWon}
+          hostValue={`${stats.longRallyBattle.hostWon}`}
+          title="Long Rallies (7+)"
+        />
+        <DuelStatRow
+          delay={44}
+          guestLabel={ctx.guestName}
+          guestShare={stats.guestFirstServe.rate}
+          guestValue={`${Math.round(stats.guestFirstServe.rate * 100)}%`}
+          hostLabel={ctx.hostName}
+          hostShare={stats.hostFirstServe.rate}
+          hostValue={`${Math.round(stats.hostFirstServe.rate * 100)}%`}
+          title="First Serve In"
         />
       </div>
 
-      <InsightCallout delay={50} text={sceneInsight("stats")} />
-      <MatchScoreBar guestName={guestName} hostName={hostName} />
+      <InsightCallout delay={50} text={sceneInsightForStats(stats, "stats")} />
+      <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} />
     </BroadcastShell>
-  );
-}
-
-function StoryCard({
-  delay,
-  guestLabel,
-  guestName: guest,
-  headline,
-  hostLabel,
-  hostName: host,
-  narrative,
-}: {
-  delay: number;
-  guestLabel: string;
-  guestName: string;
-  headline: string;
-  hostLabel: string;
-  hostName: string;
-  narrative: string;
-}) {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const enter = spring({ config: { damping: 200 }, delay, fps, frame });
-  const hostColor = getPlayerColor("host", theme);
-  const guestColor = getPlayerColor("guest", theme);
-
-  return (
-    <div
-      style={{
-        backgroundColor: PPD.surface,
-        border: `1px solid ${PPD.border}`,
-        borderRadius: PPD.radius.md,
-        opacity: enter,
-        padding: "20px 28px",
-        transform: `translateY(${(1 - enter) * 16}px)`,
-      }}
-    >
-      <div
-        style={{
-          color: PPD.textMuted,
-          fontFamily: condensedFont,
-          fontSize: 14,
-          fontWeight: 700,
-          letterSpacing: "0.04em",
-          marginBottom: 12,
-          textTransform: "uppercase",
-        }}
-      >
-        {headline}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <div>
-          <div style={{ color: hostColor, fontFamily: condensedFont, fontSize: 32, fontWeight: 700 }}>
-            {hostLabel}
-          </div>
-          <div style={{ color: PPD.textMuted, fontFamily: bodyFont, fontSize: 12 }}>{host}</div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ color: guestColor, fontFamily: condensedFont, fontSize: 32, fontWeight: 700 }}>
-            {guestLabel}
-          </div>
-          <div style={{ color: PPD.textMuted, fontFamily: bodyFont, fontSize: 12 }}>{guest}</div>
-        </div>
-      </div>
-      <div style={{ color: theme.ink, fontFamily: bodyFont, fontSize: 14, lineHeight: 1.45 }}>
-        {narrative}
-      </div>
-    </div>
   );
 }

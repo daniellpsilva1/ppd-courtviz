@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { DuelStatRow } from "../components/duel-stat-row";
@@ -25,7 +26,7 @@ export function SocialServeSpeedScene() {
   const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = verticalContentLayout(height);
-  const enter = spring({ config: { damping: 28, stiffness: 200 }, delay: 8, fps, frame });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
 
   const hostSpeeds = serveSpeeds(ctx.enrichedShots, "host");
   const guestSpeeds = serveSpeeds(ctx.enrichedShots, "guest");

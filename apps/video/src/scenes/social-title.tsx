@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { Court } from "@courtviz/react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BRAND_SURFACE } from "../brand-surface";
@@ -31,10 +32,10 @@ export function SocialTitleScene() {
     extrapolateRight: "clamp",
   });
 
-  const eyebrowOpacity = spring({ config: { damping: 200 }, fps, frame });
-  const hostSlide = spring({ config: { damping: 200 }, delay: 8, fps, frame });
-  const guestSlide = spring({ config: { damping: 200 }, delay: 16, fps, frame });
-  const scoreOpacity = spring({ config: { damping: 200 }, delay: 28, fps, frame });
+  const eyebrowOpacity = spring({ config: motionTokens.springs.snappy, fps, frame });
+  const hostSlide = spring({ config: motionTokens.springs.snappy, delay: 8, fps, frame });
+  const guestSlide = spring({ config: motionTokens.springs.snappy, delay: 16, fps, frame });
+  const scoreOpacity = spring({ config: motionTokens.springs.snappy, delay: 28, fps, frame });
   const metaOpacity = interpolate(frame, [40, 60], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",

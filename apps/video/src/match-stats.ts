@@ -26,7 +26,14 @@ import type { VideoMatchContext } from "./match-data";
 import { getVideoMatchContext } from "./match-data";
 
 export function formatSetScoreFromSets(matchSets: SetSummary[]): string {
-  return matchSets.map((set) => `${set.hostScore}-${set.guestScore}`).join(" · ");
+  return matchSets
+    .map((set) => {
+      if (set.hostTiebreakScore != null && set.guestTiebreakScore != null) {
+        return `${set.hostScore}-${set.guestScore} (${set.hostTiebreakScore}-${set.guestTiebreakScore})`;
+      }
+      return `${set.hostScore}-${set.guestScore}`;
+    })
+    .join(" · ");
 }
 
 export function formatSetScoreDetailedFromSets(matchSets: SetSummary[]): string {
@@ -45,7 +52,7 @@ export function formatSetScoreDetailedFromSets(matchSets: SetSummary[]): string 
 export function formatMatchResultFromContext(ctx: Pick<VideoMatchContext, "hostName" | "guestName" | "sets">): string {
   const hostSets = ctx.sets.filter((s) => s.hostScore > s.guestScore).length;
   const guestSets = ctx.sets.length - hostSets;
-  const winner = hostSets >= guestSets ? ctx.hostName : ctx.guestName;
+  const winner = hostSets > guestSets ? ctx.hostName : ctx.guestName;
   return `${winner} wins ${Math.max(hostSets, guestSets)}–${Math.min(hostSets, guestSets)}`;
 }
 
@@ -211,7 +218,7 @@ export function buildMatchStats(ctx: VideoMatchContext & { stats?: PlayerStat[] 
     computeBreakPointConversion(ctx.enrichedShots, "guest");
 
   return {
-    closingLine: `${ctx.hostName} dominated on return — ${Math.round(hostServiceStats.serviceWinRate * 100)}% service points won, ${longRallyBattle.hostWon}–${longRallyBattle.guestWon} in long rallies`,
+    closingLine: `${ctx.hostName} won ${Math.round(hostServiceStats.serviceWinRate * 100)}% of service points and ${longRallyBattle.hostWon}–${longRallyBattle.guestWon} in long rallies (7+ shots)`,
     guestBreakConv,
     guestFirstServe,
     guestName: ctx.guestName,
@@ -242,9 +249,9 @@ export function sceneInsightForStats(stats: MatchStats, scene: string): string {
     case "shotRain":
       return `${stats.totalShots.toLocaleString()} tracked shots — every bounce tells the story`;
     case "hexbin":
-      return `${stats.hostName} owned the deuce side — ${topZoneInsight(stats.hostZones)}`;
+      return `${stats.hostName}: ${topZoneInsight(stats.hostZones) || "shot efficiency by court zone"}`;
     case "trajectories":
-      return `${stats.hostName}: ${topZoneInsight(stats.hostZones)}`;
+      return `${stats.hostName}: ${topZoneInsight(stats.hostZones) || "shot trajectories across the match"}`;
     case "serve":
       return `${stats.hostName} ${Math.round(stats.hostFirstServe.rate * 100)}% first serve in · avg ${stats.hostServeDirections.avgSpeedKmh} km/h`;
     case "momentum":

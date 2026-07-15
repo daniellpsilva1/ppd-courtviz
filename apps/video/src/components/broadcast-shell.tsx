@@ -1,4 +1,5 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { signatureDevices } from "@ppd/tokens";
 import { PPD, theme } from "../ppd-tokens";
 
 type BroadcastShellProps = {
@@ -9,6 +10,7 @@ export function BroadcastShell({ children }: BroadcastShellProps) {
   return (
     <AbsoluteFill style={{ backgroundColor: theme.background }}>
       <AmbientBackground />
+      <BaselineRuleBar />
       {children}
     </AbsoluteFill>
   );
@@ -53,6 +55,43 @@ function AmbientBackground() {
           top: -36,
           transform: `translateY(${drift * 0.1}px)`,
           width: "120%",
+        }}
+      />
+    </AbsoluteFill>
+  );
+}
+
+function BaselineRuleBar() {
+  const frame = useCurrentFrame();
+  const sweep = interpolate(frame, [0, 45], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const accentW = signatureDevices.baselineRule.accentWidth;
+  const barH = signatureDevices.baselineRule.height;
+
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      <div
+        style={{
+          background: PPD.border,
+          bottom: 0,
+          height: barH,
+          left: 0,
+          position: "absolute",
+          width: "100%",
+        }}
+      />
+      <div
+        style={{
+          background: theme.playerHost,
+          bottom: 0,
+          height: barH,
+          left: 0,
+          position: "absolute",
+          transform: `scaleX(${sweep})`,
+          transformOrigin: "left center",
+          width: `${accentW * 100}%`,
         }}
       />
     </AbsoluteFill>

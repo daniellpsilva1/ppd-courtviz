@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont } from "../fonts";
 import { chromeOffsets } from "../scene-layout";
@@ -14,10 +15,9 @@ export function InsightCallout({ delay = 20, orientation = "landscape", text }: 
   const { fps } = useVideoConfig();
   const { insightBottom } = chromeOffsets(orientation);
   const maxWidth = orientation === "vertical" ? 920 : 1100;
-  const maxLines = orientation === "vertical" ? 1 : 2;
 
   const enter = spring({
-    config: { damping: 28, stiffness: 200 },
+    config: motionTokens.springs.smooth,
     delay,
     fps,
     frame,
@@ -42,14 +42,15 @@ export function InsightCallout({ delay = 20, orientation = "landscape", text }: 
           borderLeft: `3px solid ${PPD.primary}`,
           borderRadius: 8,
           color: theme.annotation.calloutTextColor,
+          display: "-webkit-box",
           fontFamily: bodyFont,
           fontSize: orientation === "vertical" ? 16 : 19,
-          lineHeight: 1.45,
-          maxHeight: orientation === "vertical" ? 52 : undefined,
+          lineHeight: 1.4,
+          maxHeight: orientation === "vertical" ? 72 : 56,
           overflow: "hidden",
           padding: orientation === "vertical" ? "10px 24px" : "14px 28px",
-          textOverflow: "ellipsis",
-          whiteSpace: orientation === "vertical" && maxLines === 1 ? "nowrap" : "normal",
+          WebkitBoxOrient: "vertical",
+          WebkitLineClamp: 2,
         }}
       >
         {text}

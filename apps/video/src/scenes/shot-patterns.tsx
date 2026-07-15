@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { computeRallyBucketStats } from "@courtviz/core";
 import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -7,16 +8,18 @@ import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
 import { SFXTick } from "../components/sfx-cues";
 import { theme } from "../court-viz-utils";
-import { condensedFont } from "../fonts";
+import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
+import { landscapeContentLayout } from "../scene-layout";
 
 export function ShotPatternsScene() {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
+  const layout = landscapeContentLayout(height);
   const hostBuckets = computeRallyBucketStats(ctx.enrichedShots, "host");
   const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
-  const enter = spring({ config: { damping: 200 }, delay: 10, fps, frame });
+  const enter = spring({ config: motionTokens.springs.snappy, delay: 10, fps, frame });
 
   return (
     <BroadcastShell>
@@ -28,11 +31,11 @@ export function ShotPatternsScene() {
           display: "flex",
           gap: 48,
           justifyContent: "center",
-          left: 0,
+          left: layout.sidePadding,
           opacity: enter,
           position: "absolute",
-          right: 0,
-          top: 220,
+          right: layout.sidePadding,
+          top: layout.contentTop,
         }}
       >
         <BucketPanel
@@ -77,7 +80,7 @@ function BucketPanel({
   name: string;
   startDelay: number;
 }) {
-  const enter = spring({ config: { damping: 200 }, delay: startDelay, fps, frame });
+  const enter = spring({ config: motionTokens.springs.snappy, delay: startDelay, fps, frame });
 
   return (
     <div
@@ -105,11 +108,13 @@ function BucketPanel({
       </div>
       {buckets.map((bucket, index) => {
         const bar = spring({
-          config: { damping: 200 },
+          config: motionTokens.springs.snappy,
           delay: startDelay + 8 + index * 6,
           fps,
           frame,
         });
+        const pct = Math.round(bucket.winRate * 100);
+        const barWidth = `${pct * bar}%`;
         return (
           <div key={bucket.bucket} style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
@@ -117,7 +122,7 @@ function BucketPanel({
                 {bucket.bucket} shots
               </span>
               <span style={{ color, fontFamily: condensedFont, fontSize: 28, fontWeight: 700 }}>
-                {Math.round(bucket.winRate * 100)}%
+                {pct}%
               </span>
             </div>
             <div style={{ background: `${theme.inkMuted}33`, borderRadius: 4, height: 10, overflow: "hidden" }}>
@@ -125,11 +130,12 @@ function BucketPanel({
                 style={{
                   background: color,
                   height: "100%",
-                  transform: `scaleX(${bar})`,
-                  transformOrigin: "left",
-                  width: "100%",
+                  width: barWidth,
                 }}
               />
+            </div>
+            <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12, marginTop: 4 }}>
+              {bucket.total} pts
             </div>
           </div>
         );

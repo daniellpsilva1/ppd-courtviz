@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { enrichedShots } from "@courtviz/data/fixtures";
 import { CourtSurface, HexbinLayer, useCourtScales } from "@courtviz/react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -25,7 +26,7 @@ function HostHexbinReveal({ theme }: { theme: typeof benchmarkProductTheme }) {
 export function BenchmarkHexbinScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const reveal = spring({ frame, fps, config: { damping: 200 } });
+  const reveal = spring({ frame, fps, config: motionTokens.springs.snappy });
 
   return (
     <AbsoluteFill

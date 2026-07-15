@@ -1,4 +1,5 @@
 import { linearTiming, springTiming } from "@remotion/transitions";
+import { motionTokens } from "@ppd/tokens";
 
 export const FPS = 30;
 export const WIDTH = 1920;
@@ -13,15 +14,15 @@ export const SCENE_DURATIONS = {
   servePlacement: 8 * FPS,
   shotPatterns: 7 * FPS,
   coachInsights: 6 * FPS,
-  momentum: 4 * FPS,
+  momentum: 6 * FPS,
   statsSpotlight: 7 * FPS,
   outro: 4 * FPS,
 } as const;
 
-export const FADE_TRANSITION = linearTiming({ durationInFrames: 18 });
+export const FADE_TRANSITION = linearTiming({ durationInFrames: motionTokens.durations.fastFrames + 10 });
 export const SPRING_TRANSITION = springTiming({
-  config: { damping: 200 },
-  durationInFrames: 22,
+  config: motionTokens.springs.smooth,
+  durationInFrames: motionTokens.durations.normalFrames + 4,
 });
 
 export const TOTAL_DURATION =

@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { generateCoachInsights } from "@ppd/brand";
 import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -9,11 +10,13 @@ import { SFXImpact } from "../components/sfx-cues";
 import { theme } from "../court-viz-utils";
 import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
+import { landscapeContentLayout } from "../scene-layout";
 
 export function CoachInsightsScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ctx = getVideoMatchContext();
+  const layout = landscapeContentLayout(1080);
   const insights = generateCoachInsights(
     {
       enrichedShots: ctx.enrichedShots,
@@ -23,7 +26,7 @@ export function CoachInsightsScene() {
     },
     3,
   );
-  const enter = spring({ config: { damping: 200 }, delay: 10, fps, frame });
+  const enter = spring({ config: motionTokens.springs.snappy, delay: 10, fps, frame });
 
   return (
     <BroadcastShell>
@@ -39,12 +42,12 @@ export function CoachInsightsScene() {
           opacity: enter,
           position: "absolute",
           right: 80,
-          top: 200,
+          top: layout.contentTop,
         }}
       >
         {insights.map((insight, index) => {
           const itemEnter = spring({
-            config: { damping: 200 },
+            config: motionTokens.springs.snappy,
             delay: 16 + index * 12,
             fps,
             frame,
@@ -89,7 +92,10 @@ export function CoachInsightsScene() {
               >
                 {insight.headline}
               </div>
-              <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 15, lineHeight: 1.45 }}>
+              <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 13, lineHeight: 1.4, marginTop: 8 }}>
+                {insight.detail}
+              </div>
+              <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 15, lineHeight: 1.45, marginTop: 10 }}>
                 {insight.action}
               </div>
             </div>

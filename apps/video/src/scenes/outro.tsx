@@ -1,5 +1,7 @@
+import { motionTokens } from "@ppd/tokens";
 import { useMemo } from "react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { KineticStat } from "../components/kinetic-number";
 import { PpdLogo } from "../components/ppd-logo";
 import { bodyFont, condensedFont } from "../fonts";
 import {
@@ -16,10 +18,10 @@ export function OutroScene() {
   const ctx = getVideoMatchContext();
   const stats = useMemo(() => getMatchStats(), []);
 
-  const logoSpring = spring({ config: { damping: 200 }, fps, frame });
-  const scoreSpring = spring({ config: { damping: 200 }, delay: 14, fps, frame });
-  const statsSpring = spring({ config: { damping: 200 }, delay: 28, fps, frame });
-  const brandSpring = spring({ config: { damping: 200 }, delay: 42, fps, frame });
+  const logoSpring = spring({ config: motionTokens.springs.snappy, fps, frame });
+  const scoreSpring = spring({ config: motionTokens.springs.snappy, delay: 14, fps, frame });
+  const statsSpring = spring({ config: motionTokens.springs.snappy, delay: 28, fps, frame });
+  const brandSpring = spring({ config: motionTokens.springs.snappy, delay: 42, fps, frame });
 
   const fadeOut = interpolate(frame, [120, 150], [1, 0], {
     extrapolateLeft: "clamp",
@@ -122,8 +124,8 @@ export function OutroScene() {
             opacity: statsSpring,
           }}
         >
-          <MiniStat label={ctx.hostName} value={`${Math.round(stats.hostWinRate.rate * 100)}% pts`} />
-          <MiniStat label={ctx.guestName} value={`${Math.round(stats.guestWinRate.rate * 100)}% pts`} />
+          <KineticStat delay={28} label={ctx.hostName} suffix="% pts" value={Math.round(stats.hostWinRate.rate * 100)} />
+          <KineticStat delay={34} label={ctx.guestName} suffix="% pts" value={Math.round(stats.guestWinRate.rate * 100)} />
         </div>
 
         <div
@@ -164,18 +166,5 @@ export function OutroScene() {
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ color: theme.ink, fontFamily: condensedFont, fontSize: 28, fontWeight: 700 }}>
-        {value}
-      </div>
-      <div style={{ color: PPD.textMuted, fontFamily: bodyFont, fontSize: 13, marginTop: 4 }}>
-        {label}
-      </div>
-    </div>
   );
 }

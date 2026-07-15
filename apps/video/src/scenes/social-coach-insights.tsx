@@ -1,3 +1,4 @@
+import { motionTokens } from "@ppd/tokens";
 import { generateCoachInsights } from "@ppd/brand";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
@@ -36,7 +37,7 @@ export function SocialCoachInsightsScene() {
   const activeIndex = Math.min(insights.length - 1, Math.floor(frame / cycleFrames));
   const insight = insights[activeIndex]!;
   const accent = CATEGORY_COLORS[insight.category] ?? PPD.primary;
-  const enter = spring({ config: { damping: 28, stiffness: 200 }, delay: 10, fps, frame: frame % cycleFrames });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 10, fps, frame: frame % cycleFrames });
 
   return (
     <BroadcastShell>
