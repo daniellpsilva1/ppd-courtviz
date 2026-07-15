@@ -48,8 +48,8 @@ export type { ZoneWinRateLayerProps } from "./zone-win-rate-layer";
 export { ZoneBarChart } from "./zone-bar-chart";
 export type { ZoneBarChartProps, ZoneBarDatum } from "./zone-bar-chart";
 
-export { Annotation, CalloutCircle, ZonePercentage, InsightLabel, ArrowAnnotation } from "./annotation";
-export type { AnnotationProps, CalloutCircleProps, ZonePercentageProps, InsightLabelProps, ArrowAnnotationProps } from "./annotation";
+export { Annotation, CalloutCircle, CentroidAnnotation, ZonePercentage, InsightLabel, ArrowAnnotation } from "./annotation";
+export type { AnnotationProps, CalloutCircleProps, CentroidAnnotationProps, ZonePercentageProps, InsightLabelProps, ArrowAnnotationProps } from "./annotation";
 
 export { ServeAnnotations } from "./serve-annotations";
 export type { ServeAnnotationsProps } from "./serve-annotations";

@@ -29,13 +29,17 @@
     "@courtviz/themes": "workspace:*",
     "@ppd/brand": "workspace:*",
     "@ppd/tokens": "workspace:*",
-    "d3-interpolate": "^3.0.1"
+    "d3-interpolate": "^3.0.1",
+    "d3-polygon": "^3.0.1",
+    "d3-shape": "^3.2.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
   },
   "devDependencies": {
     "@types/d3-interpolate": "^3.0.1",
+    "@types/d3-polygon": "^3.0.2",
+    "@types/d3-shape": "^3.1.7",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "react": "^19.0.0",

@@ -4,7 +4,9 @@
  * Ported from DataViz/tennisviz/annotate.py for Opta/Athletic-style storytelling.
  */
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
+import { polygonCentroid } from "d3-polygon";
+import { type CourtScales, type DensityContour } from "@courtviz/core";
 import { type CourtvizTheme, ppd } from "@courtviz/themes";
 
 export interface AnnotationProps {
@@ -274,5 +276,58 @@ export const ArrowAnnotation = memo(function ArrowAnnotation({
         points={`${tipX},${tipY} ${baseX + perpX},${baseY + perpY} ${baseX - perpX},${baseY - perpY}`}
       />
     </g>
+  );
+});
+
+export interface CentroidAnnotationProps {
+  contour: DensityContour;
+  scales: CourtScales;
+  text: string;
+  subtext?: string;
+  theme?: CourtvizTheme;
+  color?: string;
+  /** Offset from centroid in SVG pixels (default: { x: 40, y: -20 }) */
+  offset?: { x: number; y: number };
+}
+
+/** Smart annotation placed at the centroid of a density contour polygon. */
+export const CentroidAnnotation = memo(function CentroidAnnotation({
+  contour,
+  offset = { x: 40, y: -20 },
+  scales,
+  subtext,
+  text,
+  theme = ppd,
+}: CentroidAnnotationProps) {
+  const { labelX, labelY, anchorX, anchorY } = useMemo(() => {
+    const largestRing = contour.coordinates
+      .flatMap((poly) => poly)
+      .reduce((longest, ring) => (ring.length > longest.length ? ring : longest), [] as number[][]);
+
+    if (largestRing.length < 3) {
+      const first = largestRing[0] ?? [0, 0];
+      const ax = scales.x(first[0]!);
+      const ay = scales.y(first[1]!);
+      return { anchorX: ax, anchorY: ay, labelX: ax + offset.x, labelY: ay + offset.y };
+    }
+
+    const cx = polygonCentroid(largestRing as Array<[number, number]>);
+    const ax = scales.x(cx[0] ?? 0);
+    const ay = scales.y(cx[1] ?? 0);
+    return { anchorX: ax, anchorY: ay, labelX: ax + offset.x, labelY: ay + offset.y };
+  }, [contour, scales, offset]);
+
+  return (
+    <Annotation
+      dotRadius={4}
+      labelX={labelX}
+      labelY={labelY}
+      showCallout
+      subtext={subtext}
+      text={text}
+      theme={theme}
+      x={anchorX}
+      y={anchorY}
+    />
   );
 });

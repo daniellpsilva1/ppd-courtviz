@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useMemo } from "react";
+import { area, line } from "d3-shape";
 import { computeMomentum, type MomentumPoint } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
 import { useSvgTooltip } from "./svg-tooltip-context";
@@ -25,9 +26,12 @@ export interface MomentumChartProps {
   showSetLabels?: boolean;
   /** Use single primary color for both fills (host/guest opacities differ) */
   monoBlue?: boolean;
+  /** Accessible summary for screen readers */
+  accessibleSummary?: string;
 }
 
 export const MomentumChart = memo(function MomentumChart({
+  accessibleSummary,
   height = 200,
   hostPlayer,
   points,
@@ -71,37 +75,32 @@ export const MomentumChart = memo(function MomentumChart({
   const guestFillOpacity = monoBlue ? 0.18 : 0.2;
   const zeroY = yScale(0);
 
-  // Host area (positive, above zero)
+  // Host area (positive, above zero) — uses d3.area with clamped y1 at zero
   const hostAreaPath = useMemo(() => {
     if (momentum.length === 0) return "";
-    let path = `M ${xScale(0)} ${zeroY}`;
-    for (const m of momentum) {
-      const y = m.cumulativeDiff >= 0 ? yScale(m.cumulativeDiff) : zeroY;
-      path += ` L ${xScale(m.pointIndex)} ${y}`;
-    }
-    path += ` L ${xScale(momentum[momentum.length - 1]!.pointIndex)} ${zeroY} Z`;
-    return path;
+    const gen = area<typeof momentum[number]>()
+      .x((m) => xScale(m.pointIndex))
+      .y0(zeroY)
+      .y1((m) => (m.cumulativeDiff >= 0 ? yScale(m.cumulativeDiff) : zeroY));
+    return gen(momentum) ?? "";
   }, [momentum, maxAbs]);
 
-  // Guest area (negative, below zero)
+  // Guest area (negative, below zero) — uses d3.area with clamped y1 at zero
   const guestAreaPath = useMemo(() => {
     if (momentum.length === 0) return "";
-    let path = `M ${xScale(0)} ${zeroY}`;
-    for (const m of momentum) {
-      const y = m.cumulativeDiff <= 0 ? yScale(m.cumulativeDiff) : zeroY;
-      path += ` L ${xScale(m.pointIndex)} ${y}`;
-    }
-    path += ` L ${xScale(momentum[momentum.length - 1]!.pointIndex)} ${zeroY} Z`;
-    return path;
+    const gen = area<typeof momentum[number]>()
+      .x((m) => xScale(m.pointIndex))
+      .y0(zeroY)
+      .y1((m) => (m.cumulativeDiff <= 0 ? yScale(m.cumulativeDiff) : zeroY));
+    return gen(momentum) ?? "";
   }, [momentum, maxAbs]);
 
   const linePath = useMemo(() => {
     if (momentum.length === 0) return "";
-    let path = `M ${xScale(0)} ${yScale(momentum[0]!.cumulativeDiff)}`;
-    for (const m of momentum) {
-      path += ` L ${xScale(m.pointIndex)} ${yScale(m.cumulativeDiff)}`;
-    }
-    return path;
+    const gen = line<typeof momentum[number]>()
+      .x((m) => xScale(m.pointIndex))
+      .y((m) => yScale(m.cumulativeDiff));
+    return gen(momentum) ?? "";
   }, [momentum, maxAbs]);
 
   const breakPoints = useMemo(
@@ -115,12 +114,17 @@ export const MomentumChart = memo(function MomentumChart({
 
   return (
     <svg
+      aria-describedby={accessibleSummary ? `${hostPlayer}-momentum-desc` : undefined}
+      aria-labelledby={`${hostPlayer}-momentum-title`}
       height={height}
       onMouseLeave={hide}
+      role="img"
       style={{ display: "block" }}
       viewBox={`0 0 ${width} ${height}`}
       width={width}
     >
+      <title id={`${hostPlayer}-momentum-title`}>Momentum chart</title>
+      {accessibleSummary && <desc id={`${hostPlayer}-momentum-desc`}>{accessibleSummary}</desc>}
       <rect fill={theme.background} height={height} width={width} x={0} y={0} />
 
       {/* Set boundary bands */}
