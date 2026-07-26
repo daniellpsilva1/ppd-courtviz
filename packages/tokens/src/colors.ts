@@ -33,19 +33,19 @@ export const colorPrimitives = {
 export const chartPalette = [
   colorPrimitives.primaryBright,
   colorPrimitives.accent,
-  colorPrimitives.violet,
-  colorPrimitives.amber,
   colorPrimitives.cyan,
+  colorPrimitives.amber,
   colorPrimitives.pink,
+  "#6366F1",
 ] as const;
 
 export const chartPaletteLight = [
   colorPrimitives.primary,
   colorPrimitives.accentDark,
-  "#7C3AED",
-  "#D97706",
   "#0891B2",
+  "#D97706",
   "#DB2777",
+  "#4F46E5",
 ] as const;
 
 export type Surface = "clay" | "hard" | "grass";
