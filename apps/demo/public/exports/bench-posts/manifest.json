@@ -1,0 +1,97 @@
+{
+  "aspectRatio": "4:5",
+  "fixtureHash": "4b1ec452d91b",
+  "format": "portrait",
+  "generatedAt": "2026-07-27T17:41:43.638Z",
+  "height": 1350,
+  "platforms": [
+    "instagram",
+    "tiktok",
+    "x",
+    "linkedin"
+  ],
+  "schemaVersion": 1,
+  "slides": [
+    {
+      "id": "cover",
+      "index": 0,
+      "png": "01-cover.png",
+      "subtitle": "Swipe to see the data →",
+      "svg": "01-cover.svg",
+      "title": "The tennis analytics bench"
+    },
+    {
+      "id": "scale",
+      "index": 1,
+      "png": "02-scale.png",
+      "subtitle": "Platform-wide aggregates",
+      "svg": "02-scale.svg",
+      "title": "By the numbers"
+    },
+    {
+      "id": "live-bench",
+      "index": 2,
+      "png": "03-live-bench.png",
+      "subtitle": "Pooled shot map and surface mix",
+      "svg": "03-live-bench.svg",
+      "title": "Live bench data"
+    },
+    {
+      "id": "record-fastest-serve",
+      "index": 3,
+      "png": "04-record-fastest-serve.png",
+      "subtitle": "Bench record",
+      "svg": "04-record-fastest-serve.svg",
+      "title": "Fastest serve"
+    },
+    {
+      "id": "record-longest-rally",
+      "index": 4,
+      "png": "05-record-longest-rally.png",
+      "subtitle": "Bench record",
+      "svg": "05-record-longest-rally.svg",
+      "title": "Longest rally"
+    },
+    {
+      "id": "record-best-break",
+      "index": 5,
+      "png": "06-record-best-break.png",
+      "subtitle": "Bench record",
+      "svg": "06-record-best-break.svg",
+      "title": "Best break conversion"
+    },
+    {
+      "id": "record-top-points",
+      "index": 6,
+      "png": "07-record-top-points.png",
+      "subtitle": "Bench record",
+      "svg": "07-record-top-points.svg",
+      "title": "Top points won"
+    },
+    {
+      "id": "featured-match",
+      "index": 7,
+      "png": "08-featured-match.png",
+      "subtitle": "Editorial match analysis",
+      "svg": "08-featured-match.svg",
+      "title": "Featured story"
+    },
+    {
+      "id": "featured-insight",
+      "index": 8,
+      "png": "09-featured-insight.png",
+      "subtitle": "Shot placement from the featured match",
+      "svg": "09-featured-insight.svg",
+      "title": "Court insight"
+    },
+    {
+      "id": "cta",
+      "index": 9,
+      "png": "10-cta.png",
+      "subtitle": "Request access to Peak Performance Data",
+      "svg": "10-cta.svg",
+      "title": "Want your matches on the bench?"
+    }
+  ],
+  "width": 1080
+}
