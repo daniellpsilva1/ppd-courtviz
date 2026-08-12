@@ -62,6 +62,28 @@ export function computePointsWonFromOfficial(
   };
 }
 
+/**
+ * 1st/2nd serve points won %.
+ * 1st = Won / In; 2nd = Won / Attempts (includes double faults).
+ */
+export function computeServePointsWonFromOfficial(
+  stats: PlayerStat[] | undefined,
+  player: string,
+  serve: "1st" | "2nd",
+  setNumber = 0,
+): RateStat | null {
+  if (serve === "1st") {
+    const total = getOfficialStatValue(stats, player, "1st Serves In", setNumber);
+    const won = getOfficialStatValue(stats, player, "1st Serves Won", setNumber);
+    if (total == null || won == null || total <= 0) return null;
+    return { rate: won / total, total, won };
+  }
+  const total = getOfficialStatValue(stats, player, "2nd Serves", setNumber);
+  const won = getOfficialStatValue(stats, player, "2nd Serves Won", setNumber);
+  if (total == null || won == null || total <= 0) return null;
+  return { rate: won / total, total, won };
+}
+
 export function getOfficialStatPair(
   stats: PlayerStat[] | undefined,
   player: string,

@@ -66,3 +66,15 @@ export type { HexSizeLegendProps } from "./hex-size-legend";
 
 export { InsightPanel } from "./insight-panel";
 export type { InsightPanelProps } from "./insight-panel";
+
+export { BroadcastScorebug } from "./broadcast-scorebug";
+export type { BroadcastScorebugProps } from "./broadcast-scorebug";
+
+export { PointReplayCourt } from "./point-replay-court";
+export type { PointReplayCourtProps } from "./point-replay-court";
+
+export { usePlaybackClock } from "./use-playback-clock";
+export type {
+  UsePlaybackClockOptions,
+  UsePlaybackClockResult,
+} from "./use-playback-clock";

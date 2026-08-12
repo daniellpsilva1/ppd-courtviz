@@ -24,6 +24,7 @@ import {
 } from "@courtviz/themes";
 import { createCourtScales, type CourtScales } from "@courtviz/core";
 import { SvgTooltipProvider } from "./svg-tooltip-context";
+import { CourtScalesProvider } from "./court-scales-context";
 
 export type DisplayRange = "full" | "near" | "serviceBoxes";
 
@@ -264,7 +265,7 @@ export const Court = memo(function Court({
 
         {/* Children (shots, hexbins, annotations, etc.) — clipped to court */}
         <g clipPath={`url(#${clipId})`}>
-          {children}
+          <CourtScalesProvider scales={scales}>{children}</CourtScalesProvider>
         </g>
       </g>
       </SvgTooltipProvider>

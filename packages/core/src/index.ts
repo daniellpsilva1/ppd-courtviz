@@ -12,3 +12,6 @@ export * from "./shot-flows";
 export * from "./curved-path";
 export * from "./bounce-zones";
 export * from "./pattern-stats";
+export * from "./playback";
+export * from "./placement-zones";
+export * from "./depth-bands";

@@ -34,10 +34,31 @@ export const signatureDevices = {
   },
 } as const;
 
+/** Video/story chrome bands — kept in sync with marketing courtviz. */
+export const chrome = {
+  landscape: {
+    bottomPad: 28,
+    callout: 72,
+    footer: 212,
+    gap: 20,
+    header: 146,
+    scoreBar: 58,
+  },
+  vertical: {
+    bottomPad: 24,
+    callout: 72,
+    gap: 20,
+    header: 172,
+    safeInset: 140,
+    scoreBar: 66,
+  },
+} as const;
+
 export const layout = {
   spacing,
   radii,
   strokes,
+  chrome,
   headerPadding: { x: 0.06, y: 0.96 },
   annotation: {
     leaderWidth: 1,
