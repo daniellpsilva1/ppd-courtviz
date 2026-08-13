@@ -20,6 +20,14 @@ import {
   SOCIAL_TRANSITION,
 } from "./social-constants";
 
+function OpaqueWrap({ children }: { children: React.ReactNode }) {
+  return (
+    <AbsoluteFill style={{ backgroundColor: theme.background }}>
+      {children}
+    </AbsoluteFill>
+  );
+}
+
 export function MatchRecapSocial() {
   return (
     <AbsoluteFill style={{ backgroundColor: theme.background }}>
@@ -27,61 +35,81 @@ export function MatchRecapSocial() {
       <SFXWhoosh delay={SOCIAL_DURATIONS.title - 12} />
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.title}>
-          <SocialTitleScene />
+          <OpaqueWrap>
+            <SocialTitleScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.hexbin}>
-          <SocialHexbinScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.hexbin} premountFor={12}>
+          <OpaqueWrap>
+            <SocialHexbinScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.trajectories}>
-          <SocialTrajectoriesScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.trajectories} premountFor={12}>
+          <OpaqueWrap>
+            <SocialTrajectoriesScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.patterns}>
-          <SocialShotPatternsScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.patterns} premountFor={12}>
+          <OpaqueWrap>
+            <SocialShotPatternsScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.stats}>
-          <SocialStatsScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.stats} premountFor={12}>
+          <OpaqueWrap>
+            <SocialStatsScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.clutchSpeed}>
-          <SocialClutchSpeedScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.clutchSpeed} premountFor={12}>
+          <OpaqueWrap>
+            <SocialClutchSpeedScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.setBySet}>
-          <SocialSetBySetScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.setBySet} premountFor={12}>
+          <OpaqueWrap>
+            <SocialSetBySetScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.coach}>
-          <SocialCoachInsightsScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.coach} premountFor={12}>
+          <OpaqueWrap>
+            <SocialCoachInsightsScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
-        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.momentum}>
-          <SocialMomentumScene />
+        <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.momentum} premountFor={12}>
+          <OpaqueWrap>
+            <SocialMomentumScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
 
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.outro}>
-          <OutroScene />
+          <OpaqueWrap>
+            <OutroScene />
+          </OpaqueWrap>
         </TransitionSeries.Sequence>
       </TransitionSeries>
     </AbsoluteFill>

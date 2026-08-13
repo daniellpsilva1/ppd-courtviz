@@ -12,6 +12,9 @@ describe("BrandMark", () => {
     expect(markup).toContain("brand-mark-monogram");
     expect(markup).toContain("brand-mark-icon");
     expect(markup).toContain("circle");
+    // A-shaped mountain with serrated base — not the old plain triangle
+    expect(markup).not.toContain("M24 7 L36 31 L12 31 Z");
+    expect(markup).toContain("M14.5 31.5");
   });
 
   it("renders lockup variant with wordmark", () => {

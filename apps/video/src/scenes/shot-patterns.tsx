@@ -12,14 +12,31 @@ import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
 import { landscapeContentLayout } from "../scene-layout";
 
+const BUCKET_LABELS: Record<string, string> = {
+  short: "Short (1-3)",
+  medium: "Medium (4-6)",
+  long: "Long (7+)",
+};
+
 export function ShotPatternsScene() {
   const frame = useCurrentFrame();
-  const { fps, height } = useVideoConfig();
+  const { fps, height, width } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = landscapeContentLayout(height);
   const hostBuckets = computeRallyBucketStats(ctx.enrichedShots, "host");
   const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
   const enter = spring({ config: motionTokens.springs.snappy, delay: 10, fps, frame });
+  const hostColor = getPlayerColor("host", theme);
+  const guestColor = getPlayerColor("guest", theme);
+
+  const allBuckets = hostBuckets.length >= guestBuckets.length ? hostBuckets : guestBuckets;
+  const chartW = Math.min(1200, width - 160);
+  const barH = 32;
+  const barGap = 6;
+  const groupGap = 28;
+  const labelW = 140;
+  const valueW = 80;
+  const trackW = chartW - labelW - valueW * 2 - 48;
 
   return (
     <BroadcastShell>
@@ -28,32 +45,79 @@ export function ShotPatternsScene() {
 
       <div
         style={{
+          alignItems: "center",
           display: "flex",
-          gap: 48,
-          justifyContent: "center",
-          left: layout.sidePadding,
+          flexDirection: "column",
+          gap: 16,
+          left: "50%",
           opacity: enter,
           position: "absolute",
-          right: layout.sidePadding,
           top: layout.contentTop,
+          transform: "translateX(-50%)",
+          width: chartW,
         }}
       >
-        <BucketPanel
-          buckets={hostBuckets}
-          color={getPlayerColor("host", theme)}
-          frame={frame}
-          fps={fps}
-          name={ctx.hostName}
-          startDelay={14}
-        />
-        <BucketPanel
-          buckets={guestBuckets}
-          color={getPlayerColor("guest", theme)}
-          frame={frame}
-          fps={fps}
-          name={ctx.guestName}
-          startDelay={24}
-        />
+        <div style={{ alignItems: "center", display: "flex", gap: 32, marginBottom: 4 }}>
+          <LegendDot color={hostColor} label={ctx.hostName} />
+          <LegendDot color={guestColor} label={ctx.guestName} />
+        </div>
+
+        <div
+          style={{
+            backdropFilter: "blur(10px)",
+            backgroundColor: "rgba(0,0,0,0.55)",
+            border: `1px solid ${theme.inkMuted}33`,
+            borderRadius: 12,
+            padding: "28px 32px",
+            width: "100%",
+          }}
+        >
+          {allBuckets.map((bucket, index) => {
+            const hostData = hostBuckets.find((b) => b.bucket === bucket.bucket);
+            const guestData = guestBuckets.find((b) => b.bucket === bucket.bucket);
+            const groupEnter = spring({
+              config: motionTokens.springs.snappy,
+              delay: 14 + index * 10,
+              fps,
+              frame,
+            });
+            const hostPct = hostData ? (hostData.winRate !== null ? Math.round(hostData.winRate * 100) : 0) : 0;
+            const guestPct = guestData ? (guestData.winRate !== null ? Math.round(guestData.winRate * 100) : 0) : 0;
+
+            return (
+              <div
+                key={bucket.bucket}
+                style={{
+                  marginBottom: index < allBuckets.length - 1 ? groupGap : 0,
+                  opacity: groupEnter,
+                  transform: `translateY(${(1 - groupEnter) * 12}px)`,
+                }}
+              >
+                <div style={{ color: theme.inkMuted, fontFamily: condensedFont, fontSize: 16, fontWeight: 600, marginBottom: barGap + 2, textTransform: "uppercase" }}>
+                  {BUCKET_LABELS[bucket.bucket] ?? bucket.bucket}
+                </div>
+                <DuelBar
+                  barH={barH}
+                  color={hostColor}
+                  label={ctx.hostName}
+                  pct={hostPct}
+                  springVal={spring({ config: motionTokens.springs.snappy, delay: 18 + index * 10, fps, frame })}
+                  total={hostData?.total ?? 0}
+                  trackW={trackW}
+                />
+                <DuelBar
+                  barH={barH}
+                  color={guestColor}
+                  label={ctx.guestName}
+                  pct={guestPct}
+                  springVal={spring({ config: motionTokens.springs.snappy, delay: 24 + index * 10, fps, frame })}
+                  total={guestData?.total ?? 0}
+                  trackW={trackW}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <InsightCallout
@@ -65,81 +129,45 @@ export function ShotPatternsScene() {
   );
 }
 
-function BucketPanel({
-  buckets,
-  color,
-  frame,
-  fps,
-  name,
-  startDelay,
-}: {
-  buckets: ReturnType<typeof computeRallyBucketStats>;
-  color: string;
-  frame: number;
-  fps: number;
-  name: string;
-  startDelay: number;
-}) {
-  const enter = spring({ config: motionTokens.springs.snappy, delay: startDelay, fps, frame });
-
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <div
-      style={{
-        backdropFilter: "blur(10px)",
-        backgroundColor: "rgba(0,0,0,0.55)",
-        border: `1px solid ${color}33`,
-        borderRadius: 12,
-        minWidth: 420,
-        opacity: enter,
-        padding: "24px 28px",
-      }}
-    >
-      <div
-        style={{
-          color,
-          fontFamily: condensedFont,
-          fontSize: 28,
-          fontWeight: 700,
-          marginBottom: 18,
-          textTransform: "uppercase",
-        }}
-      >
-        {name}
+    <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
+      <div style={{ backgroundColor: color, borderRadius: "50%", height: 10, width: 10 }} />
+      <span style={{ color: theme.ink, fontFamily: condensedFont, fontSize: 14, fontWeight: 600, textTransform: "uppercase" }}>{label}</span>
+    </div>
+  );
+}
+
+function DuelBar({ barH, color, label, pct, springVal, total, trackW }: {
+  barH: number;
+  color: string;
+  label: string;
+  pct: number;
+  springVal: number;
+  total: number;
+  trackW: number;
+}) {
+  return (
+    <div style={{ alignItems: "center", display: "flex", gap: 12, marginBottom: 6 }}>
+      <span style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12, textAlign: "right", width: 80 }}>
+        {label.split(" ").slice(-1)[0]}
+      </span>
+      <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: 4, height: barH, overflow: "hidden", width: trackW }}>
+        <div
+          style={{
+            backgroundColor: color,
+            borderRadius: 4,
+            height: "100%",
+            width: `${pct * springVal}%`,
+          }}
+        />
       </div>
-      {buckets.map((bucket, index) => {
-        const bar = spring({
-          config: motionTokens.springs.snappy,
-          delay: startDelay + 8 + index * 6,
-          fps,
-          frame,
-        });
-        const pct = Math.round(bucket.winRate * 100);
-        const barWidth = `${pct * bar}%`;
-        return (
-          <div key={bucket.bucket} style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ color: theme.inkMuted, fontFamily: condensedFont, fontSize: 14 }}>
-                {bucket.bucket} shots
-              </span>
-              <span style={{ color, fontFamily: condensedFont, fontSize: 28, fontWeight: 700 }}>
-                {pct}%
-              </span>
-            </div>
-            <div style={{ background: `${theme.inkMuted}33`, borderRadius: 4, height: 10, overflow: "hidden" }}>
-              <div
-                style={{
-                  background: color,
-                  height: "100%",
-                  width: barWidth,
-                }}
-              />
-            </div>
-            <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12, marginTop: 4 }}>
-              {bucket.total} pts
-            </div>
-          </div>
-        );
-      })}
+      <span style={{ color, fontFamily: condensedFont, fontSize: 22, fontWeight: 700, width: 60 }}>
+        {pct}%
+      </span>
+      <span style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 11, width: 50 }}>
+        {total} pts
+      </span>
     </div>
   );
 }

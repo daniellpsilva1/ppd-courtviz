@@ -1,0 +1,34 @@
+{
+  "name": "@courtviz/motion",
+  "version": "0.0.0",
+  "description": "Seekable GSAP timelines for frame-pure tennis viz export",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "gsap": "^3.12.7"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "vitest": "^3.0.0"
+  }
+}

@@ -6,7 +6,7 @@
 
 import { memo, useMemo } from "react";
 import { polygonCentroid } from "d3-polygon";
-import { type CourtScales, type DensityContour } from "@courtviz/core";
+import { type CourtScales, type DensityContour, measureSvgText } from "@courtviz/core";
 import { type CourtvizTheme, ppd } from "@courtviz/themes";
 
 export interface AnnotationProps {
@@ -36,7 +36,12 @@ export const Annotation = memo(function Annotation({
   const fs = theme.fontSize;
   const fonts = theme.fonts;
 
-  const textW = text.length * fs.label * 0.6 + 8;
+  const textW =
+    measureSvgText(text, {
+      fontFamily: fonts.condensedFont,
+      fontSize: fs.label,
+      fontWeight: 600,
+    }) + 8;
   const textH = subtext ? fs.label * 3 : fs.label * 1.8;
   const calloutX = labelX < x ? labelX - textW : labelX;
   const calloutY = labelY - fs.label;
@@ -143,7 +148,12 @@ export const ZonePercentage = memo(function ZonePercentage({
   const fs = fontSize ?? theme.fontSize.label;
   const fonts = theme.fonts;
   const label = `${Math.round(percentage)}%`;
-  const padX = label.length * fs * 0.35 + 6;
+  const padX =
+    measureSvgText(label, {
+      fontFamily: fonts.condensedFont,
+      fontSize: fs,
+      fontWeight: 700,
+    }) + 8;
   const padY = fs * 0.9;
 
   return (

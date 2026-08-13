@@ -19,6 +19,11 @@ function makeShot(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
     hitY: 5.0,
     hitZ: 1.5,
     bounceZone: "deuce",
+    bounceSide: null,
+    bounceDepth: null,
+    hitZone: null,
+    hitSide: null,
+    hitDepth: null,
     direction: null,
     isTerminal: false,
     setNumber: 1,
@@ -111,5 +116,31 @@ describe("HexbinLayer", () => {
       }),
     );
     expect(markup).toMatch(/fill="[^"]+"/);
+  });
+
+  it("maps count scale fill darker for denser hexes", () => {
+    // Cluster A: many overlapping shots → high count
+    const dense = Array.from({ length: 12 }, (_, i) =>
+      makeShot({ bounceX: 2 + i * 0.01, bounceY: 6 + i * 0.01 }),
+    );
+    // Cluster B: single sparse shot far away
+    const sparse = [makeShot({ bounceX: -2, bounceY: 3 })];
+    const markup = renderToStaticMarkup(
+      React.createElement(HexbinLayer, {
+        colorScale: "count",
+        gridsize: 20,
+        half: "near",
+        minCount: 1,
+        player: "host",
+        scales,
+        showLabels: false,
+        shots: [...dense, ...sparse],
+        theme: sprawlball,
+      }),
+    );
+    const fills = [...markup.matchAll(/<polygon[^>]*fill="([^"]+)"/g)].map((m) => m[1]);
+    const uniqueFills = new Set(fills.filter((f) => f && f !== "none"));
+    expect(uniqueFills.size).toBeGreaterThan(1);
+    expect(markup).not.toMatch(/<text[^>]*>\d+<\/text>/);
   });
 });

@@ -1,3 +1,9 @@
+const path = require("path");
+
+const demoNodeModules = path.resolve(__dirname, "..", "apps", "demo", "node_modules");
+const rootNodeModules = path.resolve(__dirname, "..", "node_modules");
+module.paths = [demoNodeModules, rootNodeModules, ...(module.paths || [])];
+
 const { brandDefaults } = require("@ppd/tokens");
 
 function parseArg(prefix) {

@@ -1,3 +1,4 @@
+import { formatRate } from "@courtviz/core";
 import { motionTokens } from "@ppd/tokens";
 import { MomentumChart } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
@@ -38,7 +39,7 @@ export function MomentumScene() {
   return (
     <BroadcastShell>
       <SceneHeader
-        subtitle={`${ctx.hostName} ${Math.round(stats.hostWinRate.rate * 100)}% · ${ctx.guestName} ${Math.round(stats.guestWinRate.rate * 100)}%`}
+        subtitle={`${ctx.hostName} ${formatRate(stats.hostWinRate.rate)} · ${ctx.guestName} ${formatRate(stats.guestWinRate.rate)}`}
         title="Match Momentum"
       />
 
@@ -47,7 +48,7 @@ export function MomentumScene() {
           left: CHART_LEFT,
           overflow: "hidden",
           position: "absolute",
-          top: layout.contentTop,
+          top: layout.contentTop + 36,
           width: revealWidth,
         }}
       >

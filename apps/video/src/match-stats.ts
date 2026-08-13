@@ -3,8 +3,8 @@ import {
   computeBreakPointConversion,
   computeFirstServeInRate,
   computePointsWonRate,
-  computeRallyBucketStats,
   computeZoneWinRatesByPoint,
+  formatRate,
   pointKeyFromShot,
 } from "@courtviz/core";
 import type { Point, PlayerStat, SetSummary } from "@courtviz/data/schema";
@@ -13,15 +13,6 @@ import {
   computeFirstServeInFromOfficial,
   computePointsWonFromOfficial,
 } from "@courtviz/data/official-stats";
-import {
-  enrichedShots,
-  guestName,
-  hostName,
-  momentumPoints,
-  points,
-  sets,
-  stats,
-} from "@courtviz/data/fixtures";
 import type { VideoMatchContext } from "./match-data";
 import { getVideoMatchContext } from "./match-data";
 
@@ -185,11 +176,11 @@ export function topZoneInsight(
   zones: ReturnType<typeof computeZoneWinRatesByPoint>,
 ): string {
   const top = zones
-    .filter((z) => z.total >= 8)
-    .sort((a, b) => b.winRate - a.winRate)[0];
+    .filter((z) => z.total >= 8 && z.winRate !== null)
+    .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0))[0];
   if (!top) return "";
   const label = top.zone.replace(/_/g, " ");
-  return `${Math.round(top.winRate * 100)}% (${top.won}/${top.total} pts) from ${label}`;
+  return `${Math.round(top.winRate! * 100)}% (${top.won}/${top.total} pts) from ${label}`;
 }
 
 export function buildMatchStats(ctx: VideoMatchContext & { stats?: PlayerStat[] }): MatchStats {
@@ -253,7 +244,7 @@ export function sceneInsightForStats(stats: MatchStats, scene: string): string {
     case "trajectories":
       return `${stats.hostName}: ${topZoneInsight(stats.hostZones) || "shot trajectories across the match"}`;
     case "serve":
-      return `${stats.hostName} ${Math.round(stats.hostFirstServe.rate * 100)}% first serve in · avg ${stats.hostServeDirections.avgSpeedKmh} km/h`;
+      return `${stats.hostName} ${formatRate(stats.hostFirstServe.rate)} first serve in · avg ${stats.hostServeDirections.avgSpeedKmh} km/h`;
     case "momentum":
       return `${stats.totalBreakPoints} break points — the return game decided this match`;
     case "stats":
@@ -261,56 +252,4 @@ export function sceneInsightForStats(stats: MatchStats, scene: string): string {
     default:
       return "";
   }
-}
-
-// Fixture-backed exports for landscape video scenes
-export function formatSetScore(): string {
-  return formatSetScoreFromSets(sets);
-}
-
-export function formatSetScoreDetailed(): string {
-  return formatSetScoreDetailedFromSets(sets);
-}
-
-export function formatMatchResult(): string {
-  return formatMatchResultFromContext({ guestName, hostName, sets });
-}
-
-const fixtureStats = buildMatchStats({
-  enrichedShots,
-  guestName,
-  hostName,
-  matchDate: "",
-  momentumPoints,
-  points,
-  sets,
-  stats,
-  surface: "hard",
-});
-
-export const hostWinRate = fixtureStats.hostWinRate;
-export const guestWinRate = fixtureStats.guestWinRate;
-export const hostFirstServe = fixtureStats.hostFirstServe;
-export const guestFirstServe = fixtureStats.guestFirstServe;
-export const hostBreakConv = fixtureStats.hostBreakConv;
-export const guestBreakConv = fixtureStats.guestBreakConv;
-export const hostRally7 = computeRallyBucketStats(enrichedShots, "host").find((b) => b.bucket === "7+");
-export const guestRally7 = computeRallyBucketStats(enrichedShots, "guest").find((b) => b.bucket === "7+");
-export const hostZones = fixtureStats.hostZones;
-export const guestZones = fixtureStats.guestZones;
-export const totalShots = fixtureStats.totalShots;
-export const hostServiceStats = fixtureStats.hostServiceStats;
-export const guestServiceStats = fixtureStats.guestServiceStats;
-export const longRallyBattle = fixtureStats.longRallyBattle;
-export const totalBreakPoints = fixtureStats.totalBreakPoints;
-export const totalSetPoints = fixtureStats.totalSetPoints;
-export const hostServeDirections = fixtureStats.hostServeDirections;
-export const guestServeDirections = fixtureStats.guestServeDirections;
-
-export function sceneInsight(scene: string): string {
-  return sceneInsightForStats(fixtureStats, scene);
-}
-
-export function closingLine(): string {
-  return fixtureStats.closingLine;
 }

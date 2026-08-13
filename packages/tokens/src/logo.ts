@@ -1,6 +1,7 @@
 /**
  * Inline SVG logo paths for Peak Performance Data.
- * Vector version of the mountain + waveform circular mark.
+ * Vector version of the mountain + waveform circular mark
+ * (matches packages/brand/assets/ppd-logo.png silhouette).
  */
 
 export const logoColors = {
@@ -17,14 +18,21 @@ export const LOGO_ICON_VIEWBOX = "0 0 48 48";
 
 export const logoIconPaths = {
   circle: { cx: 24, cy: 24, r: 22 },
-  /** Main mountain mass */
-  mountain: "M24 7 L36 31 L12 31 Z",
-  /** Snow cap / highlight */
-  mountainCap: "M24 10 L30 24 L18 24 Z",
-  /** Inner shadow facet */
-  mountainShadow: "M24 24 L36 31 L24 31 Z",
-  /** EKG waveform across lower third */
-  waveformPoints: "8,35 12,31 16,37 20,29 24,34 28,27 32,33 36,28 40,32",
+  /**
+   * A-shaped mountain: flat apex, wide sides, serrated base
+   * (not a plain triangle — matches official PEAK mark).
+   */
+  mountain:
+    "M14.5 31.5 L20.2 15.2 L22.2 11.2 L25.8 11.2 L27.8 15.2 L33.5 31.5 L29.2 31.5 L27.4 26.8 L24 30.2 L20.6 26.8 L18.8 31.5 Z",
+  /** Snow / highlight facet on the upper left ridge */
+  mountainCap: "M20.2 15.2 L22.2 11.2 L25.8 11.2 L24 16.8 L21.6 16.2 Z",
+  /** Right-side shadow facet */
+  mountainShadow: "M24 16.8 L25.8 11.2 L27.8 15.2 L33.5 31.5 L29.2 31.5 L27.4 26.8 L24 30.2 Z",
+  /**
+   * EKG waveform: sharp QRS peak on the left, then a flat baseline —
+   * reads as a pulse, not a random zigzag.
+   */
+  waveformPoints: "9,33.5 13,33.5 14.5,27 16,38 17.5,33.5 24,33.5 25.5,30.5 27,33.5 39,33.5",
 } as const;
 
 export const logoLockup = {

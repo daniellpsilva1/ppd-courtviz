@@ -6,6 +6,7 @@ import {
   computePointsWonRate,
   computeRallyBucketStats,
   createCourtScales,
+  formatRate,
 } from "@courtviz/core";
 import { ppd } from "@courtviz/themes";
 import {
@@ -59,13 +60,13 @@ export function OverviewPage() {
     },
     {
       label: `${hostName} Points Won`,
-      sub: `${hostFirstServe.total > 0 ? Math.round(hostFirstServe.rate * 100) : 0}% 1st serve in · ${hostBreakPoints.total > 0 ? Math.round(hostBreakPoints.rate * 100) : 0}% BP conv`,
-      value: `${hostPointsWon.total > 0 ? Math.round(hostPointsWon.rate * 100) : 0}%`,
+      sub: `${formatRate(hostFirstServe.rate)} 1st serve in · ${formatRate(hostBreakPoints.rate)} BP conv`,
+      value: formatRate(hostPointsWon.rate),
     },
     {
       label: `${guestName} Points Won`,
-      sub: `${guestFirstServe.total > 0 ? Math.round(guestFirstServe.rate * 100) : 0}% 1st serve in · ${guestBreakPoints.total > 0 ? Math.round(guestBreakPoints.rate * 100) : 0}% BP conv`,
-      value: `${guestPointsWon.total > 0 ? Math.round(guestPointsWon.rate * 100) : 0}%`,
+      sub: `${formatRate(guestFirstServe.rate)} 1st serve in · ${formatRate(guestBreakPoints.rate)} BP conv`,
+      value: formatRate(guestPointsWon.rate),
     },
   ];
 

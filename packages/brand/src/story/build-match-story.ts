@@ -46,11 +46,11 @@ const FALLBACK_ZONE = {
   total: 0,
   won: 0,
   errors: 0,
-  winRate: 0,
+  winRate: null as number | null,
 };
 
-function pct(rate: number): number {
-  return Math.round(rate * 1000) / 10;
+function pct(rate: number | null): number {
+  return rate === null ? 0 : Math.round(rate * 1000) / 10;
 }
 
 function formatSetScore(sets: SetSummary[]): string {
@@ -63,8 +63,8 @@ function formatZoneLabel(zone: string): string {
 
 function pickTopZone(enrichedShots: EnrichedShot[], player: "host" | "guest") {
   const qualifying = computeZoneWinRatesByPoint(enrichedShots, player)
-    .filter((z) => z.total >= 8)
-    .sort((a, b) => b.winRate - a.winRate);
+    .filter((z) => z.total >= 8 && z.winRate !== null)
+    .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0));
 
   if (qualifying.length > 0) {
     return qualifying[0]!;
@@ -72,7 +72,7 @@ function pickTopZone(enrichedShots: EnrichedShot[], player: "host" | "guest") {
 
   const anyZone = computeZoneWinRatesByPoint(enrichedShots, player)
     .filter((z) => z.total > 0)
-    .sort((a, b) => b.winRate - a.winRate);
+    .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0));
 
   return anyZone[0] ?? { ...FALLBACK_ZONE };
 }
@@ -104,7 +104,7 @@ export function computeStoryMetrics(fixtures: MatchStoryFixtures) {
   const winnerBP = hostWonMatch ? hostBP : guestBP;
   const topWinnerZone = pickTopZone(enrichedShots, winnerSide);
   const winnerTopZoneLabel = formatZoneLabel(topWinnerZone.zone);
-  const winnerTopZoneWinPct = Math.round(topWinnerZone.winRate * 1000) / 10;
+  const winnerTopZoneWinPct = Math.round((topWinnerZone.winRate ?? 0) * 1000) / 10;
 
   return {
     guestBP,

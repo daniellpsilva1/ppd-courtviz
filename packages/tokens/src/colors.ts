@@ -50,6 +50,9 @@ export const chartPaletteLight = [
 
 export type Surface = "clay" | "hard" | "grass";
 
+/** Canonical court surface for all PPD exports and videos. */
+export const BRAND_SURFACE: Surface = "hard";
+
 export const sportColors = {
   playerHost: "#3B82F6",
   playerGuest: "#F97316",

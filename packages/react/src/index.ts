@@ -33,6 +33,9 @@ export type { MomentumChartProps } from "./momentum-chart";
 export { ColorBar, Legend } from "./legend";
 export type { ColorBarProps, LegendProps, LegendItem } from "./legend";
 
+export { FittedText } from "./fitted-text";
+export type { FittedTextProps } from "./fitted-text";
+
 export { FigureFrame } from "./figure-frame";
 export type { FigureFrameProps, FigureBranding } from "./figure-frame";
 
@@ -64,7 +67,7 @@ export type { StatCalloutProps } from "./stat-callout";
 export { HexSizeLegend } from "./hex-size-legend";
 export type { HexSizeLegendProps } from "./hex-size-legend";
 
-export { InsightPanel } from "./insight-panel";
+export { InsightPanel, insightPanelHeight } from "./insight-panel";
 export type { InsightPanelProps } from "./insight-panel";
 
 export { BroadcastScorebug } from "./broadcast-scorebug";

@@ -1,89 +1,66 @@
 import { motionTokens } from "@ppd/tokens";
-import { spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { getPlayerColor } from "@courtviz/themes";
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
-import { DuelStatRow } from "../components/duel-stat-row";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
+import { theme } from "../court-viz-utils";
+import { bodyFont, condensedFont } from "../fonts";
+import { getMatchStats } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
 import { verticalContentLayout } from "../scene-layout";
 
-function officialValue(stats: ReturnType<typeof getVideoMatchContext>["stats"], player: string, statName: string) {
-  const row = stats?.find(
-    (stat) => stat.player === player && stat.setNumber === 0 && stat.statName === statName,
-  );
-  return row?.statValue ?? null;
-}
-
-function percentile(values: number[], p: number) {
-  if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p));
-  return sorted[index] ?? 0;
-}
-
-function serveSpeeds(shots: ReturnType<typeof getVideoMatchContext>["enrichedShots"], player: string) {
-  return shots
-    .filter((s) => s.player === player && s.stroke === "Serve" && s.speedKmh != null)
-    .map((s) => s.speedKmh as number);
-}
-
 export function SocialClutchSpeedScene() {
   const frame = useCurrentFrame();
-  const { fps, height } = useVideoConfig();
+  const { fps, height, width } = useVideoConfig();
   const ctx = getVideoMatchContext();
+  const stats = getMatchStats();
   const layout = verticalContentLayout(height);
   const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
+  const hostColor = getPlayerColor("host", theme);
+  const guestColor = getPlayerColor("guest", theme);
 
-  const hostSpeeds = serveSpeeds(ctx.enrichedShots, "host");
-  const guestSpeeds = serveSpeeds(ctx.enrichedShots, "guest");
+  const hostBP = stats.hostBreakConv;
+  const guestBP = stats.guestBreakConv;
+  const hostPct = hostBP.total > 0 ? hostBP.won / hostBP.total : 0;
+  const guestPct = guestBP.total > 0 ? guestBP.won / guestBP.total : 0;
 
-  const rows = [
-    {
-      delay: 12,
-      guestShare: officialValue(ctx.stats, "guest", "Break Points Won") ?? 0,
-      guestValue: String(officialValue(ctx.stats, "guest", "Break Points Won") ?? "—"),
-      hostShare: officialValue(ctx.stats, "host", "Break Points Won") ?? 0,
-      hostValue: String(officialValue(ctx.stats, "host", "Break Points Won") ?? "—"),
-      title: "Break Points Won",
-    },
-    {
-      delay: 18,
-      guestShare: officialValue(ctx.stats, "guest", "Break Points Saved") ?? 0,
-      guestValue: String(officialValue(ctx.stats, "guest", "Break Points Saved") ?? "—"),
-      hostShare: officialValue(ctx.stats, "host", "Break Points Saved") ?? 0,
-      hostValue: String(officialValue(ctx.stats, "host", "Break Points Saved") ?? "—"),
-      title: "Break Points Saved",
-    },
-    {
-      delay: 24,
-      guestShare: percentile(guestSpeeds, 0.9),
-      guestValue: guestSpeeds.length ? `${Math.round(percentile(guestSpeeds, 0.9))} km/h` : "—",
-      hostShare: percentile(hostSpeeds, 0.9),
-      hostValue: hostSpeeds.length ? `${Math.round(percentile(hostSpeeds, 0.9))} km/h` : "—",
-      title: "Serve Speed P90",
-    },
-    {
-      delay: 30,
-      guestShare: guestSpeeds.length ? Math.max(...guestSpeeds) : 0,
-      guestValue: guestSpeeds.length ? `${Math.round(Math.max(...guestSpeeds))} km/h` : "—",
-      hostShare: hostSpeeds.length ? Math.max(...hostSpeeds) : 0,
-      hostValue: hostSpeeds.length ? `${Math.round(Math.max(...hostSpeeds))} km/h` : "—",
-      title: "Max Serve Speed",
-    },
-  ];
+  const speeds = ctx.enrichedShots
+    .filter((s) => s.speedKmh != null && s.speedKmh > 0)
+    .map((s) => s.speedKmh as number);
+  const speedMin = Math.floor(Math.min(...speeds, 80) / 10) * 10;
+  const speedMax = Math.ceil(Math.max(...speeds, 200) / 10) * 10;
+  const binCount = 8;
+  const binSize = (speedMax - speedMin) / binCount;
+  const bins = Array.from({ length: binCount }, (_, i) => {
+    const lo = speedMin + i * binSize;
+    const hi = lo + binSize;
+    return { count: speeds.filter((s) => s >= lo && s < hi).length, hi, lo };
+  });
+  const maxBin = Math.max(...bins.map((b) => b.count), 1);
+
+  const funnelProgress = interpolate(frame, [12, 40], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const speedProgress = interpolate(frame, [30, 55], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <BroadcastShell>
-      <SceneHeader subtitle="Pressure & power" title="Clutch & Speed" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="Pressure & power" title="Clutch & Speed" />
 
       <div
         style={{
+          alignItems: "center",
           display: "flex",
           flexDirection: "column",
-          gap: 32,
+          gap: 24,
           height: layout.contentHeight,
-          justifyContent: "space-evenly",
+          justifyContent: "center",
           left: layout.sidePadding,
           opacity: enter,
           position: "absolute",
@@ -91,19 +68,42 @@ export function SocialClutchSpeedScene() {
           top: layout.contentTop,
         }}
       >
-        {rows.map((row) => (
-          <DuelStatRow
-            key={row.title}
-            delay={row.delay}
-            guestLabel={ctx.guestName}
-            guestShare={row.guestShare}
-            guestValue={row.guestValue}
-            hostLabel={ctx.hostName}
-            hostShare={row.hostShare}
-            hostValue={row.hostValue}
-            title={row.title}
+        <div style={{ color: theme.ink, fontFamily: condensedFont, fontSize: 24, fontWeight: 700, textAlign: "center" }}>
+          Break Point Conversion
+        </div>
+
+        <div style={{ display: "flex", gap: 48 }}>
+          <BPFunnel
+            color={hostColor}
+            label={ctx.hostName.split(" ").pop() ?? ""}
+            pct={hostPct}
+            progress={funnelProgress}
+            total={hostBP.total}
+            won={hostBP.won}
           />
-        ))}
+          <BPFunnel
+            color={guestColor}
+            label={ctx.guestName.split(" ").pop() ?? ""}
+            pct={guestPct}
+            progress={funnelProgress}
+            total={guestBP.total}
+            won={guestBP.won}
+          />
+        </div>
+
+        <div style={{ color: theme.ink, fontFamily: condensedFont, fontSize: 24, fontWeight: 700, marginTop: 8, textAlign: "center" }}>
+          Serve Speed Distribution
+        </div>
+
+        <SpeedStrip
+          bins={bins}
+          color={hostColor}
+          maxBin={maxBin}
+          progress={speedProgress}
+          speedMax={speedMax}
+          speedMin={speedMin}
+          stripW={width - layout.sidePadding * 2 - 40}
+        />
       </div>
 
       <InsightCallout
@@ -113,5 +113,100 @@ export function SocialClutchSpeedScene() {
       />
       <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} orientation="vertical" />
     </BroadcastShell>
+  );
+}
+
+function BPFunnel({
+  color,
+  label,
+  pct,
+  progress,
+  total,
+  won,
+}: {
+  color: string;
+  label: string;
+  pct: number;
+  progress: number;
+  total: number;
+  won: number;
+}) {
+  const r = 50;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * pct * progress;
+  return (
+    <div style={{ alignItems: "center", display: "flex", flexDirection: "column", gap: 8 }}>
+      <svg height={130} width={130}>
+        <circle cx={65} cy={65} fill="none" r={r} stroke={`${theme.inkMuted}22`} strokeWidth={8} />
+        <circle
+          cx={65}
+          cy={65}
+          fill="none"
+          r={r}
+          stroke={color}
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          strokeWidth={8}
+          transform="rotate(-90 65 65)"
+        />
+        <text dominantBaseline="central" fill={color} fontFamily={condensedFont} fontSize={28} fontWeight={700} textAnchor="middle" x={65} y={60}>
+          {Math.round(pct * 100 * progress)}%
+        </text>
+        <text dominantBaseline="central" fill={theme.inkMuted} fontFamily={bodyFont} fontSize={10} textAnchor="middle" x={65} y={85}>
+          {won}/{total} converted
+        </text>
+      </svg>
+      <span style={{ color, fontFamily: condensedFont, fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function SpeedStrip({
+  bins,
+  color,
+  maxBin,
+  progress,
+  speedMax,
+  speedMin,
+  stripW,
+}: {
+  bins: Array<{ count: number; hi: number; lo: number }>;
+  color: string;
+  maxBin: number;
+  progress: number;
+  speedMax: number;
+  speedMin: number;
+  stripW: number;
+}) {
+  const stripH = 100;
+  const barW = stripW / bins.length;
+  const gap = 4;
+  const actualBarW = barW - gap;
+
+  return (
+    <svg height={stripH + 30} width={stripW}>
+      {bins.map((bin, i) => {
+        const barH = (bin.count / maxBin) * stripH * progress;
+        const x = i * barW + gap / 2;
+        const y = stripH - barH;
+        return (
+          <g key={i}>
+            <rect fill={`${theme.inkMuted}22`} height={stripH} rx={3} width={actualBarW} x={x} y={0} />
+            <rect fill={color} height={barH} rx={3} width={actualBarW} x={x} y={y} />
+            <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={9} textAnchor="middle" x={x + actualBarW / 2} y={stripH + 14}>
+              {Math.round(bin.lo)}
+            </text>
+          </g>
+        );
+      })}
+      <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={10} textAnchor="start" x={0} y={stripH + 26}>
+        km/h
+      </text>
+      <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={9} textAnchor="end" x={stripW} y={stripH + 26}>
+        {speedMin}–{speedMax}
+      </text>
+    </svg>
   );
 }

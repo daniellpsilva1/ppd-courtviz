@@ -16,4 +16,15 @@ describe("CourtSurface", () => {
     expect(html).toContain("<g");
     expect(html).not.toContain("<svg");
   });
+
+  it("omits drop-shadow filter when disableShadow is set", () => {
+    const withShadow = renderToStaticMarkup(
+      <CourtSurface height={400} surface="clay" theme={ppd} width={400} />,
+    );
+    const withoutShadow = renderToStaticMarkup(
+      <CourtSurface disableShadow height={400} surface="clay" theme={ppd} width={400} />,
+    );
+    expect(withShadow).toContain("feDropShadow");
+    expect(withoutShadow).not.toContain("feDropShadow");
+  });
 });

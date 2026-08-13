@@ -2,7 +2,7 @@
  * Coach-facing shot pattern metrics: serve+1, first-strike, return in-play.
  */
 
-import type { EnrichedShot, RateStat } from "./stats";
+import { MIN_SAMPLE, type EnrichedShot, type RateStat } from "./stats";
 import { pointKeyFromShot, shotPlayerWonPoint } from "./stats";
 
 function inferPointServer(shots: EnrichedShot[], key: string): string | null {
@@ -21,7 +21,7 @@ export interface ServePlusOneStrokeStat {
   stroke: string;
   total: number;
   won: number;
-  winRate: number;
+  winRate: number | null;
 }
 
 export interface PatternStats {
@@ -52,7 +52,7 @@ export function computeServePlusOneStats(
     .map(([stroke, stats]) => ({
       stroke,
       total: stats.total,
-      winRate: stats.total > 0 ? stats.won / stats.total : 0,
+      winRate: stats.total >= MIN_SAMPLE ? stats.won / stats.total : null,
       won: stats.won,
     }))
     .sort((a, b) => b.total - a.total);
@@ -83,7 +83,7 @@ export function computeFirstStrikeStats(
   }
 
   return {
-    rate: total > 0 ? won / total : 0,
+    rate: total >= MIN_SAMPLE ? won / total : null,
     total,
     won,
   };
@@ -107,7 +107,7 @@ export function computeReturnInPlayRate(
   }
 
   return {
-    rate: total > 0 ? inPlay / total : 0,
+    rate: total >= MIN_SAMPLE ? inPlay / total : null,
     total,
     won: inPlay,
   };
@@ -119,7 +119,9 @@ export interface ServePlusOneChain {
   plusOneZone: string;
   count: number;
   won: number;
-  winRate: number;
+  winRate: number | null;
+  meanPlusOneX: number;
+  meanPlusOneY: number;
 }
 
 export function computeServePlusOneChains(
@@ -134,7 +136,7 @@ export function computeServePlusOneChains(
     byPoint.set(key, bucket);
   }
 
-  const chainMap = new Map<string, { count: number; plusOneStroke: string; plusOneZone: string; serveZone: string; won: number }>();
+  const chainMap = new Map<string, { count: number; plusOneStroke: string; plusOneZone: string; serveZone: string; won: number; plusOneXSum: number; plusOneYSum: number }>();
 
   for (const [key, pointShots] of byPoint) {
     const server = inferPointServer(shots, key);
@@ -151,8 +153,10 @@ export function computeServePlusOneChains(
     const plusOneZone = plusOne.bounceZone || "Unknown";
     const chainKey = `${serveZone}|${plusOneStroke}|${plusOneZone}`;
 
-    const entry = chainMap.get(chainKey) ?? { count: 0, plusOneStroke, plusOneZone, serveZone, won: 0 };
+    const entry = chainMap.get(chainKey) ?? { count: 0, plusOneStroke, plusOneZone, serveZone, won: 0, plusOneXSum: 0, plusOneYSum: 0 };
     entry.count++;
+    entry.plusOneXSum += plusOne.bounceX ?? 0;
+    entry.plusOneYSum += plusOne.bounceY ?? 0;
     if (plusOne.pointWinner === player) entry.won++;
     chainMap.set(chainKey, entry);
   }
@@ -160,14 +164,16 @@ export function computeServePlusOneChains(
   return [...chainMap.values()]
     .map((e) => ({
       count: e.count,
+      meanPlusOneX: e.count > 0 ? e.plusOneXSum / e.count : 0,
+      meanPlusOneY: e.count > 0 ? e.plusOneYSum / e.count : 0,
       plusOneStroke: e.plusOneStroke,
       plusOneZone: e.plusOneZone,
       serveZone: e.serveZone,
-      winRate: e.count > 0 ? e.won / e.count : 0,
+      winRate: e.count >= MIN_SAMPLE ? e.won / e.count : null,
       won: e.won,
     }))
     .filter((c) => c.count >= 2)
-    .sort((a, b) => b.winRate * Math.log(b.count + 1) - a.winRate * Math.log(a.count + 1));
+    .sort((a, b) => (b.winRate ?? 0) * Math.log(b.count + 1) - (a.winRate ?? 0) * Math.log(a.count + 1));
 }
 
 export function computePatternStats(

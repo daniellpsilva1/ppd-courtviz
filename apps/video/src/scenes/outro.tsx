@@ -124,8 +124,8 @@ export function OutroScene() {
             opacity: statsSpring,
           }}
         >
-          <KineticStat delay={28} label={ctx.hostName} suffix="% pts" value={Math.round(stats.hostWinRate.rate * 100)} />
-          <KineticStat delay={34} label={ctx.guestName} suffix="% pts" value={Math.round(stats.guestWinRate.rate * 100)} />
+          <KineticStat delay={28} label={ctx.hostName} suffix="% pts" value={stats.hostWinRate.rate !== null ? Math.round(stats.hostWinRate.rate * 100) : 0} />
+          <KineticStat delay={34} label={ctx.guestName} suffix="% pts" value={stats.guestWinRate.rate !== null ? Math.round(stats.guestWinRate.rate * 100) : 0} />
         </div>
 
         <div

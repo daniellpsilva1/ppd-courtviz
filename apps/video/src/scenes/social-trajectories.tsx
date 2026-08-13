@@ -58,7 +58,7 @@ export function SocialTrajectoriesScene() {
   return (
     <BroadcastShell>
       <SFXWhoosh delay={10} />
-      <SceneHeader subtitle="Hit → bounce arcs with speed" title="Ball Trajectories" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="Hit → bounce arcs with speed" title="Ball Trajectories" />
 
       <div
         style={{

@@ -1,1 +1,1 @@
-export const BRAND_SURFACE = "hard" as const;
+export { BRAND_SURFACE } from "@ppd/tokens";

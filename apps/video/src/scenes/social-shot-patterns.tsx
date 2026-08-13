@@ -12,6 +12,8 @@ import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
 import { verticalContentLayout } from "../scene-layout";
 
+const BUCKET_LABELS = ["1–3", "4–6", "7+"];
+
 export function SocialShotPatternsScene() {
   const frame = useCurrentFrame();
   const { fps, height } = useVideoConfig();
@@ -19,19 +21,23 @@ export function SocialShotPatternsScene() {
   const layout = verticalContentLayout(height);
   const hostBuckets = computeRallyBucketStats(ctx.enrichedShots, "host");
   const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
-  const enter = spring({ config: motionTokens.springs.smooth, delay: 10, fps, frame });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 14, fps, frame });
+  const hostColor = getPlayerColor("host", theme);
+  const guestColor = getPlayerColor("guest", theme);
 
   return (
     <BroadcastShell>
       <SFXTick delay={14} />
-      <SceneHeader subtitle="Rally length win rates" title="Shot Patterns" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="Rally length win rates" title="Shot Patterns" />
 
       <div
         style={{
+          alignItems: "center",
           display: "flex",
-          flexDirection: "row",
-          gap: 16,
+          flexDirection: "column",
+          gap: 24,
           height: layout.contentHeight,
+          justifyContent: "center",
           left: layout.sidePadding,
           opacity: enter,
           position: "absolute",
@@ -39,113 +45,120 @@ export function SocialShotPatternsScene() {
           top: layout.contentTop,
         }}
       >
-        <PatternColumn
-          buckets={hostBuckets}
-          color={getPlayerColor("host", theme)}
-          frame={frame}
-          fps={fps}
-          name={ctx.hostName}
-          startDelay={14}
-        />
-        <PatternColumn
-          buckets={guestBuckets}
-          color={getPlayerColor("guest", theme)}
-          frame={frame}
-          fps={fps}
-          name={ctx.guestName}
-          startDelay={20}
-        />
+        <div style={{ color: theme.ink, fontFamily: condensedFont, fontSize: 28, fontWeight: 700, textAlign: "center" }}>
+          Who wins each rally length?
+        </div>
+
+        {hostBuckets.map((bucket, index) => {
+          const hostPct = bucket.winRate !== null ? Math.round(bucket.winRate * 100) : 0;
+          const guestPct = guestBuckets[index]?.winRate != null ? Math.round(guestBuckets[index]!.winRate * 100) : 0;
+          const maxPct = Math.max(hostPct, guestPct, 1);
+          return (
+            <DuelRow
+              delay={20 + index * 10}
+              frame={frame}
+              fps={fps}
+              guestColor={guestColor}
+              guestPct={guestPct}
+              guestTotal={guestBuckets[index]?.total ?? 0}
+              hostColor={hostColor}
+              hostPct={hostPct}
+              hostTotal={bucket.total}
+              key={bucket.bucket}
+              label={BUCKET_LABELS[index] ?? bucket.bucket}
+              maxPct={maxPct}
+            />
+          );
+        })}
+
+        <div style={{ alignItems: "center", display: "flex", gap: 24 }}>
+          <LegendDot color={hostColor} label={ctx.hostName.split(" ").pop() ?? ""} />
+          <LegendDot color={guestColor} label={ctx.guestName.split(" ").pop() ?? ""} />
+        </div>
       </div>
 
       <InsightCallout
         delay={34}
         orientation="vertical"
-        text="Short rallies = serve+1 tennis. Long rallies = endurance and consistency — coach to the profile that wins."
+        text="Short rallies = serve+1 tennis. Long rallies = endurance and consistency."
       />
       <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} orientation="vertical" />
     </BroadcastShell>
   );
 }
 
-function PatternColumn({
-  buckets,
-  color,
+function DuelRow({
+  delay,
   frame,
   fps,
-  name,
-  startDelay,
+  guestColor,
+  guestPct,
+  guestTotal,
+  hostColor,
+  hostPct,
+  hostTotal,
+  label,
+  maxPct,
 }: {
-  buckets: ReturnType<typeof computeRallyBucketStats>;
-  color: string;
+  delay: number;
   frame: number;
   fps: number;
-  name: string;
-  startDelay: number;
+  guestColor: string;
+  guestPct: number;
+  guestTotal: number;
+  hostColor: string;
+  hostPct: number;
+  hostTotal: number;
+  label: string;
+  maxPct: number;
 }) {
-  const enter = spring({ config: motionTokens.springs.smooth, delay: startDelay, fps, frame });
+  const enter = spring({ config: motionTokens.springs.snappy, delay, fps, frame });
+  const barProgress = spring({ config: motionTokens.springs.smooth, delay: delay + 4, fps, frame });
+  const barH = 32;
+  const trackW = 380;
 
   return (
     <div
       style={{
-        backdropFilter: "blur(10px)",
-        backgroundColor: "rgba(0,0,0,0.55)",
-        border: `1px solid ${color}33`,
-        borderRadius: 12,
+        alignItems: "center",
         display: "flex",
-        flex: 1,
         flexDirection: "column",
-        justifyContent: "center",
+        gap: 6,
         opacity: enter,
-        padding: "18px 16px",
+        transform: `translateY(${(1 - enter) * 12}px)`,
       }}
     >
-      <div
-        style={{
-          color,
-          fontFamily: condensedFont,
-          fontSize: 18,
-          fontWeight: 700,
-          marginBottom: 12,
-          textTransform: "uppercase",
-        }}
-      >
-        {name}
+      <div style={{ color: theme.inkMuted, fontFamily: condensedFont, fontSize: 14, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        {label} shots
       </div>
-      {buckets.map((bucket, index) => {
-        const bar = spring({
-          config: motionTokens.springs.smooth,
-          delay: startDelay + 6 + index * 4,
-          fps,
-          frame,
-        });
-        const pct = Math.round(bucket.winRate * 100);
-        const barWidth = `${pct * bar}%`;
-
-        return (
-          <div key={bucket.bucket} style={{ marginBottom: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ color: theme.inkMuted, fontFamily: condensedFont, fontSize: 11 }}>
-                {bucket.bucket}
-              </span>
-              <span style={{ color, fontFamily: condensedFont, fontSize: 16, fontWeight: 700 }}>
-                {pct}%
-              </span>
-            </div>
-            <div style={{ background: `${theme.inkMuted}33`, borderRadius: 4, height: 8, overflow: "hidden" }}>
-              <div
-                style={{
-                  background: color,
-                  height: "100%",
-                  width: barWidth,
-                }}
-              />
-            </div>
-            <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 10, marginTop: 3 }}>
-              {bucket.total} pts
-            </div>
+      <div style={{ alignItems: "center", display: "flex", gap: 12 }}>
+        <span style={{ color: hostColor, fontFamily: condensedFont, fontSize: 36, fontWeight: 700, textAlign: "right", width: 80 }}>
+          {hostPct}%
+        </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: 4, height: barH, overflow: "hidden", width: trackW }}>
+            <div style={{ backgroundColor: hostColor, borderRadius: 4, height: "100%", marginLeft: "auto", width: `${(hostPct / maxPct) * 100 * barProgress}%` }} />
           </div>
-        );
-      })}
+          <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: 4, height: barH, overflow: "hidden", width: trackW }}>
+            <div style={{ backgroundColor: guestColor, borderRadius: 4, height: "100%", width: `${(guestPct / maxPct) * 100 * barProgress}%` }} />
+          </div>
+        </div>
+        <span style={{ color: guestColor, fontFamily: condensedFont, fontSize: 36, fontWeight: 700, width: 80 }}>
+          {guestPct}%
+        </span>
+      </div>
+      <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 11 }}>
+        {hostTotal} pts vs {guestTotal} pts
+      </div>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div style={{ alignItems: "center", display: "flex", gap: 6 }}>
+      <div style={{ backgroundColor: color, borderRadius: "50%", height: 10, width: 10 }} />
+      <span style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12 }}>{label}</span>
     </div>
   );
 }

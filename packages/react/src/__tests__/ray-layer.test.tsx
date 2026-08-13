@@ -19,6 +19,11 @@ function makeShot(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
     hitY: 5.0,
     hitZ: 1.5,
     bounceZone: "deuce",
+    bounceSide: null,
+    bounceDepth: null,
+    hitZone: null,
+    hitSide: null,
+    hitDepth: null,
     direction: null,
     isTerminal: false,
     setNumber: 1,
@@ -79,7 +84,7 @@ describe("RayLayer", () => {
       }),
     );
     const lineCount = (markup.match(/<line[^r]/g) || []).length;
-    expect(lineCount).toBe(1);
+    expect(lineCount).toBe(2);
   });
 
   it("filters by stroke type when strokeFilter is provided", () => {
@@ -97,9 +102,9 @@ describe("RayLayer", () => {
     );
     // Should contain Forehand stroke color on lines
     expect(markup).toContain("#E8742C");
-    // Should only have 1 line element (Backhand filtered out)
+    // Should have 2 line elements (underlay + main) for 1 filtered shot
     const lineCount = (markup.match(/<line[^r]/g) || []).length;
-    expect(lineCount).toBe(1);
+    expect(lineCount).toBe(2);
   });
 
   it("renders arrowhead marker definitions", () => {

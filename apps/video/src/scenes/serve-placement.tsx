@@ -6,7 +6,8 @@ import {
 } from "@courtviz/core";
 import type { EnrichedShot } from "@courtviz/core";
 import { Court, ServeLayer } from "@courtviz/react";
-import { spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { getPlayerColor } from "@courtviz/themes";
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BRAND_SURFACE } from "../brand-surface";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { CourtCard } from "../components/court-card";
@@ -48,24 +49,26 @@ export function ServePlacementScene() {
 
       <div style={{ display: "flex", gap: GAP, left: LEFT, position: "absolute", top: layout.contentTop }}>
         <ServePanel
-          color="#38BDF8"
+          color={getPlayerColor("host", darkCourt)}
           directions={stats.hostServeDirections}
-          firstServeIn={Math.round(stats.hostFirstServe.rate * 100)}
+          firstServeIn={stats.hostFirstServe.rate !== null ? Math.round(stats.hostFirstServe.rate * 100) : 0}
           frame={frame}
           fps={fps}
           name={ctx.hostName}
+          player="host"
           scales={hostScales}
           shots={ctx.enrichedShots}
           startFrame={15}
           zones={hostZones}
         />
         <ServePanel
-          color="#FB923C"
+          color={getPlayerColor("guest", darkCourt)}
           directions={stats.guestServeDirections}
-          firstServeIn={Math.round(stats.guestFirstServe.rate * 100)}
+          firstServeIn={stats.guestFirstServe.rate !== null ? Math.round(stats.guestFirstServe.rate * 100) : 0}
           frame={frame}
           fps={fps}
           name={ctx.guestName}
+          player="guest"
           scales={guestScales}
           shots={ctx.enrichedShots}
           startFrame={22}
@@ -74,9 +77,10 @@ export function ServePlacementScene() {
       </div>
 
       <div style={{ bottom: legendBottom, display: "flex", gap: 28, left: "50%", opacity: spring({ config: motionTokens.springs.snappy, delay: 40, fps, frame }), position: "absolute", transform: "translateX(-50%)" }}>
-        <ServeLegend color="#38BDF8" label="● 1st in" />
-        <ServeLegend color="#38BDF8" label="▲ 2nd in" triangle />
-        <ServeLegend color="#38BDF8" label="○ Fault" outline />
+        <ServeLegend color={getPlayerColor("host", darkCourt)} label="● 1st in" />
+        <ServeLegend color={getPlayerColor("host", darkCourt)} label="▲ 2nd in" triangle />
+        <ServeLegend color={getPlayerColor("host", darkCourt)} label="○ Fault" outline />
+        <span style={{ color: darkCourt.inkMuted, fontFamily: bodyFont, fontSize: 14 }}>▓ Zone heat = in-rate</span>
       </div>
 
       <InsightCallout delay={50} text={sceneInsightForStats(stats, "serve")} />
@@ -109,6 +113,7 @@ function ServePanel({
   frame,
   fps,
   name,
+  player,
   scales,
   shots,
   startFrame,
@@ -120,6 +125,7 @@ function ServePanel({
   frame: number;
   fps: number;
   name: string;
+  player: "host" | "guest";
   scales: ReturnType<typeof createCourtScales>;
   shots: EnrichedShot[];
   startFrame: number;
@@ -131,7 +137,11 @@ function ServePanel({
     fps,
     frame,
   });
-  const player = color === "#38BDF8" ? "host" : "guest";
+  const heatOpacity = interpolate(frame, [startFrame + 10, startFrame + 30], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const maxInRate = Math.max(...zones.map((z) => z.inCount / Math.max(z.count, 1)), 0.001);
 
   return (
     <CourtCard
@@ -141,6 +151,53 @@ function ServePanel({
       subtitle={`${firstServeIn}% in · ${directions.downTheT} T / ${directions.outWide} wide · ${directions.avgSpeedKmh} km/h`}
     >
       <Court half="near" height={COURT_H} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_W}>
+        {zones.map((zone, i) => {
+          const boxW = COURT_W / 3;
+          const boxH = COURT_H / 2;
+          const boxX = zone.side === "deuce" ? boxW : 0;
+          const boxY = zone.zone === "T" ? 0 : boxH;
+          const inRate = zone.inCount / Math.max(zone.count, 1);
+          const alpha = (inRate / maxInRate) * 0.4 * heatOpacity;
+
+          return (
+            <g key={i} opacity={heatOpacity}>
+              <rect
+                fill={color}
+                height={boxH}
+                opacity={alpha}
+                width={boxW}
+                x={boxX}
+                y={boxY}
+              />
+              <text
+                dominantBaseline="middle"
+                fill={darkCourt.ink}
+                fontFamily={condensedFont}
+                fontSize={14}
+                fontWeight={700}
+                opacity={0.9}
+                textAnchor="middle"
+                x={boxX + boxW / 2}
+                y={boxY + boxH / 2 - 6}
+              >
+                {Math.round(inRate * 100)}%
+              </text>
+              <text
+                dominantBaseline="middle"
+                fill={darkCourt.inkMuted}
+                fontFamily={condensedFont}
+                fontSize={10}
+                fontWeight={600}
+                opacity={0.7}
+                textAnchor="middle"
+                x={boxX + boxW / 2}
+                y={boxY + boxH / 2 + 10}
+              >
+                {zone.inCount}/{zone.count}
+              </text>
+            </g>
+          );
+        })}
         <ServeLayer
           highContrast
           includeFaults
@@ -149,35 +206,46 @@ function ServePanel({
           serveType="both"
           shapeEncode
           shots={shots}
+          size={3}
+          sizeBy="speed"
           theme={darkCourt}
         />
       </Court>
-      <ZoneBars color={color} frame={frame} fps={fps} zones={zones} />
+      <ZoneMatrix color={color} frame={frame} fps={fps} zones={zones} />
     </CourtCard>
   );
 }
 
-function ZoneBars({ color, frame, fps, zones }: { color: string; frame: number; fps: number; zones: ServeZoneStat[] }) {
-  const maxCount = Math.max(...zones.map((z) => z.count), 1);
+function ZoneMatrix({ color, frame, fps, zones }: { color: string; frame: number; fps: number; zones: ServeZoneStat[] }) {
+  const maxInRate = Math.max(...zones.map((z) => z.inCount / Math.max(z.count, 1)), 0.001);
+  const sortedZones = [...zones].sort((a, b) => {
+    const rowA = a.zone === "T" ? 0 : 1;
+    const rowB = b.zone === "T" ? 0 : 1;
+    const colA = a.side === "deuce" ? 0 : 1;
+    const colB = b.side === "deuce" ? 0 : 1;
+    return rowA - rowB || colA - colB;
+  });
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 10 }}>
-      <div style={{ color: darkCourt.inkMuted, fontFamily: condensedFont, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-        Zone breakdown
-      </div>
-      {zones.slice(0, 6).map((zone, i) => {
-        const enter = spring({ config: motionTokens.springs.snappy, delay: 30 + i * 4, fps, frame });
-        const barWidth = `${(zone.count / maxCount) * 100}%`;
-        const winPct = Math.round(zone.winRate * 100);
+    <div style={{ display: "grid", gap: 4, gridTemplateColumns: "repeat(3, 1fr)", marginTop: 10 }}>
+      {sortedZones.map((zone, i) => {
+        const enter = spring({ config: motionTokens.springs.snappy, delay: 30 + i * 3, fps, frame });
+        const inRate = zone.inCount / Math.max(zone.count, 1);
+        const heatAlpha = inRate / maxInRate;
         return (
-          <div key={i} style={{ alignItems: "center", display: "flex", gap: 8, opacity: enter }}>
-            <span style={{ color: darkCourt.inkMuted, fontFamily: bodyFont, fontSize: 11, textTransform: "capitalize", width: 80 }}>
-              {zone.side} {zone.zone}
+          <div key={i} style={{
+            alignItems: "center",
+            backgroundColor: `${color}${Math.round(heatAlpha * 80).toString(16).padStart(2, "0")}`,
+            borderRadius: 4,
+            display: "flex",
+            flexDirection: "column",
+            opacity: enter,
+            padding: "4px 6px",
+          }}>
+            <span style={{ color: darkCourt.ink, fontFamily: condensedFont, fontSize: 12, fontWeight: 700 }}>
+              {Math.round(inRate * 100)}%
             </span>
-            <div style={{ backgroundColor: `${color}33`, borderRadius: 2, height: 8, width: 120 }}>
-              <div style={{ backgroundColor: color, borderRadius: 2, height: 8, width: barWidth }} />
-            </div>
-            <span style={{ color: darkCourt.ink, fontFamily: condensedFont, fontSize: 11, fontWeight: 700 }}>
-              {winPct}% · n={zone.count}
+            <span style={{ color: darkCourt.inkMuted, fontFamily: bodyFont, fontSize: 9 }}>
+              {(zone.side ?? "?").charAt(0).toUpperCase()}{(zone.zone ?? "?").charAt(0).toUpperCase()} · {zone.inCount}/{zone.count}
             </span>
           </div>
         );

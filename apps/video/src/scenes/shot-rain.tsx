@@ -19,7 +19,7 @@ import { getMatchStats, sceneInsightForStats } from "../match-stats";
 import { chromeOffsets, landscapeContentLayout } from "../scene-layout";
 
 const REVEAL_START = 30;
-const REVEAL_END = 270;
+const REVEAL_END = 240;
 const COURT_WIDTH = 580;
 const COURT_HEIGHT = 720;
 const PANEL_W = 280;
@@ -34,10 +34,11 @@ const scales = createCourtScales({
 
 export function ShotRainScene() {
   const frame = useCurrentFrame();
+  const { height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const stats = getMatchStats();
   const { legendBottom } = chromeOffsets("landscape");
-  const layout = landscapeContentLayout(1080);
+  const layout = landscapeContentLayout(height);
   const COURT_TOP = layout.contentTop + (layout.contentHeight - COURT_HEIGHT) / 2;
 
   const orderedShots = ctx.enrichedShots

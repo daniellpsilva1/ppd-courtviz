@@ -16,6 +16,11 @@ function makeServe(overrides: Partial<EnrichedShot> = {}): EnrichedShot {
     hitY: 10.0,
     hitZ: 2.8,
     bounceZone: "deuce",
+    bounceSide: null,
+    bounceDepth: null,
+    hitZone: null,
+    hitSide: null,
+    hitDepth: null,
     direction: null,
     isTerminal: false,
     setNumber: 1,
@@ -49,8 +54,10 @@ describe("computeServeZones", () => {
     for (const zone of result) {
       expect(zone.zone).toMatch(/wide|body|T/);
       expect(zone.count).toBeGreaterThan(0);
-      expect(zone.winRate).toBeGreaterThanOrEqual(0);
-      expect(zone.winRate).toBeLessThanOrEqual(1);
+      if (zone.winRate !== null) {
+        expect(zone.winRate).toBeGreaterThanOrEqual(0);
+        expect(zone.winRate).toBeLessThanOrEqual(1);
+      }
     }
   });
 

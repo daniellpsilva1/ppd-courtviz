@@ -22,6 +22,7 @@ const stories = [
   { id: "density--density-guest", name: "density-guest" },
   { id: "density--density-with-annotation", name: "density-with-annotation" },
   { id: "density--density-dark-theme", name: "density-dark-theme" },
+  { id: "court-dominance--court-dominance-interactive-story", name: "court-dominance-interactive" },
 ];
 
 async function screenshotStory(page: Page, storyId: string, name: string) {

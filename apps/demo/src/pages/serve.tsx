@@ -5,8 +5,8 @@ import { ppd } from "@courtviz/themes";
 import { enrichedShots, guestName, hostName, surface } from "@courtviz/data";
 import type { ServeType } from "@courtviz/react";
 
-function formatPct(rate: number): string {
-  return `${Math.round(rate * 100)}%`;
+function formatPct(rate: number | null): string {
+  return rate === null ? "—" : `${Math.round(rate * 100)}%`;
 }
 
 export function ServePage() {

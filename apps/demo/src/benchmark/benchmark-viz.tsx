@@ -117,12 +117,12 @@ export const ZoneComparisonFigure = memo(function ZoneComparisonFigure() {
   const chart = boludaStory.charts.find((c) => c.id === "zone-comparison")!;
   const zoneData = useMemo(() => {
     const hostZones = computeZoneWinRates(enrichedShots, "host")
-      .filter((z) => z.total >= 8)
-      .sort((a, b) => b.winRate - a.winRate)
+      .filter((z) => z.total >= 8 && z.winRate !== null)
+      .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0))
       .slice(0, 4);
     const guestZones = computeZoneWinRates(enrichedShots, "guest")
-      .filter((z) => z.total >= 8)
-      .sort((a, b) => b.winRate - a.winRate)
+      .filter((z) => z.total >= 8 && z.winRate !== null)
+      .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0))
       .slice(0, 3);
     const rows: ZoneBarDatum[] = [
       ...hostZones.map((z) => ({

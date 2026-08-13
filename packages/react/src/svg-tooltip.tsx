@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from "react";
+import { measureSvgText } from "@courtviz/core";
 import type { CourtvizTheme } from "@courtviz/themes";
 
 export interface SvgTooltipState {
@@ -43,8 +44,15 @@ export function SvgTooltip({
   const lineHeight = 14;
   const pad = 8;
   const margin = 6;
-  const maxChars = Math.max(...tooltip.lines.map((line) => line.length));
-  const width = Math.min(220, Math.max(72, maxChars * 6.2)) + pad * 2;
+  const maxLineWidth = Math.max(
+    ...tooltip.lines.map((line) =>
+      measureSvgText(line, {
+        fontFamily: theme.fonts.bodyFont,
+        fontSize: 11,
+      }),
+    ),
+  );
+  const width = Math.min(220, Math.max(72, maxLineWidth)) + pad * 2;
   const height = tooltip.lines.length * lineHeight + pad * 2;
 
   let x = tooltip.x + 12;

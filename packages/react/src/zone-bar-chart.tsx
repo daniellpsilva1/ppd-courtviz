@@ -6,7 +6,7 @@ import { SvgTooltipProvider, useSvgTooltip } from "./svg-tooltip-context";
 
 export interface ZoneBarDatum {
   zone: string;
-  winRate: number;
+  winRate: number | null;
   total: number;
   playerLabel: string;
   color: string;
@@ -40,11 +40,11 @@ export const ZoneBarChart = memo(function ZoneBarChart({
         {rows.map((row, i) => {
         const y = pad.top + i * rowH + rowH * 0.15;
         const barH = rowH * 0.55;
-        const barW = innerW * Math.max(0, Math.min(1, row.winRate));
+        const barW = innerW * Math.max(0, Math.min(1, row.winRate ?? 0));
         const label = row.zone.replace(/_/g, " ");
         const tooltipLines = [
           `${row.playerLabel}: ${label}`,
-          `${Math.round(row.winRate * 100)}% win rate`,
+          `${row.winRate !== null ? Math.round(row.winRate * 100) + "%" : "—"} win rate`,
           `${row.total} shots`,
         ];
 
@@ -83,7 +83,7 @@ export const ZoneBarChart = memo(function ZoneBarChart({
               x={width - pad.right}
               y={y + barH * 0.75}
             >
-              {Math.round(row.winRate * 100)}% ({row.total})
+              {row.winRate !== null ? `${Math.round(row.winRate * 100)}%` : "—"} ({row.total})
             </text>
           </g>
         );

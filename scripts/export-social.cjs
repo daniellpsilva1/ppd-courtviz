@@ -9,6 +9,10 @@ const demoNodeModules = path.resolve(__dirname, "..", "apps", "demo", "node_modu
 const rootNodeModules = path.resolve(__dirname, "..", "node_modules");
 module.paths = [demoNodeModules, rootNodeModules, ...(module.paths || [])];
 
+function formatPct(rate) {
+  return rate == null ? "—" : `${Math.round(rate * 100)}%`;
+}
+
 const React = require("react");
 const {
   CourtSurface,
@@ -306,6 +310,7 @@ function buildCourtDominancePoster() {
     const posterLayout = resolvePosterContentLayout(layout, {
       analyticsBand: 0,
       courtAspect: 0.75,
+      distribute: "grow-court",
       insightBand: 112,
       legendBand: format === "story" ? 120 : format === "portrait" ? 110 : 100,
     });
@@ -430,6 +435,7 @@ function renderPlayerCourt(x, y, width, height, player, name, scales, valueDomai
       CourtSurface,
       { half, height, idPrefix: `dominance-${player}`, surface, theme, width },
       React.createElement(HexbinLayer, {
+        clip: true,
         colorScale: "efficiency",
         gridsize,
         half,
@@ -467,6 +473,7 @@ function buildHexbinPoster(player, titleSuffix) {
     const posterLayout = resolvePosterContentLayout(layout, {
       analyticsBand: 88,
       courtAspect: half === "full" ? 0.75 : 1,
+      distribute: "grow-court",
       insightBand: 88,
       legendBand: format === "story" ? 160 : 150,
     });
@@ -502,6 +509,7 @@ function buildHexbinPoster(player, titleSuffix) {
           CourtSurface,
           { half, height: courtHeight, idPrefix: `hexbin-${player}`, surface, theme, width: courtWidth },
           React.createElement(HexbinLayer, {
+            clip: true,
             colorScale: "efficiency",
             gridsize,
             half,
@@ -524,7 +532,7 @@ function buildHexbinPoster(player, titleSuffix) {
             React.createElement(StatCallout, {
               label: `${topZone.zone} zone win rate`,
               theme,
-              value: `${Math.round(topZone.winRate * 100)}%`,
+              value: formatPct(topZone.winRate),
               x: 0,
               y: 0,
             }),
@@ -532,7 +540,7 @@ function buildHexbinPoster(player, titleSuffix) {
             React.createElement(StatCallout, {
               label: `${secondZone.zone} zone win rate`,
               theme,
-              value: `${Math.round(secondZone.winRate * 100)}%`,
+              value: formatPct(secondZone.winRate),
               x: courtWidth - 220,
               y: 0,
             }),
@@ -551,6 +559,7 @@ function buildDotDensityPoster() {
     const half = "full";
     const posterLayout = resolvePosterContentLayout(layout, {
       courtAspect: 0.75,
+      distribute: "grow-court",
       insightBand: 88,
       legendBand: format === "landscape" ? 0 : 120,
     });
@@ -627,6 +636,7 @@ function buildServePoster() {
     const posterLayout = resolvePosterContentLayout(layout, {
       analyticsBand: format === "story" ? 220 : 0,
       courtAspect: 1,
+      distribute: "grow-court",
       insightBand: 112,
       legendBand: 0,
     });
@@ -740,6 +750,7 @@ function buildRaysPoster() {
     const half = "full";
     const posterLayout = resolvePosterContentLayout(layout, {
       courtAspect: 0.75,
+      distribute: "grow-court",
       insightBand: 88,
       legendBand: 100,
     });
@@ -815,7 +826,7 @@ function buildRaysPoster() {
               React.createElement(StatCallout, {
                 label: "top pattern win rate",
                 theme,
-                value: `${Math.round(topFlow.winRate * 100)}%`,
+                value: formatPct(topFlow.winRate),
                 x: courtWidth - 220,
                 y: 0,
               }),
@@ -824,7 +835,7 @@ function buildRaysPoster() {
           courtWidth,
           insightY - courtY,
           topFlow
-            ? `Most repeated pattern wins ${Math.round(topFlow.winRate * 100)}% — drill this lane in practice.`
+            ? `Most repeated pattern wins ${formatPct(topFlow.winRate)} — drill this lane in practice.`
             : "Review shot direction patterns in the full analytics dashboard.",
         ),
       ),
@@ -838,6 +849,7 @@ function buildMomentumPoster() {
     const posterLayout = resolvePosterContentLayout(layout, {
       analyticsBand: 72,
       courtAspect: 2.2,
+      distribute: "grow-court",
       insightBand: 88,
       legendBand: 0,
     });

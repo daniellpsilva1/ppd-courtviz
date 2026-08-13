@@ -1,4 +1,4 @@
-import { DOUBLES_HALF, NET_Y, SINGLES_HALF } from "./geometry";
+import { DOUBLES_HALF, NET_Y, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
 
 export interface ZoneRect {
   id: string;
@@ -24,13 +24,29 @@ export const BOUNCE_ZONE_RECTS_NEAR: ZoneRect[] = [
   { id: "deuce_alley", xMin: SINGLES_HALF, xMax: DOUBLES_HALF, yMin: 0, yMax: NET_Y },
 ];
 
+/**
+ * 6-zone grid (ad / center / deuce × deep / short) matching deriveNormalizedCourtZone.
+ * Deep = backcourt (baseline → service line); short = service boxes → net.
+ */
+export const BOUNCE_ZONE_GRID_3X2: ZoneRect[] = [
+  { id: "ad_deep", xMin: -SINGLES_HALF, xMax: -SINGLES_HALF * 0.35, yMin: 0, yMax: SERVICE_LINE_NEAR },
+  { id: "ad_short", xMin: -SINGLES_HALF, xMax: -SINGLES_HALF * 0.35, yMin: SERVICE_LINE_NEAR, yMax: NET_Y },
+  { id: "center_deep", xMin: -SINGLES_HALF * 0.35, xMax: SINGLES_HALF * 0.35, yMin: 0, yMax: SERVICE_LINE_NEAR },
+  { id: "center_short", xMin: -SINGLES_HALF * 0.35, xMax: SINGLES_HALF * 0.35, yMin: SERVICE_LINE_NEAR, yMax: NET_Y },
+  { id: "deuce_deep", xMin: SINGLES_HALF * 0.35, xMax: SINGLES_HALF, yMin: 0, yMax: SERVICE_LINE_NEAR },
+  { id: "deuce_short", xMin: SINGLES_HALF * 0.35, xMax: SINGLES_HALF, yMin: SERVICE_LINE_NEAR, yMax: NET_Y },
+];
+
 export function normalizeBounceZoneId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_");
 }
 
 export function bounceZoneRect(zoneId: string): ZoneRect | undefined {
   const normalized = normalizeBounceZoneId(zoneId);
-  return BOUNCE_ZONE_RECTS_NEAR.find((rect) => rect.id === normalized);
+  return (
+    BOUNCE_ZONE_RECTS_NEAR.find((rect) => rect.id === normalized) ??
+    BOUNCE_ZONE_GRID_3X2.find((rect) => rect.id === normalized)
+  );
 }
 
 export function bounceZoneCentroid(zoneId: string): { cx: number; cy: number } | null {

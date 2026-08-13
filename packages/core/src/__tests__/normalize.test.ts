@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { COURT_LENGTH, NET_Y } from "../geometry";
 import {
+  clampHitY,
   hasValidSpatialCoords,
   hasValidServeCoords,
   isFarEnd,
@@ -138,14 +139,14 @@ describe("isValidHitY", () => {
 });
 
 describe("hasValidSpatialCoords", () => {
-  it("requires valid bounce and hit coordinates", () => {
+  it("requires bounce and hit coordinates (invalid hitY is accepted)", () => {
     expect(
       hasValidSpatialCoords({
         bounceX: 1,
         bounceY: 5,
         hitY: -1,
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       hasValidSpatialCoords({
         bounceX: 1,
@@ -153,6 +154,20 @@ describe("hasValidSpatialCoords", () => {
         hitY: 20,
       }),
     ).toBe(true);
+    expect(
+      hasValidSpatialCoords({
+        bounceX: null,
+        bounceY: 5,
+        hitY: 20,
+      }),
+    ).toBe(false);
+    expect(
+      hasValidSpatialCoords({
+        bounceX: 1,
+        bounceY: 5,
+        hitY: null,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -173,11 +188,32 @@ describe("hasValidServeCoords", () => {
   });
 });
 
+describe("clampHitY", () => {
+  it("clamps negative values to 0", () => {
+    expect(clampHitY(-2.0)).toBe(0);
+  });
+
+  it("clamps values above COURT_LENGTH", () => {
+    expect(clampHitY(COURT_LENGTH + 5)).toBe(COURT_LENGTH);
+  });
+
+  it("keeps valid values as-is", () => {
+    expect(clampHitY(11.885)).toBe(11.885);
+  });
+});
+
 describe("invalid hitY normalization", () => {
-  it("defaults invalid hitY to far end", () => {
+  it("clamps invalid hitY to court bounds (near end)", () => {
     const [x, y] = normalizeShot(1.5, 20.0, -2.0);
+    expect(x).toBe(-1.5);
+    expect(y).toBe(COURT_LENGTH - 20.0);
+    expect(isFarEnd(-2.0)).toBe(false);
+  });
+
+  it("clamps above-range hitY to far end", () => {
+    const [x, y] = normalizeShot(1.5, 20.0, COURT_LENGTH + 5);
     expect(x).toBe(1.5);
     expect(y).toBe(20.0);
-    expect(isFarEnd(-2.0)).toBe(true);
+    expect(isFarEnd(COURT_LENGTH + 5)).toBe(true);
   });
 });

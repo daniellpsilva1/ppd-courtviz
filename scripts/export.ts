@@ -1,9 +1,9 @@
 /**
- * Unified export CLI — deck, captions, videos, and optional posters.
+ * Unified export CLI — bench-posts, captions, videos, and optional posters.
  *
  * Usage:
  *   tsx scripts/export.ts
- *   tsx scripts/export.ts --mode=deck --matchId=<uuid>
+ *   tsx scripts/export.ts --mode=bench-posts --matchId=<uuid>
  *   tsx scripts/export.ts --mode=posters
  *   tsx scripts/export.ts --mode=video-render
  *   tsx scripts/export.ts --mode=all
@@ -53,16 +53,16 @@ async function main() {
     .filter((a) => !a.startsWith("--mode="))
     .join(" ");
 
-  const runDeck = mode === "default" || mode === "deck" || mode === "carousel" || mode === "all";
+  const runBenchPosts = mode === "default" || mode === "bench-posts" || mode === "all";
   const runPosters = mode === "posters" || mode === "product";
   const runCaptions = mode === "default" || mode === "captions" || mode === "all";
   const runVideoData = mode === "video-data" || mode === "video-render" || mode === "all";
   const runVideoRender = mode === "video-render" || mode === "all";
   const copyVideos = mode === "default" || mode === "all" || mode === "video-render";
 
-  if (runDeck) {
-    console.log("\n📱 Deck export (story 9:16)\n");
-    run(`node scripts/export-carousel.cjs ${forward}`);
+  if (runBenchPosts) {
+    console.log("\n📱 Bench posts export (portrait 4:5)\n");
+    run(`node scripts/export-bench-posts.cjs ${forward}`);
   }
 
   if (runPosters) {

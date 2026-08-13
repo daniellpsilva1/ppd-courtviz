@@ -13,9 +13,9 @@ export const SOCIAL_DURATIONS = {
   patterns: Math.round(3.5 * SOCIAL_FPS),
   stats: Math.round(3.5 * SOCIAL_FPS),
   clutchSpeed: Math.round(4 * SOCIAL_FPS),
-  setBySet: Math.round(2.5 * SOCIAL_FPS),
+  setBySet: Math.round(3.5 * SOCIAL_FPS),
   coach: Math.round(3.5 * SOCIAL_FPS),
-  momentum: Math.round(3 * SOCIAL_FPS),
+  momentum: Math.round(4 * SOCIAL_FPS),
   outro: 2 * SOCIAL_FPS,
 } as const;
 

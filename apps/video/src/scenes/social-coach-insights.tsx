@@ -1,5 +1,7 @@
+import { formatRate } from "@courtviz/core";
 import { motionTokens } from "@ppd/tokens";
 import { generateCoachInsights } from "@ppd/brand";
+import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
@@ -8,16 +10,8 @@ import { SceneHeader } from "../components/scene-header";
 import { SFXImpact } from "../components/sfx-cues";
 import { theme } from "../court-viz-utils";
 import { bodyFont, condensedFont } from "../fonts";
-import { PPD } from "../ppd-tokens";
 import { getVideoMatchContext } from "../match-data";
 import { verticalContentLayout } from "../scene-layout";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  pattern: PPD.primary,
-  rally: PPD.primary,
-  serve: PPD.primary,
-  zone: PPD.primary,
-};
 
 export function SocialCoachInsightsScene() {
   const frame = useCurrentFrame();
@@ -33,20 +27,20 @@ export function SocialCoachInsightsScene() {
     },
     3,
   );
-  const cycleFrames = Math.floor((4 * fps) / insights.length);
-  const activeIndex = Math.min(insights.length - 1, Math.floor(frame / cycleFrames));
-  const insight = insights[activeIndex]!;
-  const accent = CATEGORY_COLORS[insight.category] ?? PPD.primary;
-  const enter = spring({ config: motionTokens.springs.smooth, delay: 10, fps, frame: frame % cycleFrames });
+  const enter = spring({ config: motionTokens.springs.smooth, delay: 10, fps, frame });
 
   return (
     <BroadcastShell>
       <SFXImpact delay={12} />
-      <SceneHeader subtitle="Actionable takeaways" title="Coach Insights" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="Actionable takeaways" title="Coach Insights" />
 
       <div
         style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
           height: layout.contentHeight,
+          justifyContent: "space-evenly",
           left: layout.sidePadding,
           opacity: enter,
           position: "absolute",
@@ -54,77 +48,72 @@ export function SocialCoachInsightsScene() {
           top: layout.contentTop,
         }}
       >
-        <div
-          style={{
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(0,0,0,0.55)",
-            border: `1px solid ${accent}44`,
-            borderLeft: `5px solid ${accent}`,
-            borderRadius: 12,
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-            justifyContent: "center",
-            padding: "28px 32px",
-            transform: `translateY(${(1 - enter) * 12}px)`,
-          }}
-        >
-          <span
-            style={{
-              background: `${accent}22`,
-              border: `1px solid ${accent}55`,
-              borderRadius: 20,
-              color: accent,
-              fontFamily: condensedFont,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              marginBottom: 16,
-              padding: "4px 12px",
-              textTransform: "uppercase",
-              width: "fit-content",
-            }}
-          >
-            {insight.category}
-          </span>
-          <div
-            style={{
-              color: theme.ink,
-              fontFamily: condensedFont,
-              fontSize: 24,
-              fontWeight: 600,
-              lineHeight: 1.25,
-              marginBottom: 12,
-            }}
-          >
-            {insight.headline}
-          </div>
-          <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 15, lineHeight: 1.45 }}>
-            {insight.action}
-          </div>
-          <div
-            style={{
-              color: theme.inkMuted,
-              display: "flex",
-              fontFamily: bodyFont,
-              fontSize: 12,
-              gap: 8,
-              marginTop: 24,
-            }}
-          >
-            {insights.map((item, index) => (
-              <span
-                key={item.id}
-                style={{
-                  background: index === activeIndex ? accent : `${theme.inkMuted}44`,
-                  borderRadius: 4,
-                  height: 4,
-                  width: index === activeIndex ? 24 : 12,
-                }}
-              />
-            ))}
-          </div>
-        </div>
+        {insights.map((insight, index) => {
+          const itemEnter = spring({
+            config: motionTokens.springs.snappy,
+            delay: 14 + index * 10,
+            fps,
+            frame,
+          });
+          const accent = getPlayerColor(index % 2 === 0 ? "host" : "guest", theme);
+
+          return (
+            <div
+              key={insight.id}
+              style={{
+                alignItems: "center",
+                backdropFilter: "blur(10px)",
+                backgroundColor: "rgba(0,0,0,0.55)",
+                border: `1px solid ${accent}44`,
+                borderLeft: `5px solid ${accent}`,
+                borderRadius: 12,
+                display: "flex",
+                flex: 1,
+                gap: 16,
+                opacity: itemEnter,
+                padding: "16px 20px",
+                transform: `translateY(${(1 - itemEnter) * 12}px)`,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span
+                  style={{
+                    background: `${accent}22`,
+                    border: `1px solid ${accent}55`,
+                    borderRadius: 20,
+                    color: accent,
+                    fontFamily: condensedFont,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    marginBottom: 8,
+                    padding: "3px 10px",
+                    textTransform: "uppercase",
+                    width: "fit-content",
+                  }}
+                >
+                  {insight.category}
+                </span>
+                <div
+                  style={{
+                    color: theme.ink,
+                    fontFamily: condensedFont,
+                    fontSize: 18,
+                    fontWeight: 600,
+                    lineHeight: 1.2,
+                    marginBottom: 6,
+                  }}
+                >
+                  {insight.headline}
+                </div>
+                <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12, lineHeight: 1.4 }}>
+                  {insight.action}
+                </div>
+              </div>
+              <SocialMiniViz frame={frame} fps={fps} insight={insight} />
+            </div>
+          );
+        })}
       </div>
 
       <InsightCallout
@@ -135,4 +124,128 @@ export function SocialCoachInsightsScene() {
       <MatchScoreBar guestName={ctx.guestName} hostName={ctx.hostName} orientation="vertical" />
     </BroadcastShell>
   );
+}
+
+function SocialMiniViz({ frame, fps, insight }: { frame: number; fps: number; insight: ReturnType<typeof generateCoachInsights>[number] }) {
+  if (!insight.viz) return null;
+  const enter = spring({ config: motionTokens.springs.snappy, delay: 20, fps, frame });
+  const viz = insight.viz;
+  const hostColor = getPlayerColor("host", theme);
+
+  if (viz.kind === "serve-zones") {
+    const maxInRate = Math.max(...viz.zones.map((z) => z.inCount / Math.max(z.count, 1)), 0.001);
+    return (
+      <svg height={100} opacity={enter} width={140}>
+        {viz.zones.slice(0, 4).map((zone, i) => {
+          const inRate = zone.inCount / Math.max(zone.count, 1);
+          const barW = 90;
+          const barH = 10;
+          const y = i * 16 + 8;
+          return (
+            <g key={i}>
+              <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={7} x={0} y={y + 8}>
+                {zone.side?.charAt(0).toUpperCase() ?? "?"}{zone.zone?.charAt(0).toUpperCase() ?? "?"}
+              </text>
+              <rect fill={`${theme.inkMuted}22`} height={barH} rx={2} width={barW} x={16} y={y} />
+              <rect fill={hostColor} height={barH} rx={2} width={barW * (inRate / maxInRate) * enter} x={16} y={y} />
+              <text fill={theme.ink} fontFamily={condensedFont} fontSize={8} fontWeight={700} x={110} y={y + 8}>
+                {Math.round(inRate * 100)}%
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  if (viz.kind === "rally-buckets") {
+    const maxWin = Math.max(...viz.buckets.map((b) => b.winRate ?? 0), 0.001);
+    return (
+      <svg height={100} opacity={enter} width={140}>
+        {viz.buckets.map((bucket, i) => {
+          const barW = 90;
+          const barH = 12;
+          const y = i * 20 + 8;
+          return (
+            <g key={i}>
+              <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={7} x={0} y={y + 9}>
+                {bucket.bucket}
+              </text>
+              <rect fill={`${theme.inkMuted}22`} height={barH} rx={2} width={barW} x={30} y={y} />
+              <rect fill={hostColor} height={barH} rx={2} width={barW * ((bucket.winRate ?? 0) / maxWin) * enter} x={30} y={y} />
+              <text fill={theme.ink} fontFamily={condensedFont} fontSize={9} fontWeight={700} x={126} y={y + 10}>
+                {formatRate(bucket.winRate)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  if (viz.kind === "zone-heat") {
+    const maxWin = Math.max(...viz.zones.map((z) => z.winRate ?? 0), 0.001);
+    return (
+      <svg height={100} opacity={enter} width={140}>
+        {viz.zones.slice(0, 4).map((zone, i) => {
+          const y = i * 16 + 8;
+          const barW = 90;
+          return (
+            <g key={i}>
+              <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={6} x={0} y={y + 8}>
+                {zone.zone.replace(/_/g, " ").slice(0, 8)}
+              </text>
+              <rect fill={`${theme.inkMuted}22`} height={10} rx={2} width={barW} x={40} y={y} />
+              <rect fill={hostColor} height={10} rx={2} width={barW * ((zone.winRate ?? 0) / maxWin) * enter} x={40} y={y} />
+              <text fill={theme.ink} fontFamily={condensedFont} fontSize={8} fontWeight={700} x={134} y={y + 8}>
+                {formatRate(zone.winRate)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  if (viz.kind === "flow") {
+    const maxCount = Math.max(...viz.flows.map((f) => f.count), 1);
+    return (
+      <svg height={100} opacity={enter} width={140}>
+        {viz.flows.slice(0, 4).map((flow, i) => {
+          const y = i * 16 + 8;
+          const barW = 80;
+          return (
+            <g key={i}>
+              <text fill={theme.inkMuted} fontFamily={bodyFont} fontSize={6} x={0} y={y + 8}>
+                {flow.fromZone.slice(0, 6)}→{flow.toZone.slice(0, 6)}
+              </text>
+              <rect fill={`${theme.inkMuted}22`} height={10} rx={2} width={barW} x={50} y={y} />
+              <rect fill={hostColor} height={10} rx={2} width={barW * (flow.count / maxCount) * enter} x={50} y={y} />
+              <text fill={theme.ink} fontFamily={condensedFont} fontSize={8} fontWeight={700} x={134} y={y + 8}>
+                {formatRate(flow.winRate)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  if (viz.kind === "bp-gauge") {
+    const pct = viz.total > 0 ? viz.won / viz.total : 0;
+    const r = 40;
+    const circ = 2 * Math.PI * r;
+    const dash = circ * pct * enter;
+    return (
+      <svg height={100} opacity={enter} width={100}>
+        <circle cx={50} cy={50} fill="none" r={r} stroke={`${theme.inkMuted}22`} strokeWidth={6} />
+        <circle cx={50} cy={50} fill="none" r={r} stroke={hostColor} strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" strokeWidth={6} transform="rotate(-90 50 50)" />
+        <text dominantBaseline="central" fill={theme.ink} fontFamily={condensedFont} fontSize={18} fontWeight={700} textAnchor="middle" x={50} y={50}>
+          {Math.round(pct * 100 * enter)}%
+        </text>
+      </svg>
+    );
+  }
+
+  return null;
 }

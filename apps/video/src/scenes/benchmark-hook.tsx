@@ -1,34 +1,33 @@
-import { enrichedShots } from "@courtviz/data/fixtures";
 import { Court, HexbinLayer } from "@courtviz/react";
 import { createCourtScales } from "@courtviz/core";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { BRAND_SURFACE } from "../brand-surface";
 import { benchmarkStory, benchmarkProductTheme } from "../benchmark-story-data";
 import { sharedEfficiencyDomain, buildPlayerHexbins } from "../court-viz-utils";
-import {
-  hostServiceStats,
-  longRallyBattle,
-  totalBreakPoints,
-} from "../match-stats";
+import { getMatchStats } from "../match-stats";
+import { getVideoMatchContext } from "../match-data";
 
 const HERO_W = 640;
 const HERO_H = 720;
 const heroScales = createCourtScales({ half: "near", height: HERO_H, margin: 1.5, width: HERO_W });
-const heroHexbins = buildPlayerHexbins(enrichedShots, "host");
+
+const ctx = getVideoMatchContext();
+const stats = getMatchStats();
+const heroHexbins = buildPlayerHexbins(ctx.enrichedShots, "host");
 const heroDomain = sharedEfficiencyDomain([heroHexbins]);
 
 const statChips = [
   {
     label: "Service won",
-    value: `${Math.round(hostServiceStats.serviceWinRate * 100)}%`,
+    value: `${Math.round(stats.hostServiceStats.serviceWinRate * 100)}%`,
   },
   {
     label: "Long rallies",
-    value: `${longRallyBattle.hostWon}–${longRallyBattle.guestWon}`,
+    value: `${stats.longRallyBattle.hostWon}–${stats.longRallyBattle.guestWon}`,
   },
   {
     label: "Break points",
-    value: String(totalBreakPoints),
+    value: String(stats.totalBreakPoints),
   },
 ];
 
@@ -85,7 +84,7 @@ export function BenchmarkHookScene() {
               half="near"
               player="host"
               scales={heroScales}
-              shots={enrichedShots}
+              shots={ctx.enrichedShots}
               sizeRange={[0.25, 0.65]}
               theme={benchmarkProductTheme}
               valueDomain={heroDomain}

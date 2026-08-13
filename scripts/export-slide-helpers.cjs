@@ -2,6 +2,16 @@
  * Shared SVG slide helpers for carousel and poster exports.
  */
 
+const path = require("path");
+
+const demoNodeModules = path.resolve(__dirname, "..", "apps", "demo", "node_modules");
+const rootNodeModules = path.resolve(__dirname, "..", "node_modules");
+module.paths = [demoNodeModules, rootNodeModules, ...(module.paths || [])];
+
+function formatPct(rate) {
+  return rate == null ? "—" : `${Math.round(rate * 100)}%`;
+}
+
 const React = require("react");
 const {
   CourtSurface,
@@ -18,6 +28,7 @@ const {
 const {
   createCourtScales,
   resolvePosterContentLayout,
+  layoutBands,
   computeServeZones,
   computeRallyBucketStats,
   computeShotFlows,
@@ -29,11 +40,17 @@ const {
   computeZoneWinRates,
   computeZoneWinRatesByPoint,
   aggregateSideWinRatesByPoint,
+  fitSvgText,
   pointKeyFromShot,
   shotPlayerWonPoint,
   SINGLES_HALF,
+  SLIDE_BANDS,
+  measureSvgText,
+  truncateText,
+  wrapText,
 } = require("@courtviz/core");
 const { getPlayerColor } = require("@courtviz/themes");
+const { colorPrimitives } = require("@ppd/tokens");
 const { BRAND_SURFACE } = require("./brand-surface.cjs");
 
 const HEX_MIN_COUNT = 1;
@@ -57,10 +74,10 @@ function singlesClipBounds(scales, half = "near") {
 }
 
 const CATEGORY_COLORS = {
-  pattern: "#34D399",
-  rally: "#A78BFA",
-  serve: "#F59E0B",
-  zone: "#38BDF8",
+  pattern: colorPrimitives.accent,
+  rally: colorPrimitives.violet,
+  serve: colorPrimitives.amber,
+  zone: colorPrimitives.primaryBright,
 };
 
 function wrapSvgText({
@@ -75,26 +92,17 @@ function wrapSvgText({
   x,
   y,
 }) {
-  const words = String(text).split(/\s+/).filter(Boolean);
-  const charWidth = fontSize * 0.52;
-  const lines = [];
-  let current = "";
-
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length * charWidth > maxWidth && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  }
-  if (current) lines.push(current);
-
-  const clipped = lines.slice(0, maxLines);
-  if (lines.length > maxLines && clipped.length > 0) {
+  const allLines = wrapText(text, { fontFamily, fontSize, fontWeight, maxWidth });
+  const clipped = allLines.slice(0, maxLines);
+  if (allLines.length > maxLines && clipped.length > 0) {
     const last = clipped[clipped.length - 1];
-    clipped[clipped.length - 1] = last.length > 3 ? `${last.slice(0, -1)}…` : `${last}…`;
+    const ellipsisWidth = measureSvgText("…", { fontFamily, fontSize, fontWeight });
+    clipped[clipped.length - 1] = truncateText(last, {
+      fontFamily,
+      fontSize,
+      fontWeight,
+      maxWidth: maxWidth - ellipsisWidth,
+    });
   }
 
   return React.createElement(
@@ -207,7 +215,7 @@ function dualEfficiencyDomain(shots, players, half, gridsize) {
 function renderMiniDualCourt(ctx, theme, x, y, width, height) {
   const half = "near";
   const gridsize = 5;
-  const gap = 8;
+  const gap = SLIDE_BANDS.dualCourtGap;
   const courtW = Math.floor((width - gap) / 2);
   const courtH = height;
   const valueDomain = dualEfficiencyDomain(ctx.enrichedShots, ["host", "guest"], half, gridsize);
@@ -278,10 +286,170 @@ function aggregateSideWinRates(shots, player) {
     }));
 }
 
+function renderSpeedHistogram(ctx, theme, width, height) {
+  const allSpeeds = ctx.enrichedShots
+    .filter((s) => s.stroke === "Serve" && s.speedKmh != null)
+    .map((s) => ({ player: s.player, speed: s.speedKmh }));
+
+  if (allSpeeds.length === 0) return null;
+
+  const minSpeed = Math.floor(Math.min(...allSpeeds.map((s) => s.speed)) / 10) * 10;
+  const maxSpeed = Math.ceil(Math.max(...allSpeeds.map((s) => s.speed)) / 10) * 10;
+  const binSize = 10;
+  const binCount = Math.max(1, Math.ceil((maxSpeed - minSpeed) / binSize));
+  const bins = Array.from({ length: binCount }, (_, i) => ({
+    host: 0,
+    guest: 0,
+    label: `${minSpeed + i * binSize}`,
+  }));
+
+  for (const s of allSpeeds) {
+    const idx = Math.min(binCount - 1, Math.floor((s.speed - minSpeed) / binSize));
+    if (s.player === "host") bins[idx].host++;
+    else bins[idx].guest++;
+  }
+
+  const maxCount = Math.max(...bins.map((b) => b.host + b.guest), 1);
+  const barW = width / binCount;
+  const chartH = height - 24;
+  const hostColor = getPlayerColor("host", theme);
+  const guestColor = getPlayerColor("guest", theme);
+
+  return React.createElement(
+    "g",
+    null,
+    React.createElement("text", {
+      fill: theme.inkMuted,
+      fontFamily: theme.fonts.bodyFont,
+      fontSize: theme.fontSize.label,
+      fontWeight: 600,
+      letterSpacing: 1,
+      x: 0,
+      y: 0,
+    }, "SERVE SPEED (km/h)"),
+    bins.map((bin, i) => {
+      const hRatio = (bin.host + bin.guest) / maxCount;
+      const barH = Math.max(2, hRatio * chartH);
+      const hostH = maxCount > 0 ? (bin.host / maxCount) * chartH : 0;
+      const guestH = maxCount > 0 ? (bin.guest / maxCount) * chartH : 0;
+      return React.createElement(
+        "g",
+        { key: i },
+        React.createElement("rect", {
+          fill: `${guestColor}55`,
+          height: Math.max(2, guestH),
+          width: barW * 0.8,
+          x: i * barW + barW * 0.1,
+          y: chartH - Math.max(2, guestH) + 16,
+        }),
+        React.createElement("rect", {
+          fill: hostColor,
+          height: Math.max(2, hostH),
+          width: barW * 0.8,
+          x: i * barW + barW * 0.1,
+          y: chartH - Math.max(2, hostH) - Math.max(2, guestH) + 16,
+        }),
+        i % 2 === 0
+          ? React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: 10,
+              textAnchor: "middle",
+              x: i * barW + barW / 2,
+              y: height + 8,
+            }, bin.label)
+          : null,
+      );
+    }),
+  );
+}
+
+function renderServeZoneHeatGrid(zones, theme, width, height, playerColor) {
+  const ZONE_ORDER = [
+    { side: "deuce", zone: "T" },
+    { side: "deuce", zone: "body" },
+    { side: "deuce", zone: "wide" },
+    { side: "ad", zone: "wide" },
+    { side: "ad", zone: "body" },
+    { side: "ad", zone: "T" },
+  ];
+
+  const zoneMap = new Map(zones.map((z) => [`${z.side}-${z.zone}`, z]));
+  const cellW = width / 3;
+  const cellH = height / 2;
+  const cellGap = 4;
+
+  function heatColor(inRate) {
+    if (inRate >= 0.8) return `${playerColor}cc`;
+    if (inRate >= 0.6) return `${playerColor}88`;
+    if (inRate >= 0.4) return `${playerColor}44`;
+    return `${theme.inkMuted}22`;
+  }
+
+  return React.createElement(
+    "g",
+    null,
+    ZONE_ORDER.map((key, i) => {
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      const z = zoneMap.get(`${key.side}-${key.zone}`);
+      const inRate = z ? z.inRate : 0;
+      const count = z ? z.count : 0;
+      const inCount = z ? z.inCount : 0;
+      const pct = count > 0 ? Math.round(inRate * 100) : 0;
+      const cx = col * cellW + cellW / 2;
+      const cy = row * cellH + cellH / 2;
+
+      return React.createElement(
+        "g",
+        { key: `${key.side}-${key.zone}` },
+        React.createElement("rect", {
+          fill: heatColor(inRate),
+          height: cellH - cellGap,
+          rx: 8,
+          stroke: count > 0 ? `${playerColor}33` : `${theme.inkMuted}11`,
+          strokeWidth: 1,
+          width: cellW - cellGap,
+          x: col * cellW + cellGap / 2,
+          y: row * cellH + cellGap / 2,
+        }),
+        count > 0
+          ? React.createElement("text", {
+              fill: theme.ink,
+              fontFamily: theme.fonts.condensedFont,
+              fontSize: 22,
+              fontWeight: 700,
+              textAnchor: "middle",
+              x: cx,
+              y: cy - 4,
+            }, `${pct}%`)
+          : null,
+        count > 0
+          ? React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: 10,
+              textAnchor: "middle",
+              x: cx,
+              y: cy + 14,
+            }, `${key.side[0].toUpperCase()}${key.zone[0].toUpperCase()} · n=${count}`)
+          : React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: 10,
+              textAnchor: "middle",
+              x: cx,
+              y: cy + 4,
+            }, `${key.side[0].toUpperCase()}${key.zone[0].toUpperCase()}`),
+      );
+    }),
+  );
+}
+
 function renderServeSlide(ctx, theme, layout, insight) {
   const hasInsight = Boolean(insight);
   const posterLayout = resolvePosterContentLayout(layout, {
-    analyticsBand: 400,
+    analyticsBand: 720,
     courtAspect: 1,
     insightBand: hasInsight ? 100 : 0,
     legendBand: 0,
@@ -311,13 +479,13 @@ function renderServeSlide(ctx, theme, layout, insight) {
     winRate: zone.winRate,
     zone: `${zone.side} ${zone.zone}`,
   }));
-  const calloutY = 4;
-  const calloutSpan = courtWidth / 3;
-  const calloutRowGap = 110;
-  const zoneBarH = 64;
+  const calloutY = 8;
+  const calloutSpan = courtWidth / 2;
+  const calloutRowGap = 80;
+  const zoneBarH = Math.max(120, SLIDE_BANDS.zoneBarH * 2);
   const hostLast = ctx.hostName.split(" ").pop();
   const guestLast = ctx.guestName.split(" ").pop();
-  const zoneSectionY = calloutY + calloutRowGap + 82;
+  const zoneSectionY = calloutY + calloutRowGap * 2 + 16;
 
   return React.createElement(
     "g",
@@ -330,7 +498,7 @@ function renderServeSlide(ctx, theme, layout, insight) {
         fontSize: theme.fontSize.label,
         fontWeight: 700,
         x: 0,
-        y: -10,
+        y: -4,
       },
       `${ctx.hostName.split(" ").pop()} serve court`,
     ),
@@ -368,15 +536,8 @@ function renderServeSlide(ctx, theme, layout, insight) {
         y: calloutY,
       }),
       React.createElement(StatCallout, {
-        label: `${hostLast} faults`,
-        theme,
-        value: String(counts.faults),
-        x: calloutSpan * 2,
-        y: calloutY,
-      }),
-      React.createElement(StatCallout, {
         accentColor: getPlayerColor("host", theme),
-        label: "aces",
+        label: "aces (H / G)",
         theme,
         value: `${hostAces} / ${guestAces}`,
         x: 0,
@@ -384,17 +545,10 @@ function renderServeSlide(ctx, theme, layout, insight) {
       }),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("guest", theme),
-        label: hostDf + guestDf > 0 ? "double faults" : "1st serve in",
+        label: hostDf + guestDf > 0 ? "double faults (H / G)" : "1st serve in",
         theme,
         value: hostDf + guestDf > 0 ? `${hostDf} / ${guestDf}` : `${Math.round((counts.first / Math.max(counts.first + counts.second, 1)) * 100)}%`,
         x: calloutSpan,
-        y: calloutY + calloutRowGap,
-      }),
-      React.createElement(StatCallout, {
-        label: "serve speed p50",
-        theme,
-        value: `${speedStats[0].hostValue} · ${speedStats[0].guestValue}`,
-        x: calloutSpan * 2,
         y: calloutY + calloutRowGap,
       }),
       React.createElement(
@@ -443,6 +597,11 @@ function renderServeSlide(ctx, theme, layout, insight) {
           width: courtWidth,
         }),
       ),
+      React.createElement(
+        "g",
+        { transform: `translate(0, ${zoneSectionY + zoneBarH * 2 + 48})` },
+        renderSpeedHistogram(ctx, theme, courtWidth, 80),
+      ),
     ),
     hasInsight &&
       React.createElement(
@@ -454,69 +613,120 @@ function renderServeSlide(ctx, theme, layout, insight) {
 }
 
 function renderRaysSlide(ctx, theme, layout) {
-  const posterLayout = resolvePosterContentLayout(layout, {
-    analyticsBand: 56,
-    courtAspect: 0.85,
-    insightBand: 0,
-    legendBand: 0,
-  });
-  const { analyticsY, courtHeight, courtWidth, courtX, courtY } = posterLayout;
-  const half = "full";
-  const scales = createCourtScales({ half, height: courtHeight, margin: 1.5, width: courtWidth });
-  const shots = ctx.enrichedShots.filter((s) => s.player === "host" && s.stroke !== "Serve");
-  const clipBounds = singlesClipBounds(scales, half);
-  const topFlow = computeShotFlows(shots, { minCount: 5, player: "host" })
-    .sort((a, b) => b.count - a.count)[0];
+  const contentW = layout.content.width;
+  const contentH = layout.content.height;
+  const gap = 12;
+  const colGap = 12;
+  const playerH = Math.floor((contentH - gap) / 2);
+  const miniCourtH = Math.floor(playerH - 40);
+  const miniCourtW = Math.floor((contentW - colGap * 2) / 3);
+  const half = "near";
+
+  function renderFlowMiniCourt(flow, player, index, playerColor) {
+    if (!flow) return null;
+    const scales = createCourtScales({ half, height: miniCourtH, margin: 1.5, width: miniCourtW });
+    const fromX = scales.x(flow.fromX);
+    const fromY = scales.y(flow.fromY);
+    const toX = scales.x(flow.toX);
+    const toY = scales.y(flow.toY);
+    const midX = (fromX + toX) / 2;
+    const midY = (fromY + toY) / 2 - 20;
+    const pct = flow.winRate == null ? null : Math.round(flow.winRate * 100);
+    const label = `${flow.fromZone.replace(/_/g, " ")} → ${flow.toZone.replace(/_/g, " ")}`;
+    const clipId = `flow-clip-${player}-${index}`;
+
+    return React.createElement(
+      "g",
+      { key: `${player}-${index}`, transform: `translate(${index * (miniCourtW + colGap)}, 0)` },
+      React.createElement(
+        "defs",
+        null,
+        React.createElement("clipPath", { id: clipId },
+          React.createElement("rect", { height: miniCourtH, width: miniCourtW, x: 0, y: 0 }),
+        ),
+      ),
+      React.createElement(CourtSurface, {
+        half,
+        height: miniCourtH,
+        idPrefix: `slide-rays-${player}-${index}`,
+        surface: BRAND_SURFACE,
+        theme,
+        width: miniCourtW,
+      }),
+      React.createElement(
+        "g",
+        { clipPath: `url(#${clipId})` },
+        React.createElement("path", {
+          d: `M ${fromX} ${fromY} Q ${midX} ${midY} ${toX} ${toY}`,
+          fill: "none",
+          stroke: playerColor,
+          strokeWidth: Math.max(2, Math.min(6, flow.count / 3)),
+          strokeLinecap: "round",
+          opacity: 0.7,
+        }),
+        React.createElement("circle", { cx: fromX, cy: fromY, fill: playerColor, r: 3 }),
+        React.createElement("circle", { cx: toX, cy: toY, fill: playerColor, opacity: 0.5, r: 3 }),
+      ),
+      React.createElement("text", {
+        fill: theme.ink,
+        fontFamily: theme.fonts.bodyFont,
+        fontSize: 12,
+        fontWeight: 600,
+        textAnchor: "middle",
+        x: miniCourtW / 2,
+        y: miniCourtH + 14,
+      }, label),
+      React.createElement("text", {
+        fill: theme.inkMuted,
+        fontFamily: theme.fonts.bodyFont,
+        fontSize: 12,
+        textAnchor: "middle",
+        x: miniCourtW / 2,
+        y: miniCourtH + 28,
+      }, `${pct != null ? pct + "%" : "—"} win · n=${flow.count}`),
+    );
+  }
+
+  function renderPlayerFlows(player, name, yOffset) {
+    const playerColor = getPlayerColor(player, theme);
+    const shots = ctx.enrichedShots.filter((s) => s.player === player && s.stroke !== "Serve");
+    const flows = computeShotFlows(shots, { minCount: 3, player })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    return React.createElement(
+      "g",
+      { transform: `translate(0, ${yOffset})` },
+      React.createElement("text", {
+        fill: playerColor,
+        fontFamily: theme.fonts.condensedFont,
+        fontSize: theme.fontSize.subtitle,
+        fontWeight: 700,
+        x: 0,
+        y: 16,
+      }, name.toUpperCase()),
+      React.createElement(
+        "g",
+        { transform: `translate(0, 28)` },
+        flows.map((flow, i) => renderFlowMiniCourt(flow, player, i, playerColor)),
+        flows.length === 0
+          ? React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: theme.fontSize.body,
+              x: 0,
+              y: miniCourtH / 2,
+            }, "Not enough shot data")
+          : null,
+      ),
+    );
+  }
 
   return React.createElement(
     "g",
-    { transform: `translate(${courtX}, ${courtY})` },
-    React.createElement(
-      CourtSurface,
-      { half, height: courtHeight, idPrefix: "slide-rays", surface: BRAND_SURFACE, theme, width: courtWidth },
-      React.createElement(RayLayer, {
-        alpha: 0.65,
-        clip: true,
-        clipBounds,
-        curved: true,
-        curvature: 0.04,
-        highContrast: true,
-        player: "host",
-        scales,
-        shots,
-        strokeWidth: 1.2,
-        theme,
-        useHalfCourtNormalization: true,
-      }),
-      React.createElement(RayLayer, {
-        alpha: 0.42,
-        clip: true,
-        clipBounds,
-        curved: true,
-        curvature: 0.03,
-        flowMaxWidth: 6,
-        flowMinCount: 5,
-        flowMode: true,
-        player: "host",
-        scales,
-        shots,
-        theme,
-        useHalfCourtNormalization: true,
-      }),
-    ),
-    topFlow &&
-      React.createElement(
-        "g",
-        { transform: `translate(0, ${analyticsY - courtY})` },
-        React.createElement(StatCallout, {
-          accentColor: getPlayerColor("host", theme),
-          label: `top pattern: ${topFlow.fromZone.replace(/_/g, " ")} → ${topFlow.toZone.replace(/_/g, " ")}`,
-          theme,
-          value: `${Math.round(topFlow.winRate * 100)}% (${topFlow.count} rallies)`,
-          x: 0,
-          y: 0,
-        }),
-      ),
+    null,
+    renderPlayerFlows("host", ctx.hostName, 0),
+    renderPlayerFlows("guest", ctx.guestName, playerH + gap),
   );
 }
 
@@ -525,18 +735,21 @@ function renderRallyBars(ctx, theme, layout) {
   const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
   const highlights = buildRallyHighlightStats(ctx);
   const totalRows = hostBuckets.length + guestBuckets.length;
-  const footerH = 110;
-  const sectionGap = 56;
-  const rowH = Math.max(48, Math.min(88, Math.floor((layout.content.height * 0.55) / Math.max(totalRows, 1))));
+  const footerH = SLIDE_BANDS.rallyFooterH;
+  const sectionGap = SLIDE_BANDS.rallySectionGap;
+  const rowH = Math.max(SLIDE_BANDS.rallyMinRowH, Math.min(SLIDE_BANDS.rallyMaxRowH, Math.floor((layout.content.height * 0.55) / Math.max(totalRows, 1))));
   const barsBlockH = 16 + hostBuckets.length * rowH + sectionGap + guestBuckets.length * rowH;
-  const highlightY = barsBlockH + 64;
-  const blockH = highlightY + footerH;
-  const startY = 16;
   const barW = layout.content.width;
+
+  const [barsBand, highlightBand] = layoutBands(layout.content.height, [
+    { id: "bars", height: barsBlockH },
+    { id: "highlight", height: footerH },
+  ], SLIDE_BANDS.rallyHighlightOffset);
+  const highlightY = highlightBand.y;
 
   return React.createElement(
     "g",
-    { transform: `translate(0, ${startY})` },
+    { transform: `translate(0, ${barsBand.y})` },
     React.createElement(
       "text",
       {
@@ -664,15 +877,15 @@ function renderRallyBarRow(bucket, color, width, y, theme) {
         x: labelW + barW + 16,
         y: 24,
       },
-      `${Math.round(bucket.winRate * 100)}%`,
+      formatPct(bucket.winRate),
     ),
   );
 }
 
 function renderDuelStats(ctx, theme, layout, stats) {
-  const SECTION_H = 30;
-  const MIN_ROW_H = 54;
-  const MAX_ROW_BONUS = 64;
+  const SECTION_H = SLIDE_BANDS.duelSectionH;
+  const MIN_ROW_H = SLIDE_BANDS.duelMinRowH;
+  const MAX_ROW_BONUS = SLIDE_BANDS.duelMaxRowBonus;
   const contentH = layout.content.height - 8;
   const sectionCount = stats.filter((s) => s.section).length;
   const rowCount = stats.filter((s) => !s.section).length;
@@ -681,9 +894,12 @@ function renderDuelStats(ctx, theme, layout, stats) {
     rowCount > 0 ? Math.max(0, Math.min(MAX_ROW_BONUS, Math.floor((contentH - fixedH) / rowCount))) : 0;
   const rowH = MIN_ROW_H + bonus;
   const blockH = sectionCount * SECTION_H + rowCount * rowH;
-  const startY = 8;
 
-  let y = startY;
+  const [duelBand] = layoutBands(layout.content.height, [
+    { id: "duel", grow: true },
+  ]);
+
+  let y = duelBand.y;
   const elements = [];
 
   for (const stat of stats) {
@@ -803,17 +1019,182 @@ function renderDuelStats(ctx, theme, layout, stats) {
   return React.createElement("g", null, ...elements);
 }
 
+function renderInsightMiniViz(viz, theme, width, y) {
+  if (!viz) return null;
+  const vizW = Math.min(160, width * 0.4);
+  const vizX = width - vizW - 12;
+
+  if (viz.kind === "bp-gauge") {
+    const r = 28;
+    const cx = vizX + vizW / 2;
+    const cy = y + r + 4;
+    const circ = 2 * Math.PI * r;
+    const arc = circ * viz.rate;
+    return React.createElement(
+      "g",
+      { transform: `translate(${vizX}, 0)` },
+      renderRingGauge(cx, cy, r, viz.rate, theme.ink, "BP", `${viz.won}/${viz.total}`, theme),
+    );
+  }
+
+  if (viz.kind === "rally-buckets") {
+    const barH = 10;
+    const barGap = 4;
+    const maxTotal = Math.max(...viz.buckets.map((b) => b.total), 1);
+    return React.createElement(
+      "g",
+      { transform: `translate(${vizX}, ${y})` },
+      viz.buckets.slice(0, 4).map((b, i) =>
+        React.createElement(
+          "g",
+          { key: b.bucket },
+          React.createElement("text", {
+            fill: theme.inkMuted,
+            fontFamily: theme.fonts.bodyFont,
+            fontSize: 8,
+            x: 0,
+            y: i * (barH + barGap) + 8,
+          }, b.bucket),
+          React.createElement("rect", {
+            fill: `${theme.inkMuted}33`,
+            height: barH - 2,
+            width: vizW - 30,
+            x: 24,
+            y: i * (barH + barGap),
+          }),
+          React.createElement("rect", {
+            fill: theme.ink,
+            height: barH - 2,
+            width: Math.max(2, ((vizW - 30) * b.total) / maxTotal),
+            x: 24,
+            y: i * (barH + barGap),
+          }),
+        ),
+      ),
+    );
+  }
+
+  if (viz.kind === "serve-zones" && viz.zones.length > 0) {
+    const top3 = viz.zones.slice(0, 3);
+    const barH = 10;
+    const barGap = 4;
+    const maxCount = Math.max(...top3.map((z) => z.inCount), 1);
+    return React.createElement(
+      "g",
+      { transform: `translate(${vizX}, ${y})` },
+      top3.map((z, i) =>
+        React.createElement(
+          "g",
+          { key: `${z.side}-${z.zone}` },
+          React.createElement("text", {
+            fill: theme.inkMuted,
+            fontFamily: theme.fonts.bodyFont,
+            fontSize: 8,
+            x: 0,
+            y: i * (barH + barGap) + 8,
+          }, `${z.side[0].toUpperCase()}${z.zone[0].toUpperCase()}`),
+          React.createElement("rect", {
+            fill: `${theme.inkMuted}33`,
+            height: barH - 2,
+            width: vizW - 40,
+            x: 20,
+            y: i * (barH + barGap),
+          }),
+          React.createElement("rect", {
+            fill: theme.ink,
+            height: barH - 2,
+            width: Math.max(2, ((vizW - 40) * z.inCount) / maxCount),
+            x: 20,
+            y: i * (barH + barGap),
+          }),
+          React.createElement("text", {
+            fill: theme.inkMuted,
+            fontFamily: theme.fonts.bodyFont,
+            fontSize: 8,
+            x: vizW - 16,
+            y: i * (barH + barGap) + 8,
+          }, formatPct(z.winRate)),
+        ),
+      ),
+    );
+  }
+
+  if (viz.kind === "flow" && viz.flows.length > 0) {
+    const top3 = viz.flows.slice(0, 3);
+    return React.createElement(
+      "g",
+      { transform: `translate(${vizX}, ${y})` },
+      top3.map((f, i) =>
+        React.createElement("text", {
+          fill: theme.inkMuted,
+          fontFamily: theme.fonts.bodyFont,
+          fontSize: 8,
+          key: i,
+          x: 0,
+          y: i * 14 + 10,
+        }, `${f.fromZone.replace(/_/g, " ")} → ${f.toZone.replace(/_/g, " ")} ${formatPct(f.winRate)}`),
+      ),
+    );
+  }
+
+  if (viz.kind === "zone-heat" && viz.zones.length > 0) {
+    const top3 = viz.zones.slice(0, 3);
+    return React.createElement(
+      "g",
+      { transform: `translate(${vizX}, ${y})` },
+      top3.map((z, i) =>
+        React.createElement("text", {
+          fill: theme.inkMuted,
+          fontFamily: theme.fonts.bodyFont,
+          fontSize: 8,
+          key: z.zone,
+          x: 0,
+          y: i * 14 + 10,
+        }, `${z.zone.replace(/_/g, " ")} ${formatPct(z.winRate)} (n=${z.total})`),
+      ),
+    );
+  }
+
+  return null;
+}
+
 function renderCompactCoachCard(insight, theme, width, height = 100) {
   if (!insight) return null;
   const accent = insightAccent(theme, insight.category);
   const categoryLabel = insight.category ? insight.category.toUpperCase() : "INSIGHT";
+  const padding = 16;
+  const hasViz = Boolean(insight.viz);
+  const maxTextWidth = hasViz ? width - padding * 2 - 170 : width - padding * 2;
+  const pillWidth = Math.min(120, categoryLabel.length * 8 + 24);
+  const takeawayX = padding + pillWidth + 12;
+  const headlineLines = fitSvgText(insight.headline, {
+    fontFamily: theme.fonts.condensedFont,
+    fontSize: theme.fontSize.subtitle,
+    fontWeight: 600,
+    maxLines: 2,
+    maxWidth: maxTextWidth,
+    mode: "wrap",
+  }).lines;
+  const actionLines = fitSvgText(insight.action, {
+    fontFamily: theme.fonts.bodyFont,
+    fontSize: theme.fontSize.label,
+    maxLines: 2,
+    maxWidth: maxTextWidth,
+    mode: "wrap",
+  }).lines;
+  const headlineStartY = 58;
+  const headlineLineH = theme.fontSize.subtitle + 4;
+  const actionStartY = headlineStartY + headlineLines.length * headlineLineH + 8;
+  const actionLineH = theme.fontSize.label + 4;
+  const contentBottom = actionStartY + actionLines.length * actionLineH + 12;
+  const cardHeight = Math.max(height, contentBottom);
 
   return React.createElement(
     "g",
     null,
     React.createElement("rect", {
       fill: `${accent}18`,
-      height,
+      height: cardHeight,
       rx: 10,
       stroke: `${accent}55`,
       strokeWidth: 1,
@@ -823,7 +1204,7 @@ function renderCompactCoachCard(insight, theme, width, height = 100) {
     }),
     React.createElement("rect", {
       fill: accent,
-      height,
+      height: cardHeight,
       rx: 2,
       width: 5,
       x: 0,
@@ -833,7 +1214,7 @@ function renderCompactCoachCard(insight, theme, width, height = 100) {
       fill: `${accent}33`,
       height: 22,
       rx: 11,
-      width: Math.min(120, categoryLabel.length * 8 + 24),
+      width: pillWidth,
       x: 16,
       y: 14,
     }),
@@ -856,34 +1237,41 @@ function renderCompactCoachCard(insight, theme, width, height = 100) {
         fontFamily: theme.fonts.condensedFont,
         fontSize: theme.fontSize.label,
         fontWeight: 600,
-        x: 150,
+        x: takeawayX,
         y: 30,
       },
       "COACH TAKEAWAY",
     ),
-    React.createElement(
-      "text",
-      {
-        fill: theme.ink,
-        fontFamily: theme.fonts.condensedFont,
-        fontSize: theme.fontSize.subtitle,
-        fontWeight: 600,
-        x: 16,
-        y: 58,
-      },
-      insight.headline.length > 58 ? `${insight.headline.slice(0, 58)}…` : insight.headline,
+    headlineLines.map((line, i) =>
+      React.createElement(
+        "text",
+        {
+          key: `headline-${i}`,
+          fill: theme.ink,
+          fontFamily: theme.fonts.condensedFont,
+          fontSize: theme.fontSize.subtitle,
+          fontWeight: 600,
+          x: padding,
+          y: headlineStartY + i * headlineLineH,
+        },
+        line,
+      ),
     ),
-    React.createElement(
-      "text",
-      {
-        fill: theme.inkMuted,
-        fontFamily: theme.fonts.bodyFont,
-        fontSize: theme.fontSize.label,
-        x: 16,
-        y: 82,
-      },
-      insight.action.length > 72 ? `${insight.action.slice(0, 72)}…` : insight.action,
+    actionLines.map((line, i) =>
+      React.createElement(
+        "text",
+        {
+          key: `action-${i}`,
+          fill: theme.inkMuted,
+          fontFamily: theme.fonts.bodyFont,
+          fontSize: theme.fontSize.label,
+          x: padding,
+          y: actionStartY + i * actionLineH,
+        },
+        line,
+      ),
     ),
+    hasViz && renderInsightMiniViz(insight.viz, theme, width, headlineStartY),
   );
 }
 
@@ -903,32 +1291,35 @@ function topPointZones(shots, player, limit = 4) {
 function buildServeInsight(ctx) {
   const hostZones = computeServeZones(ctx.enrichedShots, "host")
     .filter((zone) => zone.inCount >= 3)
-    .sort((a, b) => b.winRate - a.winRate);
+    .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0));
   const top = hostZones[0];
   if (!top) return null;
   const firstServe = computeFirstServeInRate(ctx.enrichedShots, "host");
   return {
     action:
-      top.winRate >= 0.6
+      (top.winRate ?? 0) >= 0.6
         ? `Keep targeting ${top.side} ${top.zone} under pressure.`
         : `Mix serve locations — ${top.side} ${top.zone} is underperforming.`,
     category: "serve",
-    detail: `${Math.round(firstServe.rate * 100)}% first serves in (${firstServe.won}/${firstServe.total})`,
-    headline: `${ctx.hostName}: ${Math.round(top.winRate * 100)}% win rate serving ${top.side} ${top.zone}`,
+    detail: `${formatPct(firstServe.rate)} first serves in (${firstServe.won}/${firstServe.total})`,
+    headline: `${ctx.hostName}: ${formatPct(top.winRate)} win rate serving ${top.side} ${top.zone}`,
     id: "serve-slide-insight",
   };
 }
 
 function renderZonesSlide(ctx, theme, layout) {
   const barW = layout.content.width;
-  const gap = 24;
+  const gap = SLIDE_BANDS.zoneColumnGap;
   const hostZones = topPointZones(ctx.enrichedShots, "host");
   const guestZones = topPointZones(ctx.enrichedShots, "guest");
   const maxRows = Math.max(hostZones.length, guestZones.length, 1);
   const rowH = Math.min(150, Math.max(88, Math.floor((layout.content.height - 72) / maxRows)));
   const blockH = 48 + maxRows * rowH;
-  const startY = 16;
   const columnW = (barW - gap) / 2;
+
+  const [contentBand] = layoutBands(layout.content.height, [
+    { id: "zones", grow: true },
+  ]);
 
   function renderZoneColumn(zones, player, x, title) {
     return React.createElement(
@@ -951,7 +1342,7 @@ function renderZonesSlide(ctx, theme, layout) {
         const pct = Math.round(winRate * 100);
         const trackW = columnW - 80;
         const barWidth = Math.max(10, trackW * winRate);
-        const pctX = Math.min(trackW - 4, barWidth + 6);
+        const pctX = trackW + 10;
         return React.createElement(
           "g",
           { key: `${player}-${entry.label}`, transform: `translate(0, ${48 + index * rowH})` },
@@ -1013,7 +1404,7 @@ function renderZonesSlide(ctx, theme, layout) {
 
   return React.createElement(
     "g",
-    { transform: `translate(0, ${startY})` },
+    { transform: `translate(0, ${contentBand.y})` },
     renderZoneColumn(hostZones, "host", 0, ctx.hostName),
     renderZoneColumn(guestZones, "guest", columnW + gap, ctx.guestName),
   );
@@ -1021,17 +1412,20 @@ function renderZonesSlide(ctx, theme, layout) {
 
 function renderCoachCards(ctx, theme, layout, insights) {
   const cards = insights.slice(0, 3);
-  const gap = 20;
+  const gap = SLIDE_BANDS.coachCardGap;
   const cardW = layout.content.width;
   const cardH = Math.min(
-    320,
-    Math.max(220, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
+    SLIDE_BANDS.coachCardMaxH,
+    Math.max(SLIDE_BANDS.coachCardMinH, Math.floor((layout.content.height - gap * (cards.length - 1)) / cards.length)),
   );
-  const startY = 8;
+
+  const [cardsBand] = layoutBands(layout.content.height, [
+    { id: "cards", grow: true },
+  ]);
 
   return React.createElement(
     "g",
-    { transform: `translate(0, ${startY})` },
+    { transform: `translate(0, ${cardsBand.y})` },
     cards.map((insight, index) => {
       const accent = insightAccent(theme, insight.category, index);
       const hero = extractHeroStat(insight.headline);
@@ -1160,17 +1554,17 @@ function buildKeyStats(ctx) {
 
   return [
     {
-      guestShare: guestWin.rate,
-      guestValue: `${Math.round(guestWin.rate * 100)}%`,
-      hostShare: hostWin.rate,
-      hostValue: `${Math.round(hostWin.rate * 100)}%`,
+      guestShare: guestWin.rate ?? 0,
+      guestValue: formatPct(guestWin.rate),
+      hostShare: hostWin.rate ?? 0,
+      hostValue: formatPct(hostWin.rate),
       title: "Points Won",
     },
     {
-      guestShare: guestFS.rate,
-      guestValue: `${Math.round(guestFS.rate * 100)}%`,
-      hostShare: hostFS.rate,
-      hostValue: `${Math.round(hostFS.rate * 100)}%`,
+      guestShare: guestFS.rate ?? 0,
+      guestValue: formatPct(guestFS.rate),
+      hostShare: hostFS.rate ?? 0,
+      hostValue: formatPct(hostFS.rate),
       title: "First Serve In",
     },
     {
@@ -1181,10 +1575,10 @@ function buildKeyStats(ctx) {
       title: "Long Rallies Won (7+)",
     },
     {
-      guestShare: guestBP.rate,
-      guestValue: `${Math.round(guestBP.rate * 100)}%`,
-      hostShare: hostBP.rate,
-      hostValue: `${Math.round(hostBP.rate * 100)}%`,
+      guestShare: guestBP.rate ?? 0,
+      guestValue: formatPct(guestBP.rate),
+      hostShare: hostBP.rate ?? 0,
+      hostValue: formatPct(hostBP.rate),
       title: "Break Points Converted (Return)",
     },
   ];
@@ -1396,9 +1790,9 @@ function buildReturnGameStats(ctx) {
   return [
     {
       guestShare: guest?.rate ?? 0,
-      guestValue: guest ? `${Math.round(guest.rate * 100)}%` : "—",
+      guestValue: guest ? formatPct(guest.rate) : "—",
       hostShare: host?.rate ?? 0,
-      hostValue: host ? `${Math.round(host.rate * 100)}%` : "—",
+      hostValue: host ? formatPct(host.rate) : "—",
       title: "Return Points Won",
     },
     {
@@ -1459,16 +1853,16 @@ function buildSpinDirectionStats(ctx) {
   return [
     {
       guestShare: guestSpin?.winRate ?? 0,
-      guestValue: guestSpin ? `${guestSpin.spin} ${Math.round(guestSpin.winRate * 100)}%` : "—",
+      guestValue: guestSpin ? `${guestSpin.spin} ${formatPct(guestSpin.winRate)}` : "—",
       hostShare: hostSpin?.winRate ?? 0,
-      hostValue: hostSpin ? `${hostSpin.spin} ${Math.round(hostSpin.winRate * 100)}%` : "—",
+      hostValue: hostSpin ? `${hostSpin.spin} ${formatPct(hostSpin.winRate)}` : "—",
       title: "Best Spin Win Rate",
     },
     {
       guestShare: guestDir?.winRate ?? 0,
-      guestValue: guestDir ? `${guestDir.direction} ${Math.round(guestDir.winRate * 100)}%` : "—",
+      guestValue: guestDir ? `${guestDir.direction} ${formatPct(guestDir.winRate)}` : "—",
       hostShare: hostDir?.winRate ?? 0,
-      hostValue: hostDir ? `${hostDir.direction} ${Math.round(hostDir.winRate * 100)}%` : "—",
+      hostValue: hostDir ? `${hostDir.direction} ${formatPct(hostDir.winRate)}` : "—",
       title: "Best Direction Win Rate",
     },
   ];
@@ -1530,11 +1924,9 @@ function buildShotmakingStats(ctx) {
 }
 
 function renderMomentumSlide(ctx, theme, layout) {
-  const footerH = 80;
+  const footerH = SLIDE_BANDS.momentumFooterH;
   const chartW = layout.content.width;
   const chartH = Math.min(layout.content.height - footerH - 16, Math.floor(chartW * 1.1));
-  const blockH = chartH + 12 + footerH;
-  const startY = 12;
   const hostWin = computePointsWonRate(ctx.momentumPoints, "host");
   const guestWin = computePointsWonRate(ctx.momentumPoints, "guest");
   const bpCount = ctx.points.filter((point) => point.breakPoint).length;
@@ -1547,13 +1939,17 @@ function renderMomentumSlide(ctx, theme, layout) {
     setNumber: point.setNumber,
   }));
 
+  const [chartBand, footerBand] = layoutBands(layout.content.height, [
+    { id: "chart", height: chartH },
+    { id: "footer", height: footerH },
+  ]);
+
   return React.createElement(
     "g",
-    { transform: `translate(0, ${startY})` },
+    { transform: `translate(0, ${chartBand.y})` },
     React.createElement(MomentumChart, {
       height: chartH,
       hostPlayer: "host",
-      monoBlue: true,
       points,
       showBreakPoints: true,
       showSetBoundaries: true,
@@ -1567,7 +1963,7 @@ function renderMomentumSlide(ctx, theme, layout) {
         accentColor: getPlayerColor("host", theme),
         label: `${ctx.hostName.split(" ").pop()} points won`,
         theme,
-        value: `${Math.round(hostWin.rate * 100)}%`,
+        value: formatPct(hostWin.rate),
         x: 0,
         y: 0,
       }),
@@ -1575,7 +1971,7 @@ function renderMomentumSlide(ctx, theme, layout) {
         accentColor: getPlayerColor("guest", theme),
         label: `${ctx.guestName.split(" ").pop()} points won`,
         theme,
-        value: `${Math.round(guestWin.rate * 100)}%`,
+        value: formatPct(guestWin.rate),
         x: chartW / 3,
         y: 0,
       }),
@@ -1617,34 +2013,40 @@ function errorShots(shots) {
 }
 
 function renderDensitySlide(ctx, theme, layout) {
-  const gap = 20;
-  const labelH = 44;
+  const gap = SLIDE_BANDS.densityGap;
+  const labelH = SLIDE_BANDS.densityLabelH;
+  const chipH = 32;
   const courtW = Math.floor((layout.content.width - gap) / 2);
-  // Near-half court plus margins is ~1.07 taller than wide; don't hand CourtSurface
-  // a taller box or the court floats vertically away from the player label.
-  const courtH = Math.min(Math.floor(layout.content.height - labelH - 16), Math.floor(courtW * 1.07));
+  const courtH = Math.min(Math.floor(layout.content.height - labelH - chipH - 16), Math.floor(courtW * 1.07));
   const half = "near";
-  const blockH = labelH + courtH;
-  const startY = 12;
+
+  const [densityBand] = layoutBands(layout.content.height, [
+    { id: "density", grow: true },
+  ]);
+
+  const groundstrokeShots = ctx.enrichedShots.filter(
+    (s) => s.stroke !== "Serve" && s.stroke !== "Volley" && s.stroke !== "Overhead",
+  );
 
   function renderPlayerDensity(player, x, name) {
     const scales = createCourtScales({ half, height: courtH, margin: 1.5, width: courtW });
+    const playerColor = getPlayerColor(player, theme);
+    const zoneWinRates = computeZoneWinRates(groundstrokeShots, player);
+    const deuceRate = zoneWinRates.find((z) => z.zone === "deuce");
+    const adRate = zoneWinRates.find((z) => z.zone === "ad");
+
     return React.createElement(
       "g",
       { key: player, transform: `translate(${x}, 0)` },
-      React.createElement(
-        "text",
-        {
-          fill: getPlayerColor(player, theme),
-          fontFamily: theme.fonts.condensedFont,
-          fontSize: theme.fontSize.title,
-          fontWeight: 700,
-          x: courtW / 2,
-          y: 28,
-          textAnchor: "middle",
-        },
-        name,
-      ),
+      React.createElement("text", {
+        fill: playerColor,
+        fontFamily: theme.fonts.condensedFont,
+        fontSize: theme.fontSize.title,
+        fontWeight: 700,
+        textAnchor: "middle",
+        x: courtW / 2,
+        y: 28,
+      }, name),
       React.createElement(
         "g",
         { transform: `translate(0, ${labelH})` },
@@ -1655,23 +2057,49 @@ function renderDensitySlide(ctx, theme, layout) {
             alpha: 0.45,
             bandwidth: 1.2,
             half,
-            highColor: getPlayerColor(player, theme),
+            highColor: playerColor,
             lowColor: `${theme.inkMuted}44`,
             player,
             scales,
-            shots: ctx.enrichedShots,
+            shots: groundstrokeShots,
             showOutlines: false,
             theme,
             thresholds: 5,
           }),
         ),
       ),
+      React.createElement(
+        "g",
+        { transform: `translate(0, ${labelH + courtH + 12})` },
+        deuceRate
+          ? React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: theme.fontSize.label,
+              fontWeight: 500,
+              textAnchor: "middle",
+              x: courtW * 0.25,
+              y: 16,
+            }, `Deuce ${formatPct(deuceRate.winRate)}`)
+          : null,
+        adRate
+          ? React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: theme.fontSize.label,
+              fontWeight: 500,
+              textAnchor: "middle",
+              x: courtW * 0.75,
+              y: 16,
+            }, `Ad ${formatPct(adRate.winRate)}`)
+          : null,
+      ),
     );
   }
 
   return React.createElement(
     "g",
-    { transform: `translate(0, ${startY})` },
+    { transform: `translate(0, ${densityBand.y})` },
     renderPlayerDensity("host", 0, ctx.hostName),
     renderPlayerDensity("guest", courtW + gap, ctx.guestName),
   );
@@ -1679,17 +2107,24 @@ function renderDensitySlide(ctx, theme, layout) {
 
 function renderErrorHeatmapSlide(ctx, theme, layout) {
   const posterLayout = resolvePosterContentLayout(layout, {
-    analyticsBand: 56,
-    courtAspect: 1.1,
+    analyticsBand: 200,
+    courtAspect: 0.85,
     insightBand: 0,
     legendBand: 0,
   });
   const { analyticsY, courtHeight, courtWidth, courtX, courtY } = posterLayout;
-  const half = "near";
+  const half = "full";
   const scales = createCourtScales({ half, height: courtHeight, margin: 1.5, width: courtWidth });
-  const errors = errorShots(ctx.enrichedShots);
-  const hostErrors = errors.filter((s) => s.player === "host").length;
-  const guestErrors = errors.filter((s) => s.player === "guest").length;
+  const allErrors = errorShots(ctx.enrichedShots);
+  const outErrors = allErrors.filter((s) => s.result === "Out" || s.endedBy === "unforced_error");
+  const netErrors = allErrors.filter((s) => s.result === "Net");
+  const hostOut = outErrors.filter((s) => s.player === "host").length;
+  const guestOut = outErrors.filter((s) => s.player === "guest").length;
+  const hostNet = netErrors.filter((s) => s.player === "host").length;
+  const guestNet = netErrors.filter((s) => s.player === "guest").length;
+  const hostLast = ctx.hostName.split(" ").pop();
+  const guestLast = ctx.guestName.split(" ").pop();
+  const colW = courtWidth / 2;
 
   return React.createElement(
     "g",
@@ -1698,47 +2133,114 @@ function renderErrorHeatmapSlide(ctx, theme, layout) {
       CourtSurface,
       { half, height: courtHeight, idPrefix: "slide-errors", surface: BRAND_SURFACE, theme, width: courtWidth },
       React.createElement(DotLayer, {
-        alpha: 0.75,
+        alpha: 0.8,
         colorBy: "player",
         highContrast: true,
         player: "host",
         scales,
-        shots: errors,
+        shots: outErrors,
         size: 6,
         theme,
-        useHalfCourtNormalization: true,
       }),
       React.createElement(DotLayer, {
-        alpha: 0.75,
+        alpha: 0.8,
         colorBy: "player",
         highContrast: true,
         player: "guest",
         scales,
-        shots: errors,
+        shots: outErrors,
         size: 6,
         theme,
-        useHalfCourtNormalization: true,
       }),
     ),
     React.createElement(
       "g",
       { transform: `translate(0, ${analyticsY - courtY})` },
+      React.createElement("text", {
+        fill: theme.inkMuted,
+        fontFamily: theme.fonts.bodyFont,
+        fontSize: theme.fontSize.label,
+        fontWeight: 600,
+        x: 0,
+        y: -8,
+      }, "OUT ERRORS (plotted above)"),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("host", theme),
-        label: `${ctx.hostName.split(" ").pop()} errors`,
+        label: `${hostLast} out`,
         theme,
-        value: String(hostErrors),
+        value: String(hostOut),
         x: 0,
-        y: 0,
+        y: 8,
       }),
       React.createElement(StatCallout, {
         accentColor: getPlayerColor("guest", theme),
-        label: `${ctx.guestName.split(" ").pop()} errors`,
+        label: `${guestLast} out`,
         theme,
-        value: String(guestErrors),
-        x: courtWidth / 2,
-        y: 0,
+        value: String(guestOut),
+        x: colW,
+        y: 8,
       }),
+      React.createElement("text", {
+        fill: theme.inkMuted,
+        fontFamily: theme.fonts.bodyFont,
+        fontSize: theme.fontSize.label,
+        fontWeight: 600,
+        x: 0,
+        y: 80,
+      }, "NET ERRORS BY STROKE"),
+      (() => {
+        const strokes = ["Forehand", "Backhand", "Volley"];
+        const hostColor = getPlayerColor("host", theme);
+        const guestColor = getPlayerColor("guest", theme);
+        const maxNet = Math.max(
+          ...strokes.map((st) =>
+            netErrors.filter((s) => s.player === "host" && s.stroke === st).length +
+            netErrors.filter((s) => s.player === "guest" && s.stroke === st).length,
+          ),
+          1,
+        );
+        const barH = 16;
+        const barGap = 8;
+        const trackW = colW - 60;
+        return strokes.map((st, i) => {
+          const hostCount = netErrors.filter((s) => s.player === "host" && s.stroke === st).length;
+          const guestCount = netErrors.filter((s) => s.player === "guest" && s.stroke === st).length;
+          const y = 96 + i * (barH + barGap);
+          return React.createElement(
+            "g",
+            { key: st },
+            React.createElement("text", {
+              fill: theme.inkMuted,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: 10,
+              x: 0,
+              y: y + 12,
+            }, st[0] + st.slice(1).toLowerCase()),
+            React.createElement("rect", {
+              fill: hostColor,
+              height: barH / 2 - 1,
+              width: Math.max(2, (hostCount / maxNet) * trackW),
+              x: 50,
+              y: y,
+            }),
+            React.createElement("rect", {
+              fill: guestColor,
+              height: barH / 2 - 1,
+              width: Math.max(2, (guestCount / maxNet) * trackW),
+              x: 50,
+              y: y + barH / 2 + 1,
+            }),
+            React.createElement("text", {
+              fill: theme.ink,
+              fontFamily: theme.fonts.bodyFont,
+              fontSize: 10,
+              fontWeight: 600,
+              x: 50 + trackW + 6,
+              y: y + 12,
+            }, `H: ${hostCount} · G: ${guestCount}`),
+          );
+        });
+      })(),
     ),
   );
 }
@@ -1753,11 +2255,9 @@ function renderServePlacementSlide(ctx, theme, layout) {
   const { analyticsY, courtHeight, courtWidth, courtX, courtY } = posterLayout;
   const half = "near";
   const scales = createCourtScales({ half, height: courtHeight, margin: 1.5, width: courtWidth });
-  const hostPlacements = computeServePlacements(ctx.enrichedShots, "host")
-    .filter((p) => p.total >= 5)
-    .slice(0, 4);
-  const colW = courtWidth / 2;
-  const rowH = 76;
+  const hostZones = computeServeZones(ctx.enrichedShots, "host");
+  const hostColor = getPlayerColor("host", theme);
+  const heatGridH = analyticsY - courtY - courtHeight - 16;
 
   return React.createElement(
     "g",
@@ -1765,12 +2265,12 @@ function renderServePlacementSlide(ctx, theme, layout) {
     React.createElement(
       "text",
       {
-        fill: getPlayerColor("host", theme),
+        fill: hostColor,
         fontFamily: theme.fonts.condensedFont,
         fontSize: theme.fontSize.label,
         fontWeight: 700,
         x: 0,
-        y: -10,
+        y: -4,
       },
       `${ctx.hostName.split(" ").pop()} serves`,
     ),
@@ -1780,11 +2280,11 @@ function renderServePlacementSlide(ctx, theme, layout) {
       React.createElement(ServeLayer, {
         haloWidth: 1.5,
         highContrast: true,
-        includeFaults: true,
+        includeFaults: false,
         player: "host",
         scales,
-        serveType: "both",
-        shapeEncode: true,
+        serveType: "first",
+        shapeEncode: false,
         shots: ctx.enrichedShots,
         size: 7,
         theme,
@@ -1793,15 +2293,19 @@ function renderServePlacementSlide(ctx, theme, layout) {
     React.createElement(
       "g",
       { transform: `translate(0, ${analyticsY - courtY})` },
-      hostPlacements.map((placement, index) =>
-        React.createElement(StatCallout, {
-          key: placement.zone,
-          label: `${placement.side} ${placement.zone} (n=${placement.total})`,
-          theme,
-          value: `${Math.round(placement.inRate * 100)}% in`,
-          x: (index % 2) * colW,
-          y: Math.floor(index / 2) * rowH,
-        }),
+      React.createElement("text", {
+        fill: theme.inkMuted,
+        fontFamily: theme.fonts.bodyFont,
+        fontSize: theme.fontSize.label,
+        fontWeight: 600,
+        letterSpacing: 1,
+        x: 0,
+        y: 0,
+      }, "SERVICE BOX HEAT — IN-RATE %"),
+      React.createElement(
+        "g",
+        { transform: `translate(0, 12)` },
+        renderServeZoneHeatGrid(hostZones, theme, courtWidth, Math.max(120, heatGridH), hostColor),
       ),
     ),
   );
@@ -1811,18 +2315,593 @@ function renderGenericDuelSlide(ctx, theme, layout, stats) {
   return renderDuelStats(ctx, theme, layout, stats);
 }
 
+function buildKeyStatsSlideStats(ctx) {
+  const {
+    computeBreakPointConversionFromOfficial,
+    computeFirstServeInFromOfficial,
+    computePointsWonFromOfficial,
+  } = require("@courtviz/data");
+
+  const hostWin = computePointsWonFromOfficial(ctx.stats, "host") ?? computePointsWonRate(ctx.momentumPoints, "host");
+  const guestWin = computePointsWonFromOfficial(ctx.stats, "guest") ?? computePointsWonRate(ctx.momentumPoints, "guest");
+  const hostFS = computeFirstServeInFromOfficial(ctx.stats, "host") ?? computeFirstServeInRate(ctx.enrichedShots, "host");
+  const guestFS = computeFirstServeInFromOfficial(ctx.stats, "guest") ?? computeFirstServeInRate(ctx.enrichedShots, "guest");
+  const host1stWon = officialValue(ctx, "host", "1st Serve Points Won") ?? 0;
+  const guest1stWon = officialValue(ctx, "guest", "1st Serve Points Won") ?? 0;
+  const host2ndIn = officialValue(ctx, "host", "2nd Serves In") ?? 0;
+  const guest2ndIn = officialValue(ctx, "guest", "2nd Serves In") ?? 0;
+  const hostRetWon = officialValue(ctx, "host", "Return Points Won") ?? 0;
+  const guestRetWon = officialValue(ctx, "guest", "Return Points Won") ?? 0;
+  const hostBP = computeBreakPointConversionFromOfficial(ctx.stats, "host") ?? computeBreakPointConversion(ctx.enrichedShots, "host");
+  const guestBP = computeBreakPointConversionFromOfficial(ctx.stats, "guest") ?? computeBreakPointConversion(ctx.enrichedShots, "guest");
+
+  const stats = [
+    {
+      guestShare: guestWin.rate ?? 0,
+      guestValue: formatPct(guestWin.rate),
+      hostShare: hostWin.rate ?? 0,
+      hostValue: formatPct(hostWin.rate),
+      title: "Points Won",
+    },
+    {
+      guestShare: guestFS.rate ?? 0,
+      guestValue: formatPct(guestFS.rate),
+      hostShare: hostFS.rate ?? 0,
+      hostValue: formatPct(hostFS.rate),
+      title: "1st Serve In",
+    },
+    {
+      guestShare: guest1stWon,
+      guestValue: String(guest1stWon),
+      hostShare: host1stWon,
+      hostValue: String(host1stWon),
+      title: "1st Serve Points Won",
+    },
+    {
+      guestShare: guest2ndIn,
+      guestValue: String(guest2ndIn),
+      hostShare: host2ndIn,
+      hostValue: String(host2ndIn),
+      title: "2nd Serves In",
+    },
+    {
+      guestShare: guestRetWon,
+      guestValue: String(guestRetWon),
+      hostShare: hostRetWon,
+      hostValue: String(hostRetWon),
+      title: "Return Points Won",
+    },
+    {
+      guestShare: guestBP.rate ?? 0,
+      guestValue: formatPct(guestBP.rate),
+      hostShare: hostBP.rate ?? 0,
+      hostValue: formatPct(hostBP.rate),
+      title: "Break Points Converted",
+    },
+  ];
+
+  return stats.slice(0, 6);
+}
+
+function renderRingGauge(cx, cy, radius, rate, color, label, value, theme) {
+  const circumference = 2 * Math.PI * radius;
+  const arcLength = circumference * rate;
+  return React.createElement(
+    "g",
+    null,
+    React.createElement("circle", {
+      cx,
+      cy,
+      fill: "none",
+      r: radius,
+      stroke: `${theme.inkMuted}22`,
+      strokeWidth: 6,
+    }),
+    React.createElement("circle", {
+      cx,
+      cy,
+      fill: "none",
+      r: radius,
+      stroke: color,
+      strokeDasharray: `${arcLength} ${circumference}`,
+      strokeLinecap: "round",
+      strokeWidth: 6,
+      transform: `rotate(-90 ${cx} ${cy})`,
+    }),
+    React.createElement("text", {
+      fill: theme.ink,
+      fontFamily: theme.fonts.condensedFont,
+      fontSize: 20,
+      fontWeight: 700,
+      textAnchor: "middle",
+      x: cx,
+      y: cy + 4,
+    }, value),
+    React.createElement("text", {
+      fill: theme.inkMuted,
+      fontFamily: theme.fonts.bodyFont,
+      fontSize: 10,
+      fontWeight: 500,
+      textAnchor: "middle",
+      x: cx,
+      y: cy + radius + 18,
+    }, label),
+  );
+}
+
+function renderKeyStatsSlide(ctx, theme, layout) {
+  const {
+    computeBreakPointConversionFromOfficial,
+    computeFirstServeInFromOfficial,
+    computePointsWonFromOfficial,
+  } = require("@courtviz/data");
+
+  const hostWin = computePointsWonFromOfficial(ctx.stats, "host") ?? computePointsWonRate(ctx.momentumPoints, "host");
+  const guestWin = computePointsWonFromOfficial(ctx.stats, "guest") ?? computePointsWonRate(ctx.momentumPoints, "guest");
+  const hostFS = computeFirstServeInFromOfficial(ctx.stats, "host") ?? computeFirstServeInRate(ctx.enrichedShots, "host");
+  const guestFS = computeFirstServeInFromOfficial(ctx.stats, "guest") ?? computeFirstServeInRate(ctx.enrichedShots, "guest");
+  const host1stWon = officialValue(ctx, "host", "1st Serve Points Won") ?? 0;
+  const guest1stWon = officialValue(ctx, "guest", "1st Serve Points Won") ?? 0;
+  const hostRetWon = officialValue(ctx, "host", "Return Points Won") ?? 0;
+  const guestRetWon = officialValue(ctx, "guest", "Return Points Won") ?? 0;
+  const hostBP = computeBreakPointConversionFromOfficial(ctx.stats, "host") ?? computeBreakPointConversion(ctx.enrichedShots, "host");
+  const guestBP = computeBreakPointConversionFromOfficial(ctx.stats, "guest") ?? computeBreakPointConversion(ctx.enrichedShots, "guest");
+
+  const contentW = layout.content.width;
+  const contentH = layout.content.height;
+  const hostColor = getPlayerColor("host", theme);
+  const guestColor = getPlayerColor("guest", theme);
+
+  const [ringsBand, chipsBand, barsBand] = layoutBands(contentH, [
+    { id: "rings", height: 140 },
+    { id: "chips", height: 36 },
+    { id: "bars", grow: true, minHeight: 120 },
+  ], 12);
+
+  const ringR = 42;
+  const ringCx1 = contentW * 0.28;
+  const ringCx2 = contentW * 0.72;
+  const ringCy = ringsBand.y + ringR + 8;
+
+  const barStats = [
+    { guestShare: guestFS.rate ?? 0, guestValue: formatPct(guestFS.rate), hostShare: hostFS.rate ?? 0, hostValue: formatPct(hostFS.rate), title: "1st Serve In" },
+    { guestShare: guest1stWon, guestValue: String(guest1stWon), hostShare: host1stWon, hostValue: String(host1stWon), title: "1st Serve Points Won" },
+    { guestShare: guestRetWon, guestValue: String(guestRetWon), hostShare: hostRetWon, hostValue: String(hostRetWon), title: "Return Points Won" },
+    { guestShare: guestBP.rate ?? 0, guestValue: formatPct(guestBP.rate), hostShare: hostBP.rate ?? 0, hostValue: formatPct(hostBP.rate), title: "Break Points Converted" },
+  ];
+
+  const barH = Math.max(24, Math.min(40, Math.floor((barsBand.height - barStats.length * 12) / barStats.length)));
+  const barW = contentW - 40;
+  const barTitleH = 20;
+  const barStride = barTitleH + barH + 12;
+
+  return React.createElement(
+    "g",
+    null,
+    React.createElement("text", {
+      fill: theme.inkMuted,
+      fontFamily: theme.fonts.bodyFont,
+      fontSize: theme.fontSize.label,
+      fontWeight: 600,
+      letterSpacing: 1,
+      textAnchor: "middle",
+      x: contentW / 2,
+      y: ringsBand.y,
+    }, "POINTS WON"),
+    renderRingGauge(ringCx1, ringCy, ringR, hostWin.rate ?? 0, hostColor, ctx.hostName.split(" ").pop(), formatPct(hostWin.rate), theme),
+    renderRingGauge(ringCx2, ringCy, ringR, guestWin.rate ?? 0, guestColor, ctx.guestName.split(" ").pop(), formatPct(guestWin.rate), theme),
+    React.createElement(
+      "g",
+      { transform: `translate(${contentW / 2}, ${chipsBand.y})` },
+      ctx.sets.map((set, i) =>
+        React.createElement(
+          "g",
+          { key: i, transform: `translate(${(i - (ctx.sets.length - 1) / 2) * 64}, 0)` },
+          React.createElement("rect", {
+            fill: `${theme.inkMuted}18`,
+            height: 24,
+            rx: 12,
+            width: 52,
+            x: -26,
+            y: 0,
+          }),
+          React.createElement("text", {
+            fill: theme.ink,
+            fontFamily: theme.fonts.bodyFont,
+            fontSize: theme.fontSize.body,
+            fontWeight: 600,
+            textAnchor: "middle",
+            x: 0,
+            y: 17,
+          }, `${set.hostGames ?? "-"}-${set.guestGames ?? "-"}`),
+        ),
+      ),
+    ),
+    React.createElement(
+      "g",
+      { transform: `translate(0, ${barsBand.y})` },
+      barStats.map((stat, i) => {
+        const total = Math.max((stat.hostShare ?? 0) + (stat.guestShare ?? 0), 0.001);
+        const hostPct = (stat.hostShare ?? 0) / total;
+        const guestPct = 1 - hostPct;
+        const y = i * barStride;
+        const barY = barTitleH;
+        const valueY = barY + barH * 0.75;
+        return React.createElement(
+          "g",
+          { key: stat.title, transform: `translate(0, ${y})` },
+          React.createElement("text", {
+            fill: theme.inkMuted,
+            fontFamily: theme.fonts.condensedFont,
+            fontSize: theme.fontSize.label,
+            fontWeight: 600,
+            textAnchor: "middle",
+            x: barW / 2,
+            y: 14,
+          }, stat.title.toUpperCase()),
+          React.createElement("text", {
+            fill: hostColor,
+            fontFamily: theme.fonts.condensedFont,
+            fontSize: theme.fontSize.subtitle,
+            fontWeight: 700,
+            textAnchor: "end",
+            x: barW / 2 - 8,
+            y: valueY,
+          }, stat.hostValue),
+          React.createElement("text", {
+            fill: guestColor,
+            fontFamily: theme.fonts.condensedFont,
+            fontSize: theme.fontSize.subtitle,
+            fontWeight: 700,
+            textAnchor: "start",
+            x: barW / 2 + 8,
+            y: valueY,
+          }, stat.guestValue),
+          React.createElement("rect", {
+            fill: hostColor,
+            height: barH,
+            rx: 2,
+            width: Math.max(4, (barW / 2) * hostPct),
+            x: barW / 2 - Math.max(4, (barW / 2) * hostPct),
+            y: barY,
+          }),
+          React.createElement("rect", {
+            fill: guestColor,
+            height: barH,
+            rx: 2,
+            width: Math.max(4, (barW / 2) * guestPct),
+            x: barW / 2,
+            y: barY,
+          }),
+        );
+      }),
+    ),
+  );
+}
+
+function renderMomentumClutchSlide(ctx, theme, layout) {
+  const footerH = SLIDE_BANDS.momentumFooterH;
+  const chartW = layout.content.width;
+  const clutchStats = buildClutchStats(ctx);
+  const clutchH = 120;
+  const calloutH = 80;
+  const chartH = Math.min(
+    Math.floor(layout.content.height - footerH - clutchH - calloutH - 32),
+    Math.floor(chartW * 0.85),
+  );
+  const hostWin = computePointsWonRate(ctx.momentumPoints, "host");
+  const guestWin = computePointsWonRate(ctx.momentumPoints, "guest");
+  const bpCount = ctx.points.filter((point) => point.breakPoint).length;
+  const points = ctx.momentumPoints.map((point) => ({
+    gameNumber: point.gameNumber,
+    isBreakPoint: Boolean(point.isBreakPoint ?? point.breakPoint),
+    isMatchPoint: Boolean(point.isMatchPoint ?? point.matchPoint),
+    isSetPoint: Boolean(point.isSetPoint ?? point.setPoint),
+    pointWinner: point.pointWinner,
+    setNumber: point.setNumber,
+  }));
+
+  const [chartBand, calloutBand, clutchBand, footerBand] = layoutBands(layout.content.height, [
+    { id: "chart", height: chartH },
+    { id: "callout", height: calloutH },
+    { id: "clutch", height: clutchH + 16 },
+    { id: "footer", height: footerH },
+  ]);
+
+  const hostColor = getPlayerColor("host", theme);
+  const guestColor = getPlayerColor("guest", theme);
+  const clutchR = 32;
+  const clutchSpacing = chartW / Math.max(clutchStats.length, 1);
+
+  return React.createElement(
+    "g",
+    { transform: `translate(0, ${chartBand.y})` },
+    React.createElement(MomentumChart, {
+      height: chartH,
+      hostPlayer: "host",
+      points,
+      showBreakPoints: true,
+      showSetBoundaries: true,
+      theme,
+      width: chartW,
+    }),
+    React.createElement(
+      "g",
+      { transform: `translate(0, ${calloutBand.y - chartBand.y})` },
+      React.createElement(StatCallout, {
+        accentColor: hostColor,
+        label: `${ctx.hostName.split(" ").pop()} points won`,
+        theme,
+        value: formatPct(hostWin.rate),
+        x: 0,
+        y: 0,
+      }),
+      React.createElement(StatCallout, {
+        accentColor: guestColor,
+        label: `${ctx.guestName.split(" ").pop()} points won`,
+        theme,
+        value: formatPct(guestWin.rate),
+        x: chartW / 3,
+        y: 0,
+      }),
+      React.createElement(StatCallout, {
+        label: "break points played",
+        theme,
+        value: String(bpCount),
+        x: (chartW / 3) * 2,
+        y: 0,
+      }),
+    ),
+    React.createElement(
+      "g",
+      { transform: `translate(0, ${clutchBand.y - chartBand.y})` },
+      clutchStats.map((stat, index) => {
+        const cx = clutchSpacing * index + clutchSpacing / 2;
+        const cy = clutchR + 16;
+        const rate = parseFloat(stat.hostValue) / 100 || 0;
+        return React.createElement(
+          "g",
+          { key: stat.title },
+          renderRingGauge(cx, cy, clutchR, rate, hostColor, stat.title, stat.hostValue, theme),
+        );
+      }),
+    ),
+  );
+}
+
+function buildServePowerStats(ctx) {
+  const {
+    computeFirstStrikeStats,
+    computeReturnInPlayRate,
+    computeServePlusOneStats,
+  } = require("@courtviz/core");
+
+  const hostFS = computeFirstStrikeStats(ctx.enrichedShots, "host");
+  const guestFS = computeFirstStrikeStats(ctx.enrichedShots, "guest");
+  const hostRIP = computeReturnInPlayRate(ctx.enrichedShots, "host");
+  const guestRIP = computeReturnInPlayRate(ctx.enrichedShots, "guest");
+  const hostS1 = computeServePlusOneStats(ctx.enrichedShots, "host");
+  const guestS1 = computeServePlusOneStats(ctx.enrichedShots, "guest");
+
+  const servePlusOneRows = [];
+  const allStrokes = new Set([...hostS1.map((s) => s.stroke), ...guestS1.map((s) => s.stroke)]);
+  for (const stroke of allStrokes) {
+    const hostStat = hostS1.find((s) => s.stroke === stroke);
+    const guestStat = guestS1.find((s) => s.stroke === stroke);
+    if (!hostStat && !guestStat) continue;
+    const hostTotal = hostStat?.total ?? 0;
+    const guestTotal = guestStat?.total ?? 0;
+    if (hostTotal < 3 && guestTotal < 3) continue;
+    servePlusOneRows.push({
+      guestShare: guestStat?.winRate ?? 0,
+      guestValue: guestStat ? `${formatPct(guestStat.winRate)} (${guestStat.won}/${guestStat.total})` : "—",
+      hostShare: hostStat?.winRate ?? 0,
+      hostValue: hostStat ? `${formatPct(hostStat.winRate)} (${hostStat.won}/${hostStat.total})` : "—",
+      title: `Serve+1 ${stroke}`,
+    });
+  }
+
+  return [
+    sectionHeader("Serve Speed"),
+    ...buildServeSpeedStats(ctx),
+    sectionHeader("First Strike (≤4 shots)"),
+    {
+      guestShare: guestFS.rate ?? 0,
+      guestValue: `${formatPct(guestFS.rate)} (${guestFS.won}/${guestFS.total})`,
+      hostShare: hostFS.rate ?? 0,
+      hostValue: `${formatPct(hostFS.rate)} (${hostFS.won}/${hostFS.total})`,
+      title: "First-Strike Win Rate",
+    },
+    ...(servePlusOneRows.length > 0
+      ? [sectionHeader("Serve + 1"), ...servePlusOneRows.slice(0, 3)]
+      : []),
+    sectionHeader("Return In-Play"),
+    {
+      guestShare: guestRIP.rate ?? 0,
+      guestValue: `${formatPct(guestRIP.rate)} (${guestRIP.won}/${guestRIP.total})`,
+      hostShare: hostRIP.rate ?? 0,
+      hostValue: `${formatPct(hostRIP.rate)} (${hostRIP.won}/${hostRIP.total})`,
+      title: "Return In-Play Rate",
+    },
+  ];
+}
+
+function renderServePowerSlide(ctx, theme, layout) {
+  return renderDuelStats(ctx, theme, layout, buildServePowerStats(ctx));
+}
+
+function renderCoachCtaSlide(ctx, theme, layout, insights, branding) {
+  const cards = insights.slice(0, 2);
+  const gap = SLIDE_BANDS.coachCardGap;
+  const cardW = layout.content.width;
+  const ctaH = 200;
+  const availableH = layout.content.height - ctaH - gap;
+  const cardH = Math.min(
+    SLIDE_BANDS.coachCardMaxH,
+    Math.max(SLIDE_BANDS.coachCardMinH, Math.floor((availableH - gap * (cards.length - 1)) / cards.length)),
+  );
+  const cardsBlockH = cards.length * (cardH + gap);  const centerX = cardW / 2;
+
+  const [cardsBand, ctaBand] = layoutBands(layout.content.height, [
+    { id: "cards", height: cardsBlockH },
+    { id: "cta", height: ctaH },
+  ]);
+  const ctaY = ctaBand.y;
+  const score = setScore(ctx.sets);
+
+  return React.createElement(
+    "g",
+    null,
+    React.createElement(
+      "g",
+      { transform: `translate(0, ${cardsBand.y})` },
+      cards.map((insight, index) => {
+        const card = renderCompactCoachCard(insight, theme, cardW, cardH);
+        if (!card) return null;
+        return React.createElement(
+          "g",
+          { key: insight.id, transform: `translate(0, ${index * (cardH + gap)})` },
+          card,
+        );
+      }),
+    ),
+    React.createElement(
+      "g",
+      { transform: `translate(0, ${ctaY})` },
+      React.createElement("rect", {
+        fill: `${theme.inkMuted}18`,
+        height: 44,
+        rx: 8,
+        width: cardW,
+        x: 0,
+        y: 0,
+      }),
+      React.createElement(
+        "text",
+        {
+          fill: theme.ink,
+          fontFamily: theme.fonts.condensedFont,
+          fontSize: theme.fontSize.title,
+          fontWeight: 700,
+          textAnchor: "middle",
+          x: centerX,
+          y: 28,
+        },
+        `${ctx.hostName.split(" ").pop()} vs ${ctx.guestName.split(" ").pop()} · ${score}`,
+      ),
+      branding.logoHref
+        ? React.createElement("image", {
+            height: 80,
+            href: branding.logoHref,
+            preserveAspectRatio: "xMidYMid meet",
+            width: 80,
+            x: centerX - 40,
+            y: 56,
+          })
+        : null,
+      React.createElement(
+        "text",
+        {
+          fill: theme.ink,
+          fontFamily: theme.fonts.condensedFont,
+          fontSize: 28,
+          fontWeight: 700,
+          textAnchor: "middle",
+          x: centerX,
+          y: 152,
+        },
+        branding.handle,
+      ),
+      React.createElement(
+        "text",
+        {
+          fill: theme.inkMuted,
+          fontFamily: theme.fonts.bodyFont,
+          fontSize: theme.fontSize.label,
+          textAnchor: "middle",
+          x: centerX,
+          y: 180,
+        },
+        branding.tagline,
+      ),
+    ),
+  );
+}
+
+function buildCoverHookStat(ctx) {
+  const {
+    computeFirstServeInFromOfficial,
+    computePointsWonFromOfficial,
+  } = require("@courtviz/data");
+
+  const totalShots = ctx.enrichedShots.length;
+  if (totalShots > 0) {
+    return { label: "Tracked shots", value: String(totalShots) };
+  }
+
+  const hostWin = computePointsWonFromOfficial(ctx.stats, "host");
+  if (hostWin) {
+    return { label: "Points won", value: formatPct(hostWin.rate) };
+  }
+
+  return null;
+}
+
+function buildCoverHookStats(ctx) {
+  const {
+    computeFirstServeInFromOfficial,
+    computePointsWonFromOfficial,
+  } = require("@courtviz/data");
+
+  const totalShots = ctx.enrichedShots.length;
+  const hostWin = computePointsWonFromOfficial(ctx.stats, "host");
+  const guestWin = computePointsWonFromOfficial(ctx.stats, "guest");
+  const hostFS = computeFirstServeInFromOfficial(ctx.stats, "host");
+
+  const stats = [];
+
+  if (hostWin && guestWin) {
+    const hostPct = hostWin.rate != null ? Math.round(hostWin.rate * 100) : null;
+    const guestPct = guestWin.rate != null ? Math.round(guestWin.rate * 100) : null;
+    stats.push({
+      label: "Points Won",
+      value: hostPct != null && guestPct != null ? `${hostPct}%–${guestPct}%` : "—",
+    });
+  }
+
+  if (hostFS) {
+    stats.push({
+      label: "1st Serve In",
+      value: formatPct(hostFS.rate),
+    });
+  }
+
+  if (totalShots > 0) {
+    stats.push({
+      label: "Tracked Shots",
+      value: String(totalShots),
+    });
+  }
+
+  return stats.slice(0, 3);
+}
+
 module.exports = {
   HEX_MIN_COUNT,
   HEX_SIZE_RANGE,
   buildAcesStats,
   buildBreakPointBattleStats,
   buildClutchStats,
+  buildCoverHookStat,
+  buildCoverHookStats,
   buildErrorHeatmapStats,
   buildKeyStats,
+  buildKeyStatsSlideStats,
   buildMatchNumbersStats,
   buildReturnGameStats,
   buildRallyHighlightStats,
   buildServeInsight,
+  buildServePowerStats,
   buildServeSpeedStats,
   buildSetBySetStats,
   buildShotmakingStats,
@@ -1830,16 +2909,20 @@ module.exports = {
   buildWinnersErrorStats,
   extractHeroStat,
   renderCoachCards,
+  renderCoachCtaSlide,
   renderCompactCoachCard,
   renderDensitySlide,
   renderDuelStats,
   renderErrorHeatmapSlide,
   renderGenericDuelSlide,
+  renderKeyStatsSlide,
   renderMiniDualCourt,
+  renderMomentumClutchSlide,
   renderMomentumSlide,
   renderRallyBars,
   renderRaysSlide,
   renderServePlacementSlide,
+  renderServePowerSlide,
   renderServeSlide,
   renderZonesSlide,
   serveCounts,

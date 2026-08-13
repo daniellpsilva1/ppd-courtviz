@@ -5,34 +5,38 @@
 import type { Surface } from "@courtviz/core";
 import {
   brandDefaults,
+  colorPrimitives,
   layout as tokenLayout,
   semanticColors,
   sportColors,
   typography,
 } from "@ppd/tokens";
 
+/** Legacy warm-paper constants not present in @ppd/tokens */
 export const BG_COLOR = "#F5F0E8";
-export const COURT_CLAY = "#C97B4E";
-export const COURT_CLAY_LIGHT = "#E0A87E";
-export const COURT_HARD = "#2E5A88";
-export const COURT_GRASS = "#6B9E5A";
-export const COURT_LINE = "#FFFFFF";
-export const COURT_LINE_DARK = "#2B2B2B";
 export const INK = "#1A1A1A";
-export const ACCENT_ORANGE = "#E8742C";
 export const ACCENT_BLUE = "#2B6CB0";
-export const SURROUND_CLAY = "#B0663C";
-export const SURROUND_HARD = "#244A72";
-export const SURROUND_GRASS = "#5A8A4A";
-export const HALO_COLOR = "#FAF6EE";
-export const DIV_LOW = "#2B4D8C";
-export const DIV_LOW_MID = "#6B8FCB";
-export const DIV_MID = "#F5F0E8";
+export const DIV_MID = BG_COLOR;
 export const DIV_MID_LIGHT = "#E8DCC8";
-export const DIV_HIGH = "#E8742C";
-export const DIV_PEAK = "#8B1A1A";
-export const PLAYER_HOST = "#E8742C";
-export const PLAYER_GUEST = "#2B6CB0";
+
+/** Unified constants derived from @ppd/tokens */
+export const COURT_CLAY = sportColors.surfaceLight.clay;
+export const COURT_CLAY_LIGHT = sportColors.surfaceLight.clayLight;
+export const COURT_HARD = sportColors.surfaceLight.hard;
+export const COURT_GRASS = sportColors.surfaceLight.grass;
+export const COURT_LINE = colorPrimitives.white;
+export const COURT_LINE_DARK = "#2B2B2B";
+export const ACCENT_ORANGE = sportColors.divergingLight.high;
+export const SURROUND_CLAY = sportColors.surfaceLight.surroundClay;
+export const SURROUND_HARD = sportColors.surfaceLight.surroundHard;
+export const SURROUND_GRASS = sportColors.surfaceLight.surroundGrass;
+export const HALO_COLOR = semanticColors.light.halo;
+export const DIV_LOW = sportColors.divergingLight.low;
+export const DIV_LOW_MID = sportColors.divergingLight.lowMid;
+export const DIV_HIGH = sportColors.divergingLight.high;
+export const DIV_PEAK = sportColors.divergingLight.peak;
+export const PLAYER_HOST = sportColors.playerHost;
+export const PLAYER_GUEST = sportColors.playerGuest;
 export const SPEED_CMAP = "turbo";
 
 export interface TypographyTokens {
@@ -81,6 +85,8 @@ export interface CourtvizTheme {
     small: number;
     label: number;
     source: number;
+    heroScore?: number;
+    hookStat?: number;
   };
   headerPadding: { x: number; y: number };
   annotation: {
@@ -116,7 +122,7 @@ function buildThemeFromTokens(options: {
   surfaces: typeof sportColors.surface | typeof sportColors.surfaceLight;
   diverging: typeof sportColors.diverging | typeof sportColors.divergingLight;
   players: { host: string; guest: string };
-  fontSize: typeof typography.sizes | typeof typography.sizesBroadcast;
+  fontSize: typeof typography.sizes | typeof typography.sizesBroadcast | typeof typography.sizesDeck;
   annotationFill: string;
   leaderWidth?: number;
   brand?: boolean;
@@ -171,6 +177,18 @@ export const ppd: CourtvizTheme = buildThemeFromTokens({
   brand: true,
 });
 
+/** Deck-specific theme using the larger sizesDeck ramp (48px titles, 72px hero score) */
+export const ppdDeck: CourtvizTheme = buildThemeFromTokens({
+  name: "ppd-deck",
+  semantic: semanticColors.dark,
+  surfaces: sportColors.surface,
+  diverging: sportColors.diverging,
+  players: { host: sportColors.playerHost, guest: sportColors.playerGuest },
+  fontSize: typography.sizesDeck,
+  annotationFill: semanticColors.dark.surface,
+  brand: true,
+});
+
 /** @deprecated Use `ppd` instead */
 export const ppdDark: CourtvizTheme = { ...ppd, name: "ppd-dark" };
 
@@ -179,7 +197,7 @@ export const ppdLight: CourtvizTheme = buildThemeFromTokens({
   semantic: semanticColors.light,
   surfaces: sportColors.surfaceLight,
   diverging: sportColors.divergingLight,
-  players: { host: "#2563EB", guest: "#2B6CB0" },
+  players: { host: sportColors.playerHost, guest: sportColors.playerGuest },
   fontSize: typography.sizes,
   annotationFill: semanticColors.light.surfaceRaised,
 });
@@ -194,7 +212,7 @@ export const ppdEditorial: CourtvizTheme = buildThemeFromTokens({
   },
   surfaces: sportColors.surfaceLight,
   diverging: sportColors.divergingLight,
-  players: { host: sportColors.playerHost, guest: "#2563EB" },
+  players: { host: sportColors.playerHost, guest: sportColors.playerGuest },
   fontSize: typography.sizes,
   annotationFill: semanticColors.light.surfaceRaised,
   brand: true,
@@ -203,7 +221,7 @@ export const ppdEditorial: CourtvizTheme = buildThemeFromTokens({
 export const broadcast: CourtvizTheme = buildThemeFromTokens({
   name: "broadcast",
   semantic: {
-    background: "#000000",
+    background: colorPrimitives.black,
     surface: "#111111",
     surfaceRaised: "#1A1A1A",
     ink: semanticColors.dark.ink,
@@ -216,11 +234,11 @@ export const broadcast: CourtvizTheme = buildThemeFromTokens({
     warning: semanticColors.dark.warning,
     courtLine: semanticColors.dark.courtLine,
     courtLineDark: semanticColors.dark.courtLineDark,
-    halo: "#000000",
+    halo: colorPrimitives.black,
   },
   surfaces: sportColors.surface,
   diverging: sportColors.diverging,
-  players: { host: "#FF7A1A", guest: "#3A9EFF" },
+  players: { host: sportColors.playerHost, guest: sportColors.playerGuest },
   fontSize: typography.sizesBroadcast,
   annotationFill: "#222222",
   leaderWidth: tokenLayout.annotation.leaderWidthBroadcast,
@@ -255,7 +273,7 @@ export const sprawlball: CourtvizTheme = {
 };
 
 export const themes: Record<string, CourtvizTheme> = {
-  broadcast, ppd, ppdDark, ppdEditorial, ppdLight, sprawlball,
+  broadcast, ppd, ppdDark, ppdDeck, ppdEditorial, ppdLight, sprawlball,
 };
 
 export function getTheme(name: string = "ppd"): CourtvizTheme {

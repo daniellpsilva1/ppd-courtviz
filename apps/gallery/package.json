@@ -16,7 +16,9 @@
     "@courtviz/core": "workspace:*",
     "@courtviz/data": "workspace:*",
     "@courtviz/react": "workspace:*",
+    "@courtviz/spike": "workspace:*",
     "@courtviz/themes": "workspace:*",
+    "@courtviz/three": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

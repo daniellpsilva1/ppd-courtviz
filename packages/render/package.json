@@ -14,7 +14,7 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "fonts"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

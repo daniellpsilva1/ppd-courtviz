@@ -43,6 +43,10 @@ describe("@ppd/tokens", () => {
     expect(tokens.social.landscape.aspectRatio).toBe("16:9");
   });
 
+  it("reserves enough portrait bottom safe inset for IG feed chrome", () => {
+    expect(tokens.social.portrait.safeArea.bottom).toBeGreaterThanOrEqual(120);
+  });
+
   it("defines motion spring presets with required damping", () => {
     expect(motionTokens.springs.snappy.damping).toBe(200);
     expect(motionTokens.springs.smooth.damping).toBe(28);

@@ -60,7 +60,7 @@ export function SocialServeSpeedScene() {
 
   return (
     <BroadcastShell>
-      <SceneHeader subtitle="Tracked serve velocity distribution" title="Serve Speed" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="Tracked serve velocity distribution" title="Serve Speed" />
 
       <div
         style={{

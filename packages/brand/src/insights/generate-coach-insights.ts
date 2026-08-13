@@ -4,17 +4,31 @@ import {
   computeRallyBucketStats,
   computeShotFlows,
   computeZoneWinRatesByPoint,
+  formatRate,
   type EnrichedShot,
+  type RallyBucketStat,
+  type ShotFlow,
+  type ServeZoneStat,
 } from "@courtviz/core";
 import { computeServeZones } from "@courtviz/core";
 import type { Point } from "@courtviz/data";
+
+export type CoachInsightViz =
+  | { kind: "serve-zones"; zones: ServeZoneStat[]; firstServeRate: number | null }
+  | { kind: "rally-buckets"; buckets: RallyBucketStat[] }
+  | { kind: "flow"; flows: ShotFlow[] }
+  | { kind: "zone-heat"; zones: { zone: string; total: number; won: number; winRate: number | null }[] }
+  | { kind: "bp-gauge"; won: number; total: number; rate: number | null };
 
 export interface CoachInsight {
   id: string;
   category: "serve" | "return" | "rally" | "pattern" | "pressure";
   headline: string;
+  /** Short stat for compact display (e.g. stat cards). */
+  metric: string;
   detail: string;
   action: string;
+  viz?: CoachInsightViz;
 }
 
 export interface CoachInsightInput {
@@ -28,34 +42,36 @@ const MIN_ZONE_POINTS = 20;
 const MIN_SERVE_IN = 10;
 const MIN_RALLY_POINTS = 4;
 
-function pct(rate: number): number {
-  return Math.round(rate * 100);
+function pct(rate: number | null): number {
+  return rate === null ? 0 : Math.round(rate * 100);
 }
 
-function rankScore(winRate: number, sample: number): number {
-  return winRate * Math.log(Math.max(sample, 1));
+function rankScore(winRate: number | null, sample: number): number {
+  return (winRate ?? 0) * Math.log(Math.max(sample, 1));
 }
 
 function topZoneInsight(shots: EnrichedShot[], player: "host" | "guest", name: string): CoachInsight | null {
   const zones = computeZoneWinRatesByPoint(shots, player)
-    .filter((z) => z.total >= MIN_ZONE_POINTS)
+    .filter((z) => z.total >= MIN_ZONE_POINTS && z.winRate !== null)
     .sort((a, b) => rankScore(b.winRate, b.total) - rankScore(a.winRate, a.total));
   const top = zones[0];
-  const weak = [...zones].sort((a, b) => a.winRate - b.winRate)[0];
+  const weak = [...zones].sort((a, b) => (a.winRate ?? 0) - (b.winRate ?? 0))[0];
   if (!top || !weak || top.zone === weak.zone) return null;
 
   return {
     id: `${player}-zone-edge`,
     category: "pattern",
     headline: `${name} wins ${pct(top.winRate)}% (${top.won}/${top.total} pts) from ${top.zone.replace(/_/g, " ")}`,
+    metric: `${pct(top.winRate)}% · ${top.zone.replace(/_/g, " ")}`,
     detail: `Only ${pct(weak.winRate)}% (${weak.won}/${weak.total} pts) from ${weak.zone.replace(/_/g, " ")}.`,
     action: `Reinforce ${top.zone.replace(/_/g, " ")} patterns in drills; avoid feeding into ${weak.zone.replace(/_/g, " ")}.`,
+    viz: { kind: "zone-heat", zones: zones.map((z) => ({ total: z.total, won: z.won, winRate: z.winRate, zone: z.zone })) },
   };
 }
 
 function serveInsight(shots: EnrichedShot[], player: "host" | "guest", name: string): CoachInsight | null {
   const zones = computeServeZones(shots, player)
-    .filter((z) => z.inCount >= MIN_SERVE_IN)
+    .filter((z) => z.inCount >= MIN_SERVE_IN && z.winRate !== null)
     .sort((a, b) => rankScore(b.winRate, b.inCount) - rankScore(a.winRate, a.inCount));
   const firstServe = computeFirstServeInRate(shots, player);
   const top = zones[0];
@@ -64,12 +80,14 @@ function serveInsight(shots: EnrichedShot[], player: "host" | "guest", name: str
   return {
     id: `${player}-serve-placement`,
     category: "serve",
-    headline: `${name}: ${pct(top.winRate)}% (${Math.round(top.winRate * top.inCount)}/${top.inCount} in) serving ${top.side} ${top.zone}`,
-    detail: `${pct(firstServe.rate)}% first serves in (${firstServe.won}/${firstServe.total}) · ${top.inCount}/${top.count} attempts in-box.`,
+    headline: `${name}: ${pct(top.winRate)}% (${Math.round((top.winRate ?? 0) * top.inCount)}/${top.inCount} in) serving ${top.side} ${top.zone}`,
+    metric: `${pct(top.winRate)}% · ${top.side} ${top.zone}`,
+    detail: `${formatRate(firstServe.rate)} first serves in (${firstServe.won}/${firstServe.total}) · ${top.inCount}/${top.count} attempts in-box.`,
     action:
-      top.winRate >= 0.6
+      (top.winRate ?? 0) >= 0.6
         ? `Keep targeting ${top.side} ${top.zone} under pressure.`
         : `Mix serve locations — ${top.side} ${top.zone} is underperforming relative to volume.`,
+    viz: { kind: "serve-zones", zones, firstServeRate: firstServe.rate },
   };
 }
 
@@ -79,7 +97,7 @@ function rallyInsight(shots: EnrichedShot[], player: "host" | "guest", name: str
   const long = buckets.find((b) => b.bucket === "7+");
   if (!short || !long || short.total < MIN_RALLY_POINTS || long.total < 3) return null;
 
-  const better = short.winRate >= long.winRate ? "short" : "long";
+  const better = (short.winRate ?? 0) >= (long.winRate ?? 0) ? "short" : "long";
   const betterBucket = better === "short" ? short : long;
   const worseBucket = better === "short" ? long : short;
 
@@ -87,11 +105,13 @@ function rallyInsight(shots: EnrichedShot[], player: "host" | "guest", name: str
     id: `${player}-rally-profile`,
     category: "rally",
     headline: `${name} wins ${pct(betterBucket.winRate)}% (${betterBucket.won}/${betterBucket.total}) of ${betterBucket.bucket}-shot rallies`,
+    metric: `${pct(betterBucket.winRate)}% · ${betterBucket.bucket} shots`,
     detail: `${pct(worseBucket.winRate)}% (${worseBucket.won}/${worseBucket.total}) in ${worseBucket.bucket}-shot exchanges.`,
     action:
       better === "short"
         ? "Push for serve-plus-one and first-strike tennis."
         : "Extend rallies — opponent breaks down in longer exchanges.",
+    viz: { kind: "rally-buckets", buckets },
   };
 }
 
@@ -109,11 +129,13 @@ function patternInsight(shots: EnrichedShot[], player: "host" | "guest", name: s
     id: `${player}-top-pattern`,
     category: "pattern",
     headline: `Top pattern: ${lane}, ${pct(top.winRate)}% win rate (${top.count} rallies)`,
+    metric: `${pct(top.winRate)}% · ${top.count} rallies`,
     detail: `${name}'s most repeated hit-to-bounce lane this match.`,
     action:
-      top.winRate >= 0.55
+      (top.winRate ?? 0) >= 0.55
         ? "Repeat this pattern on big points — it is producing."
         : "Reduce volume on this lane or change the target earlier in the rally.",
+    viz: { kind: "flow", flows },
   };
 }
 
@@ -130,12 +152,14 @@ function pressureInsight(
   return {
     id: `${player}-break-points`,
     category: "pressure",
-    headline: `${name} converted ${bp.won}/${bp.total} break points on return (${pct(bp.rate)}%)`,
+    headline: `${name} converted ${bp.won}/${bp.total} break points on return (${formatRate(bp.rate)})`,
+    metric: `${bp.won}/${bp.total} BP won`,
     detail: `${breakPoints} break points played in the match.`,
     action:
-      bp.rate >= 0.4
+      (bp.rate ?? 0) >= 0.4
         ? "Return game is a weapon — keep aggressive first returns."
         : "Work conversion patterns on return — too many break chances missed.",
+    viz: { kind: "bp-gauge", rate: bp.rate, total: bp.total, won: bp.won },
   };
 }
 

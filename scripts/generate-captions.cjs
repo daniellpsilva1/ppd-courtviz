@@ -12,7 +12,7 @@ module.paths = [demoNodeModules, rootNodeModules, ...(module.paths || [])];
 const { generateCoachInsights, primaryCoachInsight } = require("@ppd/brand");
 const { loadMatchContext } = require("./load-match-data.cjs");
 const { brandHashtag } = require("./brand-helpers.cjs");
-const { SLIDES } = require("./deck-slides.cjs");
+const { BENCH_POSTS_SLIDES } = require("./bench-posts-slides.cjs");
 const { setScore } = require("./export-slide-helpers.cjs");
 
 function buildHashtags() {
@@ -27,7 +27,7 @@ function buildHashtags() {
 function buildCaptions(ctx) {
   const score = setScore(ctx.sets);
   const HASHTAGS = buildHashtags();
-  const deckHook = `Swipe through ${SLIDES.length} slides: serve report → patterns → coach takeaways.`;
+  const deckHook = `Swipe through ${BENCH_POSTS_SLIDES.length} slides: shot maps → heatmaps → match analysis → coach takeaways.`;
   const primaryInsight = primaryCoachInsight({
     enrichedShots: ctx.enrichedShots,
     guestName: ctx.guestName,
@@ -63,7 +63,7 @@ async function main() {
 
   const captions = buildCaptions(ctx);
   const manifest = {
-    deckSlideCount: SLIDES.length,
+    deckSlideCount: BENCH_POSTS_SLIDES.length,
     guestName: ctx.guestName,
     hostName: ctx.hostName,
     matchDate: ctx.matchDate,

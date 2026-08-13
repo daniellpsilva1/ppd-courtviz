@@ -1,3 +1,4 @@
+import { formatRate } from "@courtviz/core";
 import { motionTokens } from "@ppd/tokens";
 import { useMemo } from "react";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -47,33 +48,33 @@ export function SocialStatsScene() {
     },
     {
       delay: 30,
-      guestShare: stats.guestFirstServe.rate,
-      guestValue: `${Math.round(stats.guestFirstServe.rate * 100)}%`,
-      hostShare: stats.hostFirstServe.rate,
-      hostValue: `${Math.round(stats.hostFirstServe.rate * 100)}%`,
+      guestShare: stats.guestFirstServe.rate ?? 0,
+      guestValue: formatRate(stats.guestFirstServe.rate),
+      hostShare: stats.hostFirstServe.rate ?? 0,
+      hostValue: formatRate(stats.hostFirstServe.rate),
       title: "First Serve In",
     },
     {
       delay: 36,
-      guestShare: stats.guestBreakConv.rate,
-      guestValue: `${Math.round(stats.guestBreakConv.rate * 100)}%`,
-      hostShare: stats.hostBreakConv.rate,
-      hostValue: `${Math.round(stats.hostBreakConv.rate * 100)}%`,
+      guestShare: stats.guestBreakConv.rate ?? 0,
+      guestValue: formatRate(stats.guestBreakConv.rate),
+      hostShare: stats.hostBreakConv.rate ?? 0,
+      hostValue: formatRate(stats.hostBreakConv.rate),
       title: "Break Points Converted (Return)",
     },
     {
       delay: 42,
-      guestShare: stats.guestWinRate.rate,
-      guestValue: `${Math.round(stats.guestWinRate.rate * 100)}%`,
-      hostShare: stats.hostWinRate.rate,
-      hostValue: `${Math.round(stats.hostWinRate.rate * 100)}%`,
+      guestShare: stats.guestWinRate.rate ?? 0,
+      guestValue: formatRate(stats.guestWinRate.rate),
+      hostShare: stats.hostWinRate.rate ?? 0,
+      hostValue: formatRate(stats.hostWinRate.rate),
       title: "Total Points Won",
     },
   ];
 
   return (
     <BroadcastShell>
-      <SceneHeader subtitle="How the match was won" title="Key Stats" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="How the match was won" title="Key Stats" />
 
       <div
         style={{

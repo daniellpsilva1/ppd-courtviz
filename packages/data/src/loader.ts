@@ -6,16 +6,8 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import {
-  MatchDataSchema,
-  type MatchData,
-  type Point,
-  type Shot,
-  type SetSummary,
-  type Game,
-  type PlayerStat,
-  type Match,
-} from "./schema";
+import { adaptSupabaseMatchData } from "./adapters/supabase";
+import { MatchDataSchema, type MatchData } from "./schema";
 
 const CACHE_VERSION = 1;
 
@@ -45,17 +37,25 @@ export async function loadMatch(
     options.supabaseKey ?? "",
   );
 
-  const [match, sets, games, points, shots, stats] = await Promise.all([
-    fetchMatch(client, matchId),
-    fetchSets(client, matchId),
-    fetchGames(client, matchId),
-    fetchPoints(client, matchId),
-    fetchShots(client, matchId),
-    fetchStats(client, matchId),
-  ]);
+  const [matchRow, setsRows, gamesRows, pointsRows, shotsRows, statsRows] =
+    await Promise.all([
+      fetchMatchRow(client, matchId),
+      fetchSetRows(client, matchId),
+      fetchGameRows(client, matchId),
+      fetchPointRows(client, matchId),
+      fetchShotRows(client, matchId),
+      fetchStatRows(client, matchId),
+    ]);
 
-  const data: MatchData = { match, sets, games, points, shots, stats };
-  return MatchDataSchema.parse(data);
+  const adapted = adaptSupabaseMatchData({
+    match: matchRow,
+    sets: setsRows,
+    games: gamesRows,
+    points: pointsRows,
+    shots: shotsRows,
+    stats: statsRows,
+  });
+  return MatchDataSchema.parse(adapted);
 }
 
 /**
@@ -102,61 +102,81 @@ export async function saveMatchToCache(
 
 // --- Supabase fetchers ---
 
-async function fetchMatch(client: SupabaseClient, matchId: string): Promise<Match> {
+type DbRow = Record<string, unknown>;
+
+async function fetchMatchRow(
+  client: SupabaseClient,
+  matchId: string,
+): Promise<DbRow> {
   const { data, error } = await client
     .from("tennis_matches")
     .select("*")
     .eq("id", matchId)
     .single();
   if (error) throw new Error(`Failed to fetch match: ${error.message}`);
-  return data as Match;
+  return data as DbRow;
 }
 
-async function fetchSets(client: SupabaseClient, matchId: string): Promise<SetSummary[]> {
+async function fetchSetRows(
+  client: SupabaseClient,
+  matchId: string,
+): Promise<DbRow[]> {
   const { data, error } = await client
     .from("tennis_match_sets")
     .select("*")
     .eq("match_id", matchId)
     .order("set_number");
   if (error) throw new Error(`Failed to fetch sets: ${error.message}`);
-  return (data ?? []) as SetSummary[];
+  return (data ?? []) as DbRow[];
 }
 
-async function fetchGames(client: SupabaseClient, matchId: string): Promise<Game[]> {
+async function fetchGameRows(
+  client: SupabaseClient,
+  matchId: string,
+): Promise<DbRow[]> {
   const { data, error } = await client
     .from("tennis_match_games")
     .select("*")
     .eq("match_id", matchId)
     .order("set_number, game_number");
   if (error) throw new Error(`Failed to fetch games: ${error.message}`);
-  return (data ?? []) as Game[];
+  return (data ?? []) as DbRow[];
 }
 
-async function fetchPoints(client: SupabaseClient, matchId: string): Promise<Point[]> {
+async function fetchPointRows(
+  client: SupabaseClient,
+  matchId: string,
+): Promise<DbRow[]> {
   const { data, error } = await client
     .from("tennis_match_points")
     .select("*")
     .eq("match_id", matchId)
     .order("set_number, game_number, point_number");
   if (error) throw new Error(`Failed to fetch points: ${error.message}`);
-  return (data ?? []) as Point[];
+  return (data ?? []) as DbRow[];
 }
 
-async function fetchShots(client: SupabaseClient, matchId: string): Promise<Shot[]> {
+async function fetchShotRows(
+  client: SupabaseClient,
+  matchId: string,
+): Promise<DbRow[]> {
   const { data, error } = await client
     .from("tennis_match_shots")
     .select("*")
     .eq("match_id", matchId)
     .order("set_number, game_number, point_number, shot_number");
   if (error) throw new Error(`Failed to fetch shots: ${error.message}`);
-  return (data ?? []) as Shot[];
+  return (data ?? []) as DbRow[];
 }
 
-async function fetchStats(client: SupabaseClient, matchId: string): Promise<PlayerStat[]> {
+async function fetchStatRows(
+  client: SupabaseClient,
+  matchId: string,
+): Promise<DbRow[]> {
   const { data, error } = await client
     .from("tennis_match_stats")
     .select("*")
     .eq("match_id", matchId);
   if (error) throw new Error(`Failed to fetch stats: ${error.message}`);
-  return (data ?? []) as PlayerStat[];
+  return (data ?? []) as DbRow[];
 }

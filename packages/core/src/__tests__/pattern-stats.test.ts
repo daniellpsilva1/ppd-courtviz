@@ -11,6 +11,11 @@ function shot(partial: Partial<EnrichedShot> & Pick<EnrichedShot, "player" | "se
     bounceX: 0,
     bounceY: 5,
     bounceZone: null,
+    bounceSide: null,
+    bounceDepth: null,
+    hitZone: null,
+    hitSide: null,
+    hitDepth: null,
     direction: null,
     endedBy: null,
     hitX: 0,
@@ -60,16 +65,23 @@ describe("pattern-stats", () => {
   });
 
   it("computes return in-play rate from second shot results", () => {
-    const shots = [
-      shot({ gameNumber: 1, player: "host", pointNumber: 1, setNumber: 1, shotNumber: 1, stroke: "Serve", type: "first_serve" }),
-      shot({ gameNumber: 1, player: "guest", pointNumber: 1, result: "In", setNumber: 1, shotNumber: 2, stroke: "Backhand" }),
-      shot({ gameNumber: 1, player: "host", pointNumber: 2, setNumber: 1, shotNumber: 1, stroke: "Serve", type: "first_serve" }),
-      shot({ gameNumber: 1, player: "guest", pointNumber: 2, result: "Out", setNumber: 1, shotNumber: 2, stroke: "Forehand" }),
-    ];
+    const shots: EnrichedShot[] = [];
+    for (let i = 1; i <= 5; i++) {
+      shots.push(shot({ gameNumber: 1, player: "host", pointNumber: i, setNumber: 1, shotNumber: 1, stroke: "Serve", type: "first_serve" }));
+      shots.push(shot({
+        gameNumber: 1,
+        player: "guest",
+        pointNumber: i,
+        result: i <= 3 ? "In" : "Out",
+        setNumber: 1,
+        shotNumber: 2,
+        stroke: "Backhand",
+      }));
+    }
 
     const guest = computeReturnInPlayRate(shots, "guest");
-    expect(guest.total).toBe(2);
-    expect(guest.won).toBe(1);
-    expect(guest.rate).toBe(0.5);
+    expect(guest.total).toBe(5);
+    expect(guest.won).toBe(3);
+    expect(guest.rate).toBeCloseTo(3 / 5, 5);
   });
 });

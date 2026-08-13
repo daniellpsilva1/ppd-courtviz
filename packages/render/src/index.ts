@@ -3,6 +3,9 @@
  */
 
 import { renderToStaticMarkup } from "react-dom/server";
+import { embedFontsInSvg } from "./font-embed";
+
+export { embedFontsInSvg } from "./font-embed";
 
 export function renderToSVG(element: React.ReactElement): string {
   return renderToStaticMarkup(element);
@@ -22,7 +25,8 @@ export async function renderAndSaveSVG(
   filePath: string,
   element: React.ReactElement,
 ): Promise<string> {
-  const svg = renderToSVGDocument(element);
+  const rawSvg = renderToSVGDocument(element);
+  const svg = await embedFontsInSvg(rawSvg);
   await saveSVG(filePath, svg);
   return svg;
 }
@@ -31,14 +35,28 @@ export interface SvgToPngOptions {
   width?: number;
   height?: number;
   density?: number;
+  /** Background color to flatten transparency onto (e.g. "#EEF4FF"). */
+  background?: string;
+  /** Mild unsharp mask after rasterize (sigma / m1 / m2). */
+  sharpen?: { sigma: number; m1?: number; m2?: number } | false;
 }
 
 export async function svgToPNG(svg: string, options?: SvgToPngOptions): Promise<Buffer> {
   try {
     const sharp = (await import("sharp")).default;
     let pipeline = sharp(Buffer.from(svg), { density: options?.density ?? 144 });
+    if (options?.background) {
+      pipeline = pipeline.flatten({ background: options.background });
+    }
     if (options?.width || options?.height) {
       pipeline = pipeline.resize(options.width, options.height);
+    }
+    if (options?.sharpen) {
+      pipeline = pipeline.sharpen({
+        m1: options.sharpen.m1 ?? 0.5,
+        m2: options.sharpen.m2 ?? 0.35,
+        sigma: options.sharpen.sigma,
+      });
     }
     return await pipeline.png().toBuffer();
   } catch {
@@ -56,14 +74,20 @@ export async function exportGraphic(
     pngWidth?: number;
     pngHeight?: number;
     pngDensity?: number;
+    pngBackground?: string;
+    pngSharpen?: { sigma: number; m1?: number; m2?: number } | false;
   },
 ): Promise<void> {
-  const svg = await renderAndSaveSVG(options.svgPath, element);
+  const rawSvg = renderToSVGDocument(element);
+  const svg = await embedFontsInSvg(rawSvg);
+  await saveSVG(options.svgPath, svg);
 
   if (options.pngPath) {
     const png = await svgToPNG(svg, {
+      background: options.pngBackground,
       density: options.pngDensity,
       height: options.pngHeight,
+      sharpen: options.pngSharpen,
       width: options.pngWidth,
     });
     const fs = await import("node:fs/promises");

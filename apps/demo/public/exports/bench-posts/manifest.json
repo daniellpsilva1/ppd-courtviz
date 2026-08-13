@@ -1,9 +1,10 @@
 {
   "aspectRatio": "4:5",
-  "fixtureHash": "4b1ec452d91b",
+  "exportScale": 3,
+  "fixtureHash": "5b791343ad16",
   "format": "portrait",
-  "generatedAt": "2026-07-27T17:41:43.638Z",
-  "height": 1350,
+  "generatedAt": "2026-08-07T17:39:54.743Z",
+  "height": 4050,
   "platforms": [
     "instagram",
     "tiktok",
@@ -16,82 +17,497 @@
       "id": "cover",
       "index": 0,
       "png": "01-cover.png",
-      "subtitle": "Swipe to see the data →",
+      "section": "Open",
+      "subtitle": "Swipe to map the match →",
       "svg": "01-cover.svg",
-      "title": "The tennis analytics bench"
+      "title": "Match report"
     },
     {
-      "id": "scale",
+      "id": "match-snapshot",
       "index": 1,
-      "png": "02-scale.png",
-      "subtitle": "Platform-wide aggregates",
-      "svg": "02-scale.svg",
-      "title": "By the numbers"
+      "png": "02-match-snapshot.png",
+      "section": "Open",
+      "subtitle": "Scoreline · volume · stroke mix",
+      "svg": "02-match-snapshot.svg",
+      "title": "Match snapshot"
     },
     {
-      "id": "live-bench",
+      "id": "territory-host",
       "index": 2,
-      "png": "03-live-bench.png",
-      "subtitle": "Pooled shot map and surface mix",
-      "svg": "03-live-bench.svg",
-      "title": "Live bench data"
+      "png": "03-territory-host.png",
+      "section": "Open",
+      "subtitle": "Where the host hit most",
+      "svg": "03-territory-host.svg",
+      "title": "Territory"
     },
     {
-      "id": "record-fastest-serve",
+      "id": "territory-guest",
       "index": 3,
-      "png": "04-record-fastest-serve.png",
-      "subtitle": "Bench record",
-      "svg": "04-record-fastest-serve.svg",
+      "png": "04-territory-guest.png",
+      "section": "Open",
+      "subtitle": "Where the guest hit most",
+      "svg": "04-territory-guest.svg",
+      "title": "Territory"
+    },
+    {
+      "id": "court-insight",
+      "index": 4,
+      "png": "05-court-insight.png",
+      "section": "Open",
+      "subtitle": "Where break, set, and match points ended",
+      "svg": "05-court-insight.svg",
+      "title": "Pressure zones"
+    },
+    {
+      "id": "serve-map-host",
+      "index": 5,
+      "png": "06-serve-map-host.png",
+      "section": "Serve",
+      "subtitle": "Host serve landing zones",
+      "svg": "06-serve-map-host.svg",
+      "title": "Serve placement"
+    },
+    {
+      "id": "serve-map-guest",
+      "index": 6,
+      "png": "07-serve-map-guest.png",
+      "section": "Serve",
+      "subtitle": "Guest serve landing zones",
+      "svg": "07-serve-map-guest.svg",
+      "title": "Serve placement"
+    },
+    {
+      "id": "serve-zones-heat",
+      "index": 7,
+      "png": "08-serve-zones-heat.png",
+      "section": "Serve",
+      "subtitle": "Wide · body · T heat by side",
+      "svg": "08-serve-zones-heat.svg",
+      "title": "Serve zones"
+    },
+    {
+      "id": "serve-1st-vs-2nd",
+      "index": 8,
+      "png": "09-serve-1st-vs-2nd.png",
+      "section": "Serve",
+      "subtitle": "Host · guest · official won%",
+      "svg": "09-serve-1st-vs-2nd.svg",
+      "title": "1st vs 2nd serve"
+    },
+    {
+      "id": "serve-speed-court-host",
+      "index": 9,
+      "png": "10-serve-speed-court-host.png",
+      "section": "Serve",
+      "subtitle": "Host velocity on court",
+      "svg": "10-serve-speed-court-host.svg",
+      "title": "Serve speed"
+    },
+    {
+      "id": "serve-speed-court-guest",
+      "index": 10,
+      "png": "11-serve-speed-court-guest.png",
+      "section": "Serve",
+      "subtitle": "Guest velocity on court",
+      "svg": "11-serve-speed-court-guest.svg",
+      "title": "Serve speed"
+    },
+    {
+      "id": "serve-plus-one",
+      "index": 11,
+      "png": "12-serve-plus-one.png",
+      "section": "Serve",
+      "subtitle": "Third-ball placement after first serve",
+      "svg": "12-serve-plus-one.svg",
+      "title": "Serve +1"
+    },
+    {
+      "id": "return-placement",
+      "index": 12,
+      "png": "13-return-placement.png",
+      "section": "Serve",
+      "subtitle": "Where returns land",
+      "svg": "13-return-placement.svg",
+      "title": "Return placement"
+    },
+    {
+      "id": "stroke-dots-host",
+      "index": 13,
+      "png": "14-stroke-dots-host.png",
+      "section": "Patterns",
+      "subtitle": "Host shots by stroke type",
+      "svg": "14-stroke-dots-host.svg",
+      "title": "Shot placement"
+    },
+    {
+      "id": "stroke-dots-guest",
+      "index": 14,
+      "png": "15-stroke-dots-guest.png",
+      "section": "Patterns",
+      "subtitle": "Guest shots by stroke type",
+      "svg": "15-stroke-dots-guest.svg",
+      "title": "Shot placement"
+    },
+    {
+      "id": "forehand-map",
+      "index": 15,
+      "png": "16-forehand-map.png",
+      "section": "Patterns",
+      "subtitle": "Every forehand landing",
+      "svg": "16-forehand-map.svg",
+      "title": "Forehand map"
+    },
+    {
+      "id": "backhand-map",
+      "index": 16,
+      "png": "17-backhand-map.png",
+      "section": "Patterns",
+      "subtitle": "Every backhand landing",
+      "svg": "17-backhand-map.svg",
+      "title": "Backhand map"
+    },
+    {
+      "id": "crosscourt-flows",
+      "index": 17,
+      "png": "18-crosscourt-flows.png",
+      "section": "Patterns",
+      "subtitle": "Crosscourt shot flows",
+      "svg": "18-crosscourt-flows.svg",
+      "title": "Crosscourt"
+    },
+    {
+      "id": "down-the-line-flows",
+      "index": 18,
+      "png": "19-down-the-line-flows.png",
+      "section": "Patterns",
+      "subtitle": "Down-the-line shot flows",
+      "svg": "19-down-the-line-flows.svg",
+      "title": "Down the line"
+    },
+    {
+      "id": "inside-out-in",
+      "index": 19,
+      "png": "20-inside-out-in.png",
+      "section": "Patterns",
+      "subtitle": "Aggression geometry on court",
+      "svg": "20-inside-out-in.svg",
+      "title": "Inside-out / in"
+    },
+    {
+      "id": "depth-bands",
+      "index": 20,
+      "png": "21-depth-bands.png",
+      "section": "Patterns",
+      "subtitle": "Short · mid · deep landing share",
+      "svg": "21-depth-bands.svg",
+      "title": "Depth bands"
+    },
+    {
+      "id": "depth-angle",
+      "index": 21,
+      "png": "22-depth-angle.png",
+      "section": "Patterns",
+      "subtitle": "Pin deep. Change the geometry.",
+      "svg": "22-depth-angle.svg",
+      "title": "Depth & angle"
+    },
+    {
+      "id": "approach-net",
+      "index": 22,
+      "png": "23-approach-net.png",
+      "section": "Patterns",
+      "subtitle": "Contact points · nets pinned to tape",
+      "svg": "23-approach-net.svg",
+      "title": "Approach & net"
+    },
+    {
+      "id": "volley-map",
+      "index": 23,
+      "png": "24-volley-map.png",
+      "section": "Patterns",
+      "subtitle": "Volley and net contact points",
+      "svg": "24-volley-map.svg",
+      "title": "Volley map"
+    },
+    {
+      "id": "winners-host",
+      "index": 24,
+      "png": "25-winners-host.png",
+      "section": "Outcomes",
+      "subtitle": "Host last In shot · Official W/UE",
+      "svg": "25-winners-host.svg",
+      "title": "Point endings"
+    },
+    {
+      "id": "winners-guest",
+      "index": 25,
+      "png": "26-winners-guest.png",
+      "section": "Outcomes",
+      "subtitle": "Guest last In shot · Official W/UE",
+      "svg": "26-winners-guest.svg",
+      "title": "Point endings"
+    },
+    {
+      "id": "errors-out",
+      "index": 26,
+      "png": "27-errors-out.png",
+      "section": "Outcomes",
+      "subtitle": "Outside singles · alley muted",
+      "svg": "27-errors-out.svg",
+      "title": "Out errors"
+    },
+    {
+      "id": "errors-net",
+      "index": 27,
+      "png": "28-errors-net.png",
+      "section": "Outcomes",
+      "subtitle": "Point-ending nets · pinned near tape",
+      "svg": "28-errors-net.svg",
+      "title": "Net errors"
+    },
+    {
+      "id": "zone-win-host",
+      "index": 28,
+      "png": "29-zone-win-host.png",
+      "section": "Outcomes",
+      "subtitle": "Host point win % by bounce zone",
+      "svg": "29-zone-win-host.svg",
+      "title": "Zone win rate"
+    },
+    {
+      "id": "zone-win-guest",
+      "index": 29,
+      "png": "30-zone-win-guest.png",
+      "section": "Outcomes",
+      "subtitle": "Guest point win % by bounce zone",
+      "svg": "30-zone-win-guest.svg",
+      "title": "Zone win rate"
+    },
+    {
+      "id": "first-strike-court",
+      "index": 30,
+      "png": "31-first-strike-court.png",
+      "section": "Outcomes",
+      "subtitle": "Point endings in four shots or fewer",
+      "svg": "31-first-strike-court.svg",
+      "title": "First strike"
+    },
+    {
+      "id": "rally-short",
+      "index": 31,
+      "png": "32-rally-short.png",
+      "section": "Outcomes",
+      "subtitle": "Where each 1–3 shot point ended",
+      "svg": "32-rally-short.svg",
+      "title": "Short rallies"
+    },
+    {
+      "id": "rally-medium",
+      "index": 32,
+      "png": "33-rally-medium.png",
+      "section": "Outcomes",
+      "subtitle": "Where each 4–6 shot point ended",
+      "svg": "33-rally-medium.svg",
+      "title": "Medium rallies"
+    },
+    {
+      "id": "rally-long",
+      "index": 33,
+      "png": "34-rally-long.png",
+      "section": "Outcomes",
+      "subtitle": "Where each 7+ shot point ended",
+      "svg": "34-rally-long.svg",
+      "title": "Long rallies"
+    },
+    {
+      "id": "break-points-court",
+      "index": 34,
+      "png": "35-break-points-court.png",
+      "section": "Pressure",
+      "subtitle": "Return and finish locations under pressure",
+      "svg": "35-break-points-court.svg",
+      "title": "Break points"
+    },
+    {
+      "id": "clutch-points",
+      "index": 35,
+      "png": "36-clutch-points.png",
+      "section": "Pressure",
+      "subtitle": "Break · set · match point endings",
+      "svg": "36-clutch-points.svg",
+      "title": "Clutch points"
+    },
+    {
+      "id": "set-1-density",
+      "index": 36,
+      "png": "37-set-1-density.png",
+      "section": "Pressure",
+      "subtitle": "Both players · shared scale with Set 2",
+      "svg": "37-set-1-density.svg",
+      "title": "Set 1 density"
+    },
+    {
+      "id": "set-2-density",
+      "index": 37,
+      "png": "38-set-2-density.png",
+      "section": "Pressure",
+      "subtitle": "Both players · shared scale with Set 1",
+      "svg": "38-set-2-density.svg",
+      "title": "Set 2 density"
+    },
+    {
+      "id": "momentum-court",
+      "index": 38,
+      "png": "39-momentum-court.png",
+      "section": "Pressure",
+      "subtitle": "Point winners by set on court",
+      "svg": "39-momentum-court.svg",
+      "title": "Momentum"
+    },
+    {
+      "id": "fastest-serve",
+      "index": 39,
+      "png": "40-fastest-serve.png",
+      "section": "Pressure",
+      "subtitle": "Top tracked serve speed",
+      "svg": "40-fastest-serve.svg",
       "title": "Fastest serve"
     },
     {
-      "id": "record-longest-rally",
-      "index": 4,
-      "png": "05-record-longest-rally.png",
-      "subtitle": "Bench record",
-      "svg": "05-record-longest-rally.svg",
+      "id": "longest-rally",
+      "index": 40,
+      "png": "41-longest-rally.png",
+      "section": "Pressure",
+      "subtitle": "Most shots in a single point",
+      "svg": "41-longest-rally.svg",
       "title": "Longest rally"
     },
     {
-      "id": "record-best-break",
-      "index": 5,
-      "png": "06-record-best-break.png",
-      "subtitle": "Bench record",
-      "svg": "06-record-best-break.svg",
-      "title": "Best break conversion"
+      "id": "top-points",
+      "index": 41,
+      "png": "42-top-points.png",
+      "section": "Pressure",
+      "subtitle": "Highest-leverage endings · MP › SP › BP",
+      "svg": "42-top-points.svg",
+      "title": "Top points"
     },
     {
-      "id": "record-top-points",
-      "index": 6,
-      "png": "07-record-top-points.png",
-      "subtitle": "Bench record",
-      "svg": "07-record-top-points.svg",
-      "title": "Top points won"
-    },
-    {
-      "id": "featured-match",
-      "index": 7,
-      "png": "08-featured-match.png",
-      "subtitle": "Editorial match analysis",
-      "svg": "08-featured-match.svg",
+      "id": "featured-story",
+      "index": 42,
+      "png": "43-featured-story.png",
+      "section": "Pressure",
+      "subtitle": "Head-to-head match analysis",
+      "svg": "43-featured-story.svg",
       "title": "Featured story"
     },
     {
-      "id": "featured-insight",
-      "index": 8,
-      "png": "09-featured-insight.png",
-      "subtitle": "Shot placement from the featured match",
-      "svg": "09-featured-insight.svg",
-      "title": "Court insight"
+      "id": "coach-insight-1",
+      "index": 43,
+      "png": "44-coach-insight-1.png",
+      "section": "Pressure",
+      "subtitle": "Top pattern takeaway on court",
+      "svg": "44-coach-insight-1.svg",
+      "title": "Coach insight"
+    },
+    {
+      "id": "momentum-swing",
+      "index": 44,
+      "png": "45-momentum-swing.png",
+      "section": "Pressure",
+      "subtitle": "Longest point streaks on court",
+      "svg": "45-momentum-swing.svg",
+      "title": "Momentum swing"
+    },
+    {
+      "id": "hex-efficiency",
+      "index": 45,
+      "png": "46-hex-efficiency.png",
+      "section": "Pressure",
+      "subtitle": "Win % by court zone · host vs guest",
+      "svg": "46-hex-efficiency.svg",
+      "title": "Hex efficiency"
+    },
+    {
+      "id": "zone-bars",
+      "index": 46,
+      "png": "47-zone-bars.png",
+      "section": "Pressure",
+      "subtitle": "Point win % by bounce zone · side by side",
+      "svg": "47-zone-bars.svg",
+      "title": "Zone bars"
+    },
+    {
+      "id": "serve-diamond",
+      "index": 47,
+      "png": "48-serve-diamond.png",
+      "section": "Pressure",
+      "subtitle": "1st serve % · win% · speed · aces",
+      "svg": "48-serve-diamond.svg",
+      "title": "Serve diamond"
+    },
+    {
+      "id": "error-profile",
+      "index": 48,
+      "png": "49-error-profile.png",
+      "section": "Pressure",
+      "subtitle": "Forced · unforced · net · out by stroke",
+      "svg": "49-error-profile.svg",
+      "title": "Error profile"
+    },
+    {
+      "id": "coach-insight-2",
+      "index": 49,
+      "png": "50-coach-insight-2.png",
+      "section": "Close",
+      "subtitle": "Second pattern takeaway on court",
+      "svg": "50-coach-insight-2.svg",
+      "title": "Coach insight"
+    },
+    {
+      "id": "coach-insight-3",
+      "index": 50,
+      "png": "51-coach-insight-3.png",
+      "section": "Close",
+      "subtitle": "Third pattern takeaway on court",
+      "svg": "51-coach-insight-3.svg",
+      "title": "Coach insight"
+    },
+    {
+      "id": "head-to-head-courts",
+      "index": 51,
+      "png": "52-head-to-head-courts.png",
+      "section": "Close",
+      "subtitle": "Host and guest courts side by side",
+      "svg": "52-head-to-head-courts.svg",
+      "title": "Head to head"
+    },
+    {
+      "id": "match-dna",
+      "index": 52,
+      "png": "53-match-dna.png",
+      "section": "Close",
+      "subtitle": "Serve · winners · errors · depth",
+      "svg": "53-match-dna.svg",
+      "title": "Match DNA"
+    },
+    {
+      "id": "cta-court",
+      "index": 53,
+      "png": "54-cta-court.png",
+      "section": "Close",
+      "subtitle": "Court-first match intelligence",
+      "svg": "54-cta-court.svg",
+      "title": "Every shot. Mapped."
     },
     {
       "id": "cta",
-      "index": 9,
-      "png": "10-cta.png",
-      "subtitle": "Request access to Peak Performance Data",
-      "svg": "10-cta.svg",
-      "title": "Want your matches on the bench?"
+      "index": 54,
+      "png": "55-cta.png",
+      "section": "Close",
+      "subtitle": "Sign up free at peakperformancedata.app",
+      "svg": "55-cta.svg",
+      "title": "Your matches. This clarity."
     }
   ],
-  "width": 1080
+  "width": 3240
 }

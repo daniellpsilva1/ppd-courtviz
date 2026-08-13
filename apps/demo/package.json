@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "export:social": "node ../../scripts/export-social.cjs",
-    "export:carousel": "node ../../scripts/export-carousel.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist .turbo"
   },

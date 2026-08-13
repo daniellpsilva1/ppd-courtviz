@@ -128,7 +128,7 @@ export function toCourtvizTheme(mode: PpdBrandModeName = "editorial"): CourtvizT
     background: m.background,
     ink: m.ink,
     inkMuted: m.inkMuted,
-    border: "#333333",
+    border: m.border,
     courtLine: dark.courtLine,
     courtLineDark: dark.courtLineDark,
     surfaceColors: { clay: surf.clay, grass: surf.grass, hard: surf.hard },

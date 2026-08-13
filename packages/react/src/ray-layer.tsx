@@ -71,12 +71,12 @@ export interface RayLayerProps {
 }
 
 export const RayLayer = memo(function RayLayer({
-  alpha = 0.35,
+  alpha = 0.55,
   clip = true,
   clipBounds,
   curved = false,
   curvature = 0.12,
-  flowMaxWidth = 8,
+  flowMaxWidth = 10,
   flowMinCount = 2,
   flowMode = false,
   highContrast = false,
@@ -164,9 +164,34 @@ export const RayLayer = memo(function RayLayer({
             fill="none"
             key={`flow-${i}`}
             opacity={alpha + 0.25}
-            stroke={getWinRateColor(flow.winRate, theme)}
+            stroke={getWinRateColor(flow.winRate ?? 0.5, theme)}
             strokeLinecap="round"
             strokeWidth={width}
+          />
+        );
+      })
+    : null;
+
+  const flowUnderlays = flowMode
+    ? flows.map((flow, i) => {
+        const width = maxFlowCount > 0
+          ? Math.max(1, flowMaxWidth * Math.sqrt(flow.count / maxFlowCount))
+          : 1;
+        const d = curvedRayPath(
+          scales.x(flow.fromX),
+          scales.y(flow.fromY),
+          scales.x(flow.toX),
+          scales.y(flow.toY),
+        );
+        return (
+          <path
+            d={d}
+            fill="none"
+            key={`flow-underlay-${i}`}
+            opacity={0.25}
+            stroke="#ffffff"
+            strokeLinecap="round"
+            strokeWidth={width + 2}
           />
         );
       })
@@ -183,31 +208,50 @@ export const RayLayer = memo(function RayLayer({
         if (curved) {
           const d = curvedRayPath(x1, y1, x2, y2);
           return (
-            <path
-              d={d}
-              fill="none"
-              key={i}
-              markerEnd={`url(#${markerId}-${stroke})`}
-              opacity={alpha}
-              stroke={color}
-              strokeLinecap="round"
-              strokeWidth={strokeWidth}
-            />
+            <g key={i}>
+              <path
+                d={d}
+                fill="none"
+                opacity={0.12}
+                stroke="#ffffff"
+                strokeLinecap="round"
+                strokeWidth={strokeWidth + 2}
+              />
+              <path
+                d={d}
+                fill="none"
+                markerEnd={`url(#${markerId}-${stroke})`}
+                opacity={alpha}
+                stroke={color}
+                strokeLinecap="round"
+                strokeWidth={strokeWidth}
+              />
+            </g>
           );
         }
 
         return (
-          <line
-            key={i}
-            markerEnd={`url(#${markerId}-${stroke})`}
-            opacity={alpha}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            x1={x1}
-            x2={x2}
-            y1={y1}
-            y2={y2}
-          />
+          <g key={i}>
+            <line
+              opacity={0.12}
+              stroke="#ffffff"
+              strokeWidth={strokeWidth + 2}
+              x1={x1}
+              x2={x2}
+              y1={y1}
+              y2={y2}
+            />
+            <line
+              markerEnd={`url(#${markerId}-${stroke})`}
+              opacity={alpha}
+              stroke={color}
+              strokeWidth={strokeWidth}
+              x1={x1}
+              x2={x2}
+              y1={y1}
+              y2={y2}
+            />
+          </g>
         );
       })
     : null;
@@ -235,9 +279,35 @@ export const RayLayer = memo(function RayLayer({
       ))
     : null;
 
+  const flowDots = flowMode
+    ? flows.map((flow, i) => {
+        const color = getWinRateColor(flow.winRate ?? 0.5, theme);
+        return (
+          <g key={`flow-dot-${i}`}>
+            <circle
+              cx={scales.x(flow.fromX)}
+              cy={scales.y(flow.fromY)}
+              fill={color}
+              opacity={alpha + 0.3}
+              r={3}
+            />
+            <circle
+              cx={scales.x(flow.toX)}
+              cy={scales.y(flow.toY)}
+              fill={color}
+              opacity={alpha + 0.3}
+              r={3}
+            />
+          </g>
+        );
+      })
+    : null;
+
   const layer = (
     <>
+      {flowUnderlays}
       {flowPaths}
+      {flowDots}
       {rayPaths}
       {hitDots}
     </>

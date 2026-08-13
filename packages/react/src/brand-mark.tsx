@@ -52,7 +52,7 @@ function LogoIcon({
 export const BrandMark = memo(function BrandMark({
   accentColor,
   color,
-  height = 28,
+  height = 32,
   theme = ppd,
   variant = "monogram",
 }: BrandMarkProps) {

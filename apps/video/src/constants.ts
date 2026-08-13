@@ -10,12 +10,12 @@ export const SCENE_DURATIONS = {
   title: 4 * FPS,
   shotRain: 8 * FPS,
   hexbinReveal: 8 * FPS,
-  shotTrajectories: 9 * FPS,
+  shotTrajectories: 12 * FPS,
   servePlacement: 8 * FPS,
-  shotPatterns: 7 * FPS,
-  coachInsights: 6 * FPS,
+  shotPatterns: 5 * FPS,
+  coachInsights: 10 * FPS,
   momentum: 6 * FPS,
-  statsSpotlight: 7 * FPS,
+  statsSpotlight: 5 * FPS,
   outro: 4 * FPS,
 } as const;
 

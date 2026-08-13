@@ -19,7 +19,17 @@ export function isValidHitY(hitY: number | null | undefined): boolean {
 }
 
 /**
+ * Clamp hitY to valid court bounds [0, COURT_LENGTH].
+ * SwingVision sometimes exports negative or out-of-range values; clamping
+ * preserves the near/far distinction instead of discarding the shot.
+ */
+export function clampHitY(hitY: number): number {
+  return Math.max(0, Math.min(COURT_LENGTH, hitY));
+}
+
+/**
  * Whether a shot has coordinates suitable for spatial visualization layers.
+ * Invalid hitY is accepted — resolveHitY clamps it to court bounds.
  */
 export function hasValidSpatialCoords(shot: {
   bounceX: number | null;
@@ -29,7 +39,6 @@ export function hasValidSpatialCoords(shot: {
 }): boolean {
   if (shot.bounceX == null || shot.bounceY == null) return false;
   if (shot.hitY == null) return false;
-  if (!isValidHitY(shot.hitY)) return false;
   return true;
 }
 
@@ -45,11 +54,13 @@ export function hasValidServeCoords(shot: {
 }
 
 /**
- * Resolve hitY for normalization — invalid values default to far end.
+ * Resolve hitY for normalization — invalid values are clamped to court bounds.
+ * This preserves the near/far distinction instead of defaulting all invalid
+ * values to the far end (which caused 71% of shots to be dropped or mis-mirrored).
  */
 function resolveHitY(hitY: number | null | undefined): number {
-  if (isValidHitY(hitY)) return hitY!;
-  return COURT_LENGTH;
+  if (hitY == null) return COURT_LENGTH;
+  return clampHitY(hitY);
 }
 
 /**

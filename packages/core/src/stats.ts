@@ -6,7 +6,7 @@
  * from the shots↔points join (replacing the old is_terminal approximation).
  */
 
-import { NET_Y, SINGLES_HALF } from "./geometry";
+import { NET_Y, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
 import { hasValidSpatialCoords, normalizeShot } from "./normalize";
 
 /**
@@ -48,6 +48,11 @@ export interface EnrichedShot {
   hitY: number | null;
   hitZ: number | null;
   bounceZone: string | null;
+  bounceSide: string | null;
+  bounceDepth: string | null;
+  hitZone: string | null;
+  hitSide: string | null;
+  hitDepth: string | null;
   direction: string | null;
   isTerminal: boolean;
   setNumber: number;
@@ -81,10 +86,23 @@ export function shotPlayerWonPoint(shot: EnrichedShot): boolean {
   return shot.pointWinner === shot.player;
 }
 
+/** Minimum sample size for a rate to be considered reliable. Below this, rate is null. */
+export const MIN_SAMPLE = 5;
+
 export interface RateStat {
   won: number;
   total: number;
-  rate: number;
+  rate: number | null;
+}
+
+/** Format a rate as a percentage string, or em dash when null. */
+export function formatRate(rate: number | null): string {
+  return rate === null ? "\u2014" : `${Math.round(rate * 100)}%`;
+}
+
+/** Apply MIN_SAMPLE threshold to a raw rate. */
+function thresholdRate(won: number, total: number): number | null {
+  return total >= MIN_SAMPLE ? won / total : null;
 }
 
 /**
@@ -98,7 +116,7 @@ export function computePointsWonRate(
   const total = valid.length;
   const won = valid.filter((p) => p.pointWinner === player).length;
   return {
-    rate: total > 0 ? won / total : 0,
+    rate: thresholdRate(won, total),
     total,
     won,
   };
@@ -120,7 +138,53 @@ export function computeFirstServeInRate(
   const total = firstServes.length;
   const won = firstServes.filter((s) => s.result === "In").length;
   return {
-    rate: total > 0 ? won / total : 0,
+    rate: thresholdRate(won, total),
+    total,
+    won,
+  };
+}
+
+function isServeType(type: string | null | undefined, serve: "first" | "second"): boolean {
+  const t = (type || "").toLowerCase().replace(/\s+/g, "_");
+  return serve === "first" ? t === "first_serve" : t === "second_serve";
+}
+
+/**
+ * 1st/2nd serve points won from shot records (one vote per point).
+ * 1st denominator = first serves in; 2nd = second-serve attempts (incl. DF).
+ */
+export function computeServePointsWonRate(
+  shots: EnrichedShot[],
+  player: string,
+  serve: "first" | "second",
+): RateStat {
+  const byPoint = new Map<string, EnrichedShot[]>();
+  for (const shot of shots) {
+    if (shot.player !== player || shot.stroke !== "Serve") continue;
+    const key = pointKeyFromShot(shot);
+    const bucket = byPoint.get(key) ?? [];
+    bucket.push(shot);
+    byPoint.set(key, bucket);
+  }
+
+  let total = 0;
+  let won = 0;
+  for (const pointServes of byPoint.values()) {
+    const first = pointServes.find((s) => isServeType(s.type, "first"));
+    const second = pointServes.find((s) => isServeType(s.type, "second"));
+    if (serve === "first") {
+      if (!first || first.result !== "In") continue;
+      total++;
+      if (first.pointWinner === player) won++;
+      continue;
+    }
+    if (!second) continue;
+    total++;
+    if (second.pointWinner === player) won++;
+  }
+
+  return {
+    rate: thresholdRate(won, total),
     total,
     won,
   };
@@ -218,7 +282,7 @@ export function computeBreakPointConversion(
   }
 
   return {
-    rate: total > 0 ? won / total : 0,
+    rate: thresholdRate(won, total),
     total,
     won,
   };
@@ -235,7 +299,7 @@ export interface ZoneWinRate {
   total: number;
   won: number;
   errors: number;
-  winRate: number;
+  winRate: number | null;
 }
 
 /**
@@ -247,10 +311,10 @@ export function deriveNormalizedCourtZone(
   hitY: number,
 ): string {
   const [nx, ny] = normalizeShot(bounceX, bounceY, hitY);
-  const isDeep = ny < NET_Y / 2;
+  const isDeep = ny < SERVICE_LINE_NEAR;
   const absX = Math.abs(nx);
 
-  if (absX > SINGLES_HALF * 0.6) {
+  if (absX > SINGLES_HALF * 0.35) {
     return nx > 0 ? `deuce_${isDeep ? "deep" : "short"}` : `ad_${isDeep ? "deep" : "short"}`;
   }
   return `center_${isDeep ? "deep" : "short"}`;
@@ -309,7 +373,7 @@ export function computeZoneWinRatesByPoint(
       total: stats.total,
       won: stats.won,
       errors: stats.errors,
-      winRate: stats.total > 0 ? stats.won / stats.total : 0,
+      winRate: thresholdRate(stats.won, stats.total),
     }))
     .sort((a, b) => b.total - a.total);
 }
@@ -318,7 +382,7 @@ export interface SideWinRate {
   side: "deuce" | "ad" | "center";
   total: number;
   won: number;
-  winRate: number;
+  winRate: number | null;
 }
 
 export function aggregateSideWinRatesByPoint(
@@ -334,7 +398,7 @@ export function aggregateSideWinRatesByPoint(
       side,
       total,
       won,
-      winRate: total > 0 ? won / total : 0,
+      winRate: thresholdRate(won, total),
     };
   });
 }
@@ -366,7 +430,7 @@ export function computeZoneWinRates(
       total: stats.total,
       won: stats.won,
       errors: stats.errors,
-      winRate: stats.total > 0 ? stats.won / stats.total : 0,
+      winRate: thresholdRate(stats.won, stats.total),
     }))
     .sort((a, b) => b.total - a.total);
 }
@@ -429,7 +493,7 @@ export interface RallyBucketStat {
   bucket: string;
   total: number;
   won: number;
-  winRate: number;
+  winRate: number | null;
 }
 
 export function computeRallyBucketStats(
@@ -468,7 +532,7 @@ export function computeRallyBucketStats(
       bucket: bucket.label,
       total,
       won,
-      winRate: total > 0 ? won / total : 0,
+      winRate: thresholdRate(won, total),
     };
   });
 }
@@ -482,7 +546,7 @@ export interface ServePlacement {
   zone: string; // wide, body, T
   count: number;
   inCount: number;
-  inRate: number;
+  inRate: number | null;
 }
 
 export function computeServePlacements(
@@ -514,7 +578,7 @@ export function computeServePlacements(
         zone: zone ?? "unknown",
         count: stats.total,
         inCount: stats.in,
-        inRate: stats.total > 0 ? stats.in / stats.total : 0,
+        inRate: thresholdRate(stats.in, stats.total),
       };
     })
     .sort((a, b) => b.count - a.count);
@@ -545,8 +609,10 @@ export function computeCorpusBaselines(
         totalShots: 0,
         count: 0,
       };
-      // Weight by sample size
-      entry.totalWinRate += stat.winRate * stat.total;
+      // Weight by sample size — skip null (below MIN_SAMPLE) rates
+      if (stat.winRate !== null) {
+        entry.totalWinRate += stat.winRate * stat.total;
+      }
       entry.totalShots += stat.total;
       entry.count++;
       zoneMap.set(stat.zone, entry);

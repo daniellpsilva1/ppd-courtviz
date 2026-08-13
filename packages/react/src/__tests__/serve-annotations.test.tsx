@@ -31,6 +31,16 @@ describe("ServeAnnotations", () => {
     expect(markup).toContain("DEUCE T");
   });
 
+  it("does not render ink ZonePercentage badge at the centroid", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(ServeAnnotations, { scales, theme: ppd, zones: sampleZones }),
+    );
+    // ZonePercentage used fill={theme.ink} + opacity 0.75 on a centered rect
+    expect(markup).not.toMatch(new RegExp(`fill="${ppd.ink}"[^>]*opacity="0\\.75"`));
+    expect(markup).not.toMatch(new RegExp(`opacity="0\\.75"[^>]*fill="${ppd.ink}"`));
+    expect(markup).toContain("83% IN");
+  });
+
   it("renders nothing when zones empty", () => {
     const markup = renderToStaticMarkup(
       React.createElement(ServeAnnotations, { scales, theme: ppd, zones: [] }),

@@ -5,3 +5,4 @@ export * from "./enrich";
 export * from "./loader";
 export * from "./official-stats";
 export * from "./fixtures/boluda";
+export * from "./adapters/supabase";

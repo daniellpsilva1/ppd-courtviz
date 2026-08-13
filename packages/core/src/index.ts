@@ -15,3 +15,7 @@ export * from "./pattern-stats";
 export * from "./playback";
 export * from "./placement-zones";
 export * from "./depth-bands";
+export * from "./place-labels";
+export * from "./slide-bands";
+export * from "./text-measure";
+export * from "./out-geometry";

@@ -6,6 +6,8 @@ import {
   type CourtHalf,
   type CourtScales,
   type EnrichedShot,
+  COURT_LENGTH,
+  SINGLES_HALF,
   computeHexbins,
   normalizeShot,
   shotPlayerWonPoint,
@@ -59,8 +61,29 @@ function getEfficiencyColor(value: number, vmin: number, vmax: number, stops: Ar
   return stops[stops.length - 1]![1];
 }
 
+function hexLuminance(hex: string): number {
+  const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (!m) return 0.5;
+  const r = parseInt(m[1]!, 16) / 255;
+  const g = parseInt(m[2]!, 16) / 255;
+  const b = parseInt(m[3]!, 16) / 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function contrastTextColor(fill: string, halo: string): string {
+  return hexLuminance(fill) > 0.55 ? halo : "#ffffff";
+}
+
+/** Sequential density fill: light tint → player color as count increases. */
+function getCountColor(count: number, vmax: number, playerColor: string, lowColor = "#E8F0FF"): string {
+  const t = vmax > 0 ? Math.max(0, Math.min(1, count / vmax)) : 0;
+  // Keep sparse bins visible; reserve the darkest stop for the densest bin.
+  return interpolateRgb(lowColor, playerColor)(0.2 + 0.8 * t);
+}
+
 export const HexbinLayer = memo(function HexbinLayer({
   alpha = 0.85,
+  clip = false,
   colorScale = "efficiency",
   extent,
   gridsize = 6,
@@ -125,12 +148,22 @@ export const HexbinLayer = memo(function HexbinLayer({
   }, [colorScale, hexbins, valueDomain]);
 
   const labelSize = theme.fontSize.label;
+  const clipId = `hexbin-clip-${half}`;
 
   return (
     <g onMouseLeave={hide}>
+      {clip && (
+        <defs>
+          <clipPath id={clipId}>
+            <rect height={scales.y(0) - scales.y(COURT_LENGTH)} width={scales.x(SINGLES_HALF) - scales.x(-SINGLES_HALF)} x={scales.x(-SINGLES_HALF)} y={scales.y(COURT_LENGTH)} />
+          </clipPath>
+        </defs>
+      )}
+      <g clipPath={clip ? `url(#${clipId})` : undefined}>
       {hexbins.map((hex, i) => {
+        const playerColor = getPlayerColor(player ?? "host", theme);
         const color = colorScale === "count"
-          ? getPlayerColor(player ?? "host", theme)
+          ? getCountColor(hex.count, colorRange.vmax, playerColor)
           : getEfficiencyColor(hex.value, colorRange.vmin, colorRange.vmax, stops);
 
         const points = hex.vertices
@@ -177,9 +210,9 @@ export const HexbinLayer = memo(function HexbinLayer({
             {showLabels && hex.count >= labelMinCount && r > labelSize * 0.9 && (
               <text
                 dominantBaseline="middle"
-                fill={theme.haloColor}
+                fill={contrastTextColor(color, theme.haloColor)}
                 fontFamily={`${theme.fonts.condensedFont}, ${theme.fonts.condensedFontFallback}`}
-                fontSize={labelSize}
+                fontSize={Math.min(labelSize, r * 0.85)}
                 fontWeight={700}
                 pointerEvents="none"
                 textAnchor="middle"
@@ -192,6 +225,7 @@ export const HexbinLayer = memo(function HexbinLayer({
           </g>
         );
       })}
+      </g>
       {!hasTooltipProvider ? <SvgTooltip theme={theme} tooltip={tooltip} /> : null}
     </g>
   );

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CourtViz spike test bundle</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      code { background: #eee; padding: 2px 6px; border-radius: 4px; }
+      video, img { max-width: 100%; border-radius: 8px; border: 1px solid #ccc; margin: 1rem 0; }
+      a { color: #2b6cb0; }
+    </style>
+  </head>
+  <body>
+    <h1>CourtViz — test exports</h1>
+    <p>Generated from the interactive-first viz engine spike (Court Dominance).</p>
+
+    <h2>Spike (new engine)</h2>
+    <ul>
+      <li><a href="spike/court-dominance/court-dominance-9x16.mp4">court-dominance-9x16.mp4</a> — 10s, 1080×1920, Three.js + seekable GSAP (no Remotion)</li>
+      <li><a href="spike/court-dominance/court-dominance-interactive-1080x1920.png">Interactive hexbin PNG</a></li>
+      <li><a href="spike/court-dominance/court-dominance-interactive-regression.png">Playwright regression PNG</a></li>
+      <li><a href="spike/court-dominance/README.md">spike/README.md</a></li>
+    </ul>
+    <video controls src="spike/court-dominance/court-dominance-9x16.mp4"></video>
+    <img src="spike/court-dominance/court-dominance-interactive-1080x1920.png" alt="Court Dominance interactive" />
+
+    <h2>Deck (existing pipeline, Boluda fixture)</h2>
+    <p>Slides: <code>../apps/demo/public/exports/deck/</code> — open <a href="../apps/demo/public/exports/gallery.html">gallery.html</a> after <code>pnpm export:deck</code>.</p>
+
+    <h2>Interactive gallery (best for 3D)</h2>
+    <pre>cd PeakPerformanceDataMarketing/courtviz
+pnpm --filter @courtviz/gallery dev</pre>
+    <p>Stories under <strong>Court dominance → Spike</strong>: interactive toggle, Three orbit, video export 9:16.</p>
+
+    <h2>Re-export</h2>
+    <pre>pnpm spike:export:bundle          # MP4 + PNGs
+pnpm spike:export:bundle -- --quick
+pnpm export:deck</pre>
+  </body>
+</html>

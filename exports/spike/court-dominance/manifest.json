@@ -1,0 +1,9 @@
+{
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "durationSec": 10,
+  "totalFrames": 300,
+  "engine": "@courtviz/react HexbinLayer SSR + ffmpeg",
+  "note": "No Remotion. Same layers as interactive gallery story."
+}

@@ -4,7 +4,7 @@
  * Computes per-zone counts, in-rate, and win rate for serve placement analysis.
  */
 
-import { type EnrichedShot, pointKeyFromShot, shotPlayerWonPoint } from "./stats";
+import { MIN_SAMPLE, type EnrichedShot, pointKeyFromShot, shotPlayerWonPoint } from "./stats";
 import { COURT_LENGTH, NET_Y, SERVICE_LINE_FAR, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
 import { hasValidServeCoords, normalizeShot } from "./normalize";
 
@@ -31,11 +31,11 @@ export function shouldDisplayServe(
   if (!hasValidServeCoords(serve)) {
     return false;
   }
-  const [nx, ny] = normalizeShot(serve.bounceX!, serve.bounceY!, serve.hitY ?? COURT_LENGTH);
   if (serve.result === "In") {
-    return isInServiceBox(nx, ny, SERVICE_BOX_TOLERANCE * 3);
+    return true;
   }
 
+  const [nx, ny] = normalizeShot(serve.bounceX!, serve.bounceY!, serve.hitY ?? COURT_LENGTH);
   const distY =
     ny < SERVICE_LINE_NEAR
       ? SERVICE_LINE_NEAR - ny
@@ -53,8 +53,8 @@ export interface ServeZoneStat {
   side: "deuce" | "ad";
   count: number;
   inCount: number;
-  inRate: number;
-  winRate: number;
+  inRate: number | null;
+  winRate: number | null;
   /** Mean bounce x (normalized) */
   meanX: number;
   /** Mean bounce y (normalized) */
@@ -164,11 +164,11 @@ export function computeServeZones(
     .map((e) => ({
       count: e.count,
       inCount: e.inCount,
-      inRate: e.count > 0 ? e.inCount / e.count : 0,
+      inRate: e.count >= MIN_SAMPLE ? e.inCount / e.count : null,
       meanX: e.xs.length > 0 ? e.xs.reduce((a, b) => a + b, 0) / e.xs.length : 0,
       meanY: e.ys.length > 0 ? e.ys.reduce((a, b) => a + b, 0) / e.ys.length : 0,
       side: e.side,
-      winRate: e.inCount > 0 ? e.wonCount / e.inCount : 0,
+      winRate: e.inCount >= MIN_SAMPLE ? e.wonCount / e.inCount : null,
       zone: e.zone,
     }))
     .sort((a, b) => b.count - a.count);

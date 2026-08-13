@@ -37,7 +37,7 @@ export function SocialHexbinScene() {
 
   return (
     <BroadcastShell>
-      <SceneHeader subtitle="Bigger = more shots · color = point win rate" title="Court Heatmaps" />
+      <SceneHeader delay={12} orientation="vertical" subtitle="Bigger = more shots · color = point win rate" title="Court Heatmaps" />
 
       <div
         style={{

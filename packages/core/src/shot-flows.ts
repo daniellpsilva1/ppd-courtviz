@@ -6,8 +6,8 @@
  * representative curved arc per flow, with width proportional to count.
  */
 
-import { type EnrichedShot, shotPlayerWonPoint } from "./stats";
-import { COURT_LENGTH, NET_Y, SINGLES_HALF } from "./geometry";
+import { type EnrichedShot, MIN_SAMPLE, shotPlayerWonPoint } from "./stats";
+import { COURT_LENGTH, NET_Y, SERVICE_LINE_NEAR, SINGLES_HALF } from "./geometry";
 import { hasValidSpatialCoords, normalizeHit, normalizeShot } from "./normalize";
 
 export interface ShotFlow {
@@ -26,7 +26,7 @@ export interface ShotFlow {
   /** Number of shots in this flow */
   count: number;
   /** Win rate for points ending from this flow */
-  winRate: number;
+  winRate: number | null;
   /** Mean shot speed in km/h (if available) */
   meanSpeed: number | null;
 }
@@ -36,12 +36,13 @@ export interface ShotFlow {
  *
  * Zones: deuce_deep, deuce_short, ad_deep, ad_short, center_deep, center_short
  * (based on normalized near-half coordinates where y < NET_Y is the near half).
+ * Deep = behind the service line, short = service boxes to net.
  */
 function classifyFlowZone(x: number, y: number): string {
-  const isDeep = y < NET_Y / 2;
+  const isDeep = y < SERVICE_LINE_NEAR;
   const absX = Math.abs(x);
 
-  if (absX > SINGLES_HALF * 0.6) {
+  if (absX > SINGLES_HALF * 0.35) {
     return x > 0 ? `deuce_${isDeep ? "deep" : "short"}` : `ad_${isDeep ? "deep" : "short"}`;
   }
   return `center_${isDeep ? "deep" : "short"}`;
@@ -131,7 +132,7 @@ export function computeShotFlows(
       toX: clamp(mean(e.toXs), -SINGLES_HALF, SINGLES_HALF),
       toY: clamp(mean(e.toYs), 0, COURT_LENGTH),
       toZone: e.toZone,
-      winRate: e.count > 0 ? e.wonCount / e.count : 0,
+      winRate: e.count >= MIN_SAMPLE ? e.wonCount / e.count : null,
     }))
     .sort((a, b) => b.count - a.count);
 }

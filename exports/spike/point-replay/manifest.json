@@ -1,0 +1,12 @@
+{
+  "engine": "@courtviz/core PlaybackClock + CourtSurface SSR + ffmpeg",
+  "note": "No Remotion. Reconstructed pace from distance/speed.",
+  "preset": "story-9x16",
+  "frames": 90,
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "hostName": "Kaitlin Quevedo",
+  "guestName": "Ángela Boluda",
+  "output": "/Users/danielsilva/Desktop/PeakPerformanceDataMonorepo/PeakPerformanceDataMarketing/courtviz/exports/spike/point-replay/point-replay-9x16.mp4"
+}

@@ -18,8 +18,17 @@ Inspired by [The SprawlBall](https://www.basketballanalyticsbook.com/) and [Hoop
 - **Kinetic numbers**: `<KineticNumber>` / `<KineticStat>` count-up animated statistics for video scenes
 - **Branded stinger**: `<BrandedStinger>` intro/outro animation with logo and baseline-rule sweep
 - **True point-winner attribution**: Shots↔points join replaces the old `is_terminal` approximation
-- **Supabase integration**: Direct loading from SwingVision match data
-- **Static + animated + interactive**: Single codebase powers editorial graphics, Remotion videos, and Vite demo components
+- **Supabase integration**: Direct loading from SwingVision match data (snake_case adapter in `@courtviz/data`)
+- **Static + animated + interactive**: Single codebase powers product analytics, gallery stories, seekable MP4 export, and legacy Remotion promos
+
+### Viz engine direction (interactive-first)
+
+- **Primary surfaces**: `@courtviz/core` + `@courtviz/react` for analytics; `@courtviz/three` for cinematic court chapters.
+- **Point-by-point 2D replay**: `buildMatchPlayback` / `PlaybackClock` in `@courtviz/core` + `<PointReplayCourt>` in `@courtviz/react` (reconstructed pace when `videoTimeSec` is null). Gallery: `point-replay--point-replay-interactive`.
+- **Data match storytelling video**: `@courtviz/motion` + `@courtviz/export-video` (seek + ffmpeg). **Not** Remotion. Point-replay social: `pnpm replay:export`.
+- **Reference spike**: Court Dominance — Ladle story `court-dominance--court-dominance-interactive-story`; export via `pnpm spike:export:bundle`.
+- **Archived path**: `@courtviz/video` (Remotion match-recap / social) — see [`apps/video/FROZEN.md`](apps/video/FROZEN.md); do not add new data-driven scenes.
+- **Promo films**: Keep using [PeakPerformanceDataMarketing/Remotion](../Remotion) for brand reels only.
 
 ## Packages
 
@@ -31,6 +40,10 @@ Inspired by [The SprawlBall](https://www.basketballanalyticsbook.com/) and [Hoop
 | `@courtviz/data` | Zod schemas, Supabase loader, shots↔points join |
 | `@courtviz/themes` | Courtviz themes derived from `@ppd/tokens` |
 | `@courtviz/react` | React SVG components (`Court`, `FigureFrame`, layers) |
+| `@courtviz/three` | R3F court stage, theme materials, bounce markers (cinematic) |
+| `@courtviz/motion` | Seekable GSAP timelines for frame-pure export |
+| `@courtviz/export-video` | ffmpeg PNG→MP4 + Playwright frame capture helpers |
+| `@courtviz/spike` | Reference spike scenes (Court Dominance interactive + Three) |
 | `@courtviz/render` | Server-side SVG/PNG export |
 
 ## Quick Start
@@ -78,14 +91,25 @@ const editorial = toCourtvizTheme("editorial");
 | `pnpm export:captions` | Platform captions + hashtags (`exports/captions/`) |
 | `pnpm export:all` | Deck + captions + video (add `--force-video` to re-render) |
 
-Default deliverables: `apps/demo/public/exports/video/` (2 mp4s), `apps/demo/public/exports/deck/` (13 vertical slides + `manifest.json`), and `apps/demo/public/exports/captions/`.
+Default deliverables: `apps/demo/public/exports/video/` (2 mp4s), `apps/demo/public/exports/deck/` (10 vertical slides + `manifest.json`), and `apps/demo/public/exports/captions/`.
 
 Preview everything locally with `open apps/demo/public/exports/gallery.html` after running `pnpm export`.
 Optional posters land in `apps/demo/public/exports/{square,portrait,story,landscape}/` only when you run `pnpm export:posters`.
 
 Pass `--matchId=<uuid>` or `--cache=path/to/match.json` to export a specific match (requires Supabase env for matchId).
 
-## Video (Remotion)
+## Video
+
+### Data-driven export (preferred)
+
+```bash
+pnpm spike:export          # Court Dominance 9:16 manifest + frame metadata
+pnpm spike:export -- --frames-only
+```
+
+Uses `@courtviz/motion` seek timelines and `@courtviz/export-video` for ffmpeg masters. Wire Playwright capture to a gallery/export URL when GL capture is available in CI.
+
+### Remotion (frozen for match data)
 
 ```bash
 pnpm video:prepare
@@ -93,6 +117,8 @@ pnpm video:render:social
 pnpm --filter @courtviz/video render
 pnpm --filter @courtviz/video render:benchmark
 ```
+
+**Status:** `@courtviz/video` remains for existing compositions only. New match-analytics video work belongs in the interactive + Three + seekable export stack above—not new Remotion scenes (avoids token drift and duplicated hex/trajectory drawing).
 
 Compositions: `MatchRecap` (landscape broadcast), `MatchRecapSocial` (9:16), `BenchmarkStorySocial`.
 

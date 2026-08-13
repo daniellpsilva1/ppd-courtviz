@@ -34,6 +34,8 @@ export interface PosterContentSpec {
   legendBand?: number;
   insightBand?: number;
   gap?: number;
+  /** Distribute leftover vertical space: "grow-court" enlarges the court, "center" centers the whole block. */
+  distribute?: "grow-court" | "center";
 }
 
 export interface PosterContentLayout {
@@ -81,13 +83,14 @@ export function resolvePosterContentLayout(
   });
   const gap = spec.gap ?? 12;
   const courtAspect = spec.courtAspect ?? 1;
+  const distribute = spec.distribute ?? "grow-court";
+  const activeBands = [bands.analyticsBand, bands.legendBand, bands.insightBand].filter((h) => h > 0).length;
+  const gapTotal = activeBands > 0 ? gap * (activeBands + 1) : 0; // gaps between court→band→band→band (no trailing)
   const reservedHeight =
     bands.analyticsBand +
     bands.legendBand +
     bands.insightBand +
-    (bands.analyticsBand > 0 ? gap : 0) +
-    (bands.legendBand > 0 ? gap : 0) +
-    (bands.insightBand > 0 ? gap : 0);
+    gapTotal;
 
   const maxCourtHeight = Math.max(120, region.height - reservedHeight - gap);
   const maxCourtWidth = region.width - 8;
@@ -110,8 +113,9 @@ export function resolvePosterContentLayout(
     blockHeight = courtHeight + reservedHeight;
   }
 
-  const courtY = layout.format === "landscape"
-    ? Math.max(0, Math.round((region.height - blockHeight) / 2))
+  const leftover = region.height - blockHeight;
+  const courtY = layout.format === "landscape" || distribute === "center"
+    ? Math.max(0, Math.round(leftover / 2))
     : 0;
   const courtX = Math.round((region.width - courtWidth) / 2);
   let cursor = courtY + courtHeight + gap;
@@ -136,9 +140,94 @@ export function resolvePosterContentLayout(
   };
 }
 
+export interface FrameLayoutOverrides {
+  width?: number;
+  height?: number;
+  padding?: number;
+  titleHeight?: number;
+  footerHeight?: number;
+}
+
+// ---------------------------------------------------------------------------
+// layoutBands — vertical stack allocator for deck slides
+// ---------------------------------------------------------------------------
+
+export interface BandSpec {
+  id: string;
+  /** Fixed height in px. Mutually exclusive with `grow`. */
+  height?: number;
+  /** If true, this band absorbs leftover vertical space. Only one band should have grow=true. */
+  grow?: boolean;
+  /** Minimum height when grow=true. Defaults to 0. */
+  minHeight?: number;
+}
+
+export interface BandLayout {
+  id: string;
+  y: number;
+  height: number;
+}
+
+/**
+ * Allocate vertical bands within a content region.
+ *
+ * Each band is either a fixed height or `grow` (absorbs leftover space).
+ * The cursor advances top-to-bottom with `gap` between bands.
+ * Asserts the cursor never exceeds `contentHeight`.
+ */
+export function layoutBands(
+  contentHeight: number,
+  bands: BandSpec[],
+  gap = 12,
+): BandLayout[] {
+  const fixedHeight = bands.reduce(
+    (sum, b) => sum + (b.grow ? 0 : (b.height ?? 0)),
+    0,
+  );
+  const gapTotal = bands.length > 1 ? gap * (bands.length - 1) : 0;
+  const growBand = bands.find((b) => b.grow);
+  const growMin = growBand?.minHeight ?? 0;
+  const available = contentHeight - fixedHeight - gapTotal;
+  const growHeight = Math.max(growMin, available);
+
+  let cursor = 0;
+  const result: BandLayout[] = [];
+
+  for (const band of bands) {
+    const h = band.grow ? growHeight : (band.height ?? 0);
+    result.push({ height: Math.round(h), id: band.id, y: Math.round(cursor) });
+    cursor += h + gap;
+  }
+
+  const overflow = cursor - gap - contentHeight;
+  if (overflow > 1) {
+    const msg = `[layoutBands] Bands overflow content height: ${cursor - gap} > ${contentHeight} (bands: ${bands.map((b) => b.id).join(", ")})`;
+    if (typeof process !== "undefined" && process.env?.COURTVIZ_LAYOUT_STRICT === "1") {
+      throw new Error(msg);
+    }
+    console.warn(msg);
+  }
+
+  return result;
+}
+
+const DEFAULT_TITLE_HEIGHT: Record<SocialFormat, number> = {
+  square: 80,
+  portrait: 100,
+  story: 120,
+  landscape: 0,
+};
+
+const DEFAULT_FOOTER_HEIGHT: Record<SocialFormat, number> = {
+  square: 56,
+  portrait: 56,
+  story: 64,
+  landscape: 56,
+};
+
 export function resolveFrameLayout(
   format: SocialFormat = "square",
-  overrides?: { width?: number; height?: number; padding?: number },
+  overrides?: FrameLayoutOverrides,
 ): FrameLayout {
   const preset = getSocialPreset(format);
   const width = overrides?.width ?? preset.width;
@@ -156,7 +245,7 @@ export function resolveFrameLayout(
   if (format === "landscape") {
     const titleWidth = Math.round(width * 0.38);
     const contentX = titleWidth + padding;
-    const footerH = 56;
+    const footerH = overrides?.footerHeight ?? DEFAULT_FOOTER_HEIGHT.landscape;
     return {
       format,
       width,
@@ -184,8 +273,8 @@ export function resolveFrameLayout(
     };
   }
 
-  const footerH = format === "story" ? 64 : 56;
-  const titleH = format === "story" ? 120 : format === "portrait" ? 100 : 80;
+  const footerH = overrides?.footerHeight ?? DEFAULT_FOOTER_HEIGHT[format];
+  const titleH = overrides?.titleHeight ?? DEFAULT_TITLE_HEIGHT[format];
   const contentY = safe.top + titleH;
   const footerY = height - safe.bottom - footerH;
 

@@ -76,8 +76,8 @@ export function RallyWinRateChart({
           {hostBuckets.map((bucket, i) => {
             const guestBucket = guestBuckets[i];
             const groupX = padding.left + i * (barWidth * 2 + pairGap + groupGap);
-            const hostH = Math.round(bucket.winRate * chartH);
-            const guestH = guestBucket ? Math.round(guestBucket.winRate * chartH) : 0;
+            const hostH = Math.round((bucket.winRate ?? 0) * chartH);
+            const guestH = guestBucket ? Math.round((guestBucket.winRate ?? 0) * chartH) : 0;
             const baseY = padding.top + chartH;
 
             return (
@@ -110,7 +110,7 @@ export function RallyWinRateChart({
                     x={groupX + barWidth / 2}
                     y={baseY - hostH + 12}
                   >
-                    {Math.round(bucket.winRate * 100)}%
+                    {bucket.winRate !== null ? Math.round(bucket.winRate * 100) + "%" : "—"}
                   </text>
                 )}
                 {guestH > 14 && guestBucket && (
@@ -123,7 +123,7 @@ export function RallyWinRateChart({
                     x={groupX + barWidth + pairGap + barWidth / 2}
                     y={baseY - guestH + 12}
                   >
-                    {Math.round(guestBucket.winRate * 100)}%
+                    {guestBucket.winRate !== null ? Math.round(guestBucket.winRate * 100) + "%" : "—"}
                   </text>
                 )}
                 <text

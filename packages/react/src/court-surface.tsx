@@ -38,6 +38,13 @@ export interface CourtSurfaceProps {
   margin?: number;
   showServiceBox?: boolean;
   lineWidth?: number;
+  /**
+   * Clip overlay children to the doubles fill rect (default true).
+   * Set false for out-error maps so long/wide bounces remain visible in the surround.
+   */
+  clipChildren?: boolean;
+  /** Skip court fill drop-shadow (cleaner bench / social PNG exports). */
+  disableShadow?: boolean;
   /** Offset within parent SVG coordinate space */
   offsetX?: number;
   offsetY?: number;
@@ -82,6 +89,8 @@ function ServiceBoxFill({
 
 export const CourtSurface = memo(function CourtSurface({
   children,
+  clipChildren = true,
+  disableShadow = false,
   displayRange,
   half: halfProp = "full",
   height = 1080,
@@ -147,9 +156,11 @@ export const CourtSurface = memo(function CourtSurface({
         <clipPath id={clipId}>
           <rect height={courtH} width={courtW} x={courtX} y={courtY} />
         </clipPath>
-        <filter id={shadowId} height="110%" width="110%" x="-5%" y="-5%">
-          <feDropShadow dx={0} dy={2} floodColor="#000000" floodOpacity={0.12} stdDeviation={3} />
-        </filter>
+        {!disableShadow && (
+          <filter id={shadowId} height="110%" width="110%" x="-5%" y="-5%">
+            <feDropShadow dx={0} dy={2} floodColor="#000000" floodOpacity={0.12} stdDeviation={3} />
+          </filter>
+        )}
       </defs>
       <g transform={transform}>
         {/* Tooltip provider lives inside the offset transform so hover
@@ -164,7 +175,7 @@ export const CourtSurface = memo(function CourtSurface({
         />
         <rect
           fill={surfaceColor}
-          filter={`url(#${shadowId})`}
+          filter={disableShadow ? undefined : `url(#${shadowId})`}
           height={courtH}
           width={courtW}
           x={courtX}
@@ -220,7 +231,9 @@ export const CourtSurface = memo(function CourtSurface({
             );
           })}
         </g>
-        <g clipPath={`url(#${clipId})`}>{children}</g>
+        <g clipPath={clipChildren ? `url(#${clipId})` : undefined}>
+          <CourtScalesProvider scales={scales}>{children}</CourtScalesProvider>
+        </g>
         </SvgTooltipProvider>
       </g>
     </CourtScalesProvider>

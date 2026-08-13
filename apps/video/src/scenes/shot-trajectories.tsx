@@ -1,5 +1,5 @@
 import { motionTokens } from "@ppd/tokens";
-import { computeServePlusOneChains } from "@courtviz/core";
+import { computeServePlusOneChains, formatRate } from "@courtviz/core";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
@@ -25,11 +25,16 @@ import { chromeOffsets, landscapeContentLayout } from "../scene-layout";
 const COURT_W = 540;
 const COURT_H = 560;
 const GAP = 48;
+const MINI_W = 250;
+const MINI_H = 260;
 
 const hostScales = defaultCourtScales(COURT_W, COURT_H, "full");
 const guestScales = defaultCourtScales(COURT_W, COURT_H, "full");
 const hostBounds = courtPixelBounds(hostScales, "full");
 const guestBounds = courtPixelBounds(guestScales, "full");
+
+const CHAIN_FRAMES = 45;
+const GHOST_OPACITY = 0.18;
 
 export function ShotTrajectoriesScene() {
   const frame = useCurrentFrame();
@@ -39,23 +44,27 @@ export function ShotTrajectoriesScene() {
   const layout = landscapeContentLayout(height);
   const { legendBottom } = chromeOffsets("landscape");
 
+  const hostChains = computeServePlusOneChains(ctx.enrichedShots, "host").slice(0, 3);
+  const guestChains = computeServePlusOneChains(ctx.enrichedShots, "guest").slice(0, 3);
   const hostFlows = buildPlayerFlows(ctx.enrichedShots, "host")
-    .sort((a, b) => b.winRate * Math.log(b.count + 1) - a.winRate * Math.log(a.count + 1))
-    .slice(0, 5);
+    .sort((a, b) => (b.winRate ?? 0) * Math.log(b.count + 1) - (a.winRate ?? 0) * Math.log(a.count + 1))
+    .slice(0, 3);
   const guestFlows = buildPlayerFlows(ctx.enrichedShots, "guest")
-    .sort((a, b) => b.winRate * Math.log(b.count + 1) - a.winRate * Math.log(a.count + 1))
-    .slice(0, 5);
+    .sort((a, b) => (b.winRate ?? 0) * Math.log(b.count + 1) - (a.winRate ?? 0) * Math.log(a.count + 1))
+    .slice(0, 3);
   const maxFlowCount = Math.max(
     ...hostFlows.map((f) => f.count),
     ...guestFlows.map((f) => f.count),
     1,
   );
-  const hostChains = computeServePlusOneChains(ctx.enrichedShots, "host").slice(0, 3);
-  const guestChains = computeServePlusOneChains(ctx.enrichedShots, "guest").slice(0, 3);
+
+  const maxChainCount = Math.max(hostChains.length, guestChains.length);
+  const chainPhaseEnd = maxChainCount * CHAIN_FRAMES + 30;
+  const flowPhaseStart = chainPhaseEnd + 20;
   const TOTAL_W = COURT_W * 2 + GAP + 64;
   const LEFT = (width - TOTAL_W) / 2;
 
-  const legendOpacity = interpolate(frame, [180, 210], [0, 1], {
+  const legendOpacity = interpolate(frame, [flowPhaseStart, flowPhaseStart + 20], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -63,17 +72,17 @@ export function ShotTrajectoriesScene() {
   return (
     <BroadcastShell>
       <SceneHeader
-        subtitle="Top rally flows & serve+1 chains · color = win rate"
+        subtitle="Serve+1 spotlight · then top rally flows"
         title="Tactical Patterns"
       />
 
       <div style={{ display: "flex", gap: GAP, left: LEFT, position: "absolute", top: layout.contentTop }}>
-        <FlowPanel
+        <ServePlusOnePanel
           bounds={hostBounds}
           chains={hostChains}
-          clipId="flow-clip-host"
           color={getPlayerColor("host", darkCourt)}
           flows={hostFlows}
+          flowPhaseStart={flowPhaseStart}
           frame={frame}
           fps={fps}
           maxFlowCount={maxFlowCount}
@@ -81,18 +90,18 @@ export function ShotTrajectoriesScene() {
           scales={hostScales}
           sideDelay={14}
         />
-        <FlowPanel
+        <ServePlusOnePanel
           bounds={guestBounds}
           chains={guestChains}
-          clipId="flow-clip-guest"
           color={getPlayerColor("guest", darkCourt)}
           flows={guestFlows}
+          flowPhaseStart={flowPhaseStart}
           frame={frame}
           fps={fps}
           maxFlowCount={maxFlowCount}
           name={ctx.guestName}
           scales={guestScales}
-          sideDelay={26}
+          sideDelay={14}
         />
       </div>
 
@@ -108,7 +117,7 @@ export function ShotTrajectoriesScene() {
           transform: "translateX(-50%)",
         }}
       >
-        Top 5 rally flows per player · arrow width = frequency
+        Top 3 serve+1 chains · then top 3 rally flows · color = win rate
       </div>
 
       <InsightCallout delay={60} text={sceneInsightForStats(stats, "trajectories")} />
@@ -117,12 +126,12 @@ export function ShotTrajectoriesScene() {
   );
 }
 
-function FlowPanel({
+function ServePlusOnePanel({
   bounds,
   chains,
-  clipId,
   color,
   flows,
+  flowPhaseStart,
   frame,
   fps,
   maxFlowCount,
@@ -132,9 +141,9 @@ function FlowPanel({
 }: {
   bounds: ReturnType<typeof courtPixelBounds>;
   chains: ReturnType<typeof computeServePlusOneChains>;
-  clipId: string;
   color: string;
   flows: ReturnType<typeof buildPlayerFlows>;
+  flowPhaseStart: number;
   frame: number;
   fps: number;
   maxFlowCount: number;
@@ -149,108 +158,166 @@ function FlowPanel({
     frame,
   });
 
+  const flowOpacity = interpolate(frame, [flowPhaseStart, flowPhaseStart + 15], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <CourtCard accentColor={color} label={name} labelOpacity={labelSpring}>
-      <Court half="full" height={COURT_H} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_W}>
-        <defs>
-          <clipPath id={clipId}>
-            <rect
-              height={bounds.yMax - bounds.yMin}
-              width={bounds.xMax - bounds.xMin}
-              x={bounds.xMin}
-              y={bounds.yMin}
-            />
-          </clipPath>
-        </defs>
-        <g clipPath={`url(#${clipId})`}>
+      <div style={{ display: "flex", gap: 12 }}>
+        <Court half="full" height={COURT_H} surface={BRAND_SURFACE} theme={darkCourt} width={COURT_W}>
+          <defs>
+            <clipPath id={`clip-${name}`}>
+              <rect
+                height={bounds.yMax - bounds.yMin}
+                width={bounds.xMax - bounds.xMin}
+                x={bounds.xMin}
+                y={bounds.yMin}
+              />
+            </clipPath>
+            <marker
+              id={`arrow-${name}`}
+              markerHeight="6"
+              markerWidth="6"
+              orient="auto"
+              refX="5"
+              refY="3"
+            >
+              <path d="M0,0 L6,3 L0,6 Z" fill={color} />
+            </marker>
+          </defs>
+          <g clipPath={`url(#clip-${name})`}>
+            {chains.map((chain, index) => {
+              const chainStart = sideDelay + index * CHAIN_FRAMES;
+              const chainProgress = spring({
+                config: motionTokens.springs.snappy,
+                delay: chainStart,
+                fps,
+                frame,
+              });
+              const isPast = frame > chainStart + CHAIN_FRAMES;
+              const opacity = isPast ? GHOST_OPACITY : 0.85 * chainProgress;
+
+              const serveX = scales.x(0);
+              const serveY = scales.y(20);
+              const plusOneX = scales.x(chain.meanPlusOneX || 0);
+              const plusOneY = scales.y(chain.meanPlusOneY || 8);
+              const d = curvedPath(serveX, serveY, plusOneX, plusOneY, 0.15, bounds);
+
+              return (
+                <g key={index} opacity={opacity}>
+                  <path
+                    d={d}
+                    fill="none"
+                    markerEnd={`url(#arrow-${name})`}
+                    stroke={getEfficiencyColor(chain.winRate ?? 0, true)}
+                    strokeLinecap="round"
+                    strokeWidth={4 * chainProgress}
+                  />
+                  <circle
+                    cx={serveX}
+                    cy={serveY}
+                    fill="none"
+                    r={4 * chainProgress}
+                    stroke={color}
+                    strokeWidth={1.5}
+                  />
+                  <circle
+                    cx={plusOneX}
+                    cy={plusOneY}
+                    fill={getEfficiencyColor(chain.winRate ?? 0, true)}
+                    r={4 * chainProgress}
+                  />
+                </g>
+              );
+            })}
+          </g>
+        </Court>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, width: 180 }}>
+          <div style={{ color: darkCourt.inkMuted, fontFamily: condensedFont, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Serve + 1
+          </div>
+          {chains.map((chain, i) => {
+            const chainStart = sideDelay + i * CHAIN_FRAMES;
+            const isActive = frame >= chainStart && frame < chainStart + CHAIN_FRAMES;
+            const isPast = frame > chainStart + CHAIN_FRAMES;
+            const itemOpacity = spring({
+              config: motionTokens.springs.snappy,
+              delay: chainStart,
+              fps,
+              frame,
+            });
+
+            return (
+              <div
+                key={i}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: isActive ? `${color}22` : "transparent",
+                  border: isActive ? `1px solid ${color}44` : "1px solid transparent",
+                  borderRadius: 6,
+                  color: darkCourt.ink,
+                  display: "flex",
+                  fontFamily: bodyFont,
+                  fontSize: 11,
+                  gap: 4,
+                  justifyContent: "space-between",
+                  opacity: isPast ? GHOST_OPACITY : itemOpacity,
+                  padding: "4px 8px",
+                }}
+              >
+                <span>{chain.serveZone} → {chain.plusOneZone}</span>
+                <span style={{ color: getEfficiencyColor(chain.winRate ?? 0, true), fontFamily: condensedFont, fontWeight: 700 }}>
+                  {formatRate(chain.winRate)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginTop: 12, opacity: flowOpacity }}>
         {flows.map((flow, index) => {
-          const progress = spring({
-            config: motionTokens.springs.snappy,
-            delay: sideDelay + index * 2.5,
-            fps,
-            frame,
-          });
-          const strokeW = Math.max(1.2, 7 * Math.sqrt(flow.count / maxFlowCount)) * progress;
-          const x1 = scales.x(flow.fromX);
-          const y1 = scales.y(flow.fromY);
-          const x2 = scales.x(flow.toX);
-          const y2 = scales.y(flow.toY);
-          const d = curvedPath(x1, y1, x2, y2, 0.02, bounds);
-          const flowColor = getEfficiencyColor(flow.winRate, true);
-          const inset = strokeW * 0.5;
+          const miniScales = defaultCourtScales(MINI_W, MINI_H, "full");
+          const miniBounds = courtPixelBounds(miniScales, "full");
+          const x1 = miniScales.x(flow.fromX);
+          const y1 = miniScales.y(flow.fromY);
+          const x2 = miniScales.x(flow.toX);
+          const y2 = miniScales.y(flow.toY);
+          const d = curvedPath(x1, y1, x2, y2, 0.02, miniBounds);
+          const strokeW = Math.max(1, 5 * Math.sqrt(flow.count / maxFlowCount));
+          const flowColor = getEfficiencyColor(flow.winRate ?? 0, true);
 
           return (
-            <g key={index} opacity={0.82 * progress}>
-              <path
-                d={d}
-                fill="none"
-                stroke={flowColor}
-                strokeLinecap="round"
-                strokeWidth={strokeW}
-              />
-              <circle
-                cx={Math.max(bounds.xMin + inset, Math.min(bounds.xMax - inset, x1))}
-                cy={Math.max(bounds.yMin + inset, Math.min(bounds.yMax - inset, y1))}
-                fill="none"
-                r={3.5 * progress}
-                stroke={color}
-                strokeWidth={1.5}
-              />
-              <circle
-                cx={Math.max(bounds.xMin + inset, Math.min(bounds.xMax - inset, x2))}
-                cy={Math.max(bounds.yMin + inset, Math.min(bounds.yMax - inset, y2))}
-                fill={flowColor}
-                r={3 * progress}
-                stroke={darkCourt.haloColor}
-                strokeWidth={0.5}
-              />
-              {progress > 0.8 && flow.count >= 3 ? (
-                <text
-                  dominantBaseline="middle"
-                  fill={darkCourt.ink}
-                  fontFamily={condensedFont}
-                  fontSize={10}
-                  fontWeight={700}
-                  opacity={(progress - 0.8) * 5}
-                  textAnchor="middle"
-                  x={(x1 + x2) / 2}
-                  y={(y1 + y2) / 2 - 8}
-                >
-                  {Math.round(flow.winRate * 100)}% · n={flow.count}
-                </text>
-              ) : null}
-            </g>
+            <div key={index} style={{ position: "relative" }}>
+              <Court half="full" height={MINI_H} surface={BRAND_SURFACE} theme={darkCourt} width={MINI_W}>
+                <path
+                  d={d}
+                  fill="none"
+                  stroke={flowColor}
+                  strokeLinecap="round"
+                  strokeWidth={strokeW}
+                />
+                <circle cx={x1} cy={y1} fill="none" r={3} stroke={color} strokeWidth={1} />
+                <circle cx={x2} cy={y2} fill={flowColor} r={2.5} />
+              </Court>
+              <div style={{
+                bottom: 4,
+                color: darkCourt.ink,
+                fontFamily: condensedFont,
+                fontSize: 10,
+                fontWeight: 700,
+                left: 8,
+                position: "absolute",
+              }}>
+                {formatRate(flow.winRate)} · n={flow.count}
+              </div>
+            </div>
           );
         })}
-        </g>
-      </Court>
-      {chains.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
-          <div style={{ color: darkCourt.inkMuted, fontFamily: condensedFont, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            Serve + 1 chains
-          </div>
-          {chains.map((chain, i) => (
-            <div
-              key={i}
-              style={{
-                alignItems: "center",
-                color: darkCourt.ink,
-                display: "flex",
-                fontFamily: bodyFont,
-                fontSize: 12,
-                gap: 6,
-                justifyContent: "space-between",
-                opacity: spring({ config: motionTokens.springs.snappy, delay: sideDelay + 30 + i * 8, fps, frame }),
-              }}
-            >
-              <span>{chain.serveZone} → {chain.plusOneStroke} {chain.plusOneZone}</span>
-              <span style={{ color: getEfficiencyColor(chain.winRate, true), fontFamily: condensedFont, fontWeight: 700 }}>
-                {Math.round(chain.winRate * 100)}% · n={chain.count}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      </div>
     </CourtCard>
   );
 }

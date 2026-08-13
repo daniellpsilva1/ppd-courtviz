@@ -26,6 +26,8 @@ export interface MomentumChartProps {
   showSetLabels?: boolean;
   /** Use single primary color for both fills (host/guest opacities differ) */
   monoBlue?: boolean;
+  /** Optional reveal progress (0-1) for wipe animation; if omitted, full chart is shown */
+  revealProgress?: number;
   /** Accessible summary for screen readers */
   accessibleSummary?: string;
 }
@@ -34,11 +36,12 @@ export const MomentumChart = memo(function MomentumChart({
   accessibleSummary,
   height = 200,
   hostPlayer,
+  monoBlue = false,
   points,
+  revealProgress = 1,
   showBreakPoints = true,
   showSetBoundaries = true,
   showSetLabels = true,
-  monoBlue = false,
   theme,
   width = 800,
 }: MomentumChartProps) {
@@ -48,7 +51,7 @@ export const MomentumChart = memo(function MomentumChart({
     [points, hostPlayer],
   );
 
-  const padding = { bottom: 30, left: 40, right: 20, top: 20 };
+  const padding = { bottom: 24, left: 48, right: 16, top: 28 };
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
@@ -71,8 +74,8 @@ export const MomentumChart = memo(function MomentumChart({
   const primaryColor = theme.playerHost ?? getPlayerColor("host", theme);
   const hostColor = monoBlue ? primaryColor : getPlayerColor("host", theme);
   const guestColor = monoBlue ? primaryColor : getPlayerColor("guest", theme);
-  const hostFillOpacity = monoBlue ? 0.35 : 0.2;
-  const guestFillOpacity = monoBlue ? 0.18 : 0.2;
+  const hostFillOpacity = monoBlue ? 0.45 : 0.38;
+  const guestFillOpacity = monoBlue ? 0.25 : 0.38;
   const zeroY = yScale(0);
 
   // Host area (positive, above zero) — uses d3.area with clamped y1 at zero
@@ -133,20 +136,24 @@ export const MomentumChart = memo(function MomentumChart({
         const x1 = xScale(sb.index);
         const x2 = nextBoundary ? xScale(nextBoundary.index) : (width - padding.right);
         const isEvenSet = sb.setNumber % 2 === 0;
+        const gamesInSet = nextBoundary
+          ? momentum[nextBoundary.index - 1]?.gameNumber ?? 0
+          : momentum[momentum.length - 1]?.gameNumber ?? 0;
         return (
           <g key={`set-band-${i}`}>
             <rect
               fill={isEvenSet ? theme.ink : theme.inkMuted}
               height={chartH}
-              opacity={0.03}
+              opacity={0.05}
               x={x1}
               y={padding.top}
               width={x2 - x1}
             />
             <line
               stroke={theme.inkMuted}
-              strokeDasharray="2 2"
-              strokeWidth={0.5}
+              strokeDasharray="3 3"
+              strokeOpacity={0.4}
+              strokeWidth={1}
               x1={x1}
               x2={x1}
               y1={padding.top}
@@ -160,11 +167,31 @@ export const MomentumChart = memo(function MomentumChart({
                 fontWeight={600}
                 textAnchor="middle"
                 x={(x1 + x2) / 2}
-                y={padding.top - 4}
+                y={padding.top - 8}
               >
                 Set {sb.setNumber}
               </text>
             )}
+            {/* Game ticks at each game boundary within this set */}
+            {Array.from({ length: Math.max(gamesInSet - 1, 0) }, (_, g) => {
+              const gameIdx = momentum.findIndex(
+                (m) => m.setNumber === sb.setNumber && m.gameNumber === g + 2,
+              );
+              if (gameIdx < 0) return null;
+              const gx = xScale(gameIdx);
+              return (
+                <line
+                  key={`gt-${g}`}
+                  stroke={theme.inkMuted}
+                  strokeOpacity={0.15}
+                  strokeWidth={0.5}
+                  x1={gx}
+                  x2={gx}
+                  y1={zeroY - 4}
+                  y2={zeroY + 4}
+                />
+              );
+            })}
           </g>
         );
       })}
@@ -184,14 +211,14 @@ export const MomentumChart = memo(function MomentumChart({
       <path
         d={hostAreaPath}
         fill={hostColor}
-        opacity={hostFillOpacity}
+        opacity={hostFillOpacity * revealProgress}
       />
 
       {/* Guest fill (negative) */}
       <path
         d={guestAreaPath}
         fill={guestColor}
-        opacity={guestFillOpacity}
+        opacity={guestFillOpacity * revealProgress}
       />
 
       {/* Line */}
@@ -199,7 +226,9 @@ export const MomentumChart = memo(function MomentumChart({
         d={linePath}
         fill="none"
         stroke={theme.ink}
-        strokeWidth={1.5}
+        strokeDasharray={`${chartW * 2}`}
+        strokeDashoffset={chartW * 2 * (1 - revealProgress)}
+        strokeWidth={4}
       />
 
       {/* Break point markers with halos */}

@@ -1,12 +1,25 @@
 'use client';
 
 import { memo, useMemo } from "react";
-import { type CourtScales, type EnrichedShot, COURT_LENGTH, hasValidServeCoords, NET_Y, normalizeShot, shouldDisplayServe } from "@courtviz/core";
+import { type CourtScales, type EnrichedShot, type Surface, COURT_LENGTH, hasValidServeCoords, NET_Y, normalizeShot, shouldDisplayServe } from "@courtviz/core";
 import { type CourtvizTheme, getPlayerColor } from "@courtviz/themes";
 import { useHasSvgTooltipProvider, useSvgTooltip } from "./svg-tooltip-context";
 import { SvgTooltip } from "./svg-tooltip";
 
 export type ServeType = "first_serve" | "second_serve" | "both";
+
+/** Amber/gold 2nd serve — never guest orange (#F97316), especially on clay. */
+export const SECOND_SERVE_COLOR = "#FACC15";
+export const SECOND_SERVE_COLOR_HARD = "#FBBF24";
+
+function secondServeColor(surface?: Surface): string {
+  return surface === "clay" ? SECOND_SERVE_COLOR : SECOND_SERVE_COLOR_HARD;
+}
+
+/** Dark halo on clay; editorial paper halo elsewhere. */
+function serveHaloColor(theme: CourtvizTheme, surface?: Surface): string {
+  return surface === "clay" ? "#0F172A" : theme.haloColor;
+}
 
 /** Mirror far-half bounces so faults remain visible on the near-half clip. */
 function displayServeCoords(
@@ -37,10 +50,15 @@ export interface ServeLayerProps {
   inBoxOnly?: boolean;
   /** Brighter marker color on blue courts */
   highContrast?: boolean;
+  /** Scale marker size by serve speed */
+  sizeBy?: "speed";
+  /** Court surface — drives 2nd-serve color + clay halo contrast */
+  courtSurface?: Surface;
 }
 
 export const ServeLayer = memo(function ServeLayer({
   alpha = 0.8,
+  courtSurface,
   haloWidth = 1,
   highContrast = false,
   includeFaults = false,
@@ -51,6 +69,7 @@ export const ServeLayer = memo(function ServeLayer({
   shapeEncode = true,
   shots,
   size = 6,
+  sizeBy,
   theme,
 }: ServeLayerProps) {
   const { hide, show, tooltip } = useSvgTooltip();
@@ -74,10 +93,22 @@ export const ServeLayer = memo(function ServeLayer({
   }, [shots, player, serveType, inBoxOnly, includeFaults]);
 
   const color = highContrast ? (player === "guest" ? "#FB923C" : "#38BDF8") : getPlayerColor(player, theme);
+  const secondColor = secondServeColor(courtSurface);
+  const halo = serveHaloColor(theme, courtSurface);
 
   const trianglePath = (cx: number, cy: number, r: number): string => {
     const h = r * 1.15;
     return `M${cx},${cy - h}L${cx - r * 0.95},${cy + h * 0.55}L${cx + r * 0.95},${cy + h * 0.55}Z`;
+  };
+
+  // Domain from filtered serves only — all-shot speeds (e.g. 338 km/h BH) crush markers.
+  const speeds = serves.map(({ shot }) => shot.speedKmh).filter((v): v is number => v != null);
+  const minSpeed = speeds.length > 0 ? Math.min(...speeds) : 0;
+  const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 1;
+  const speedScale = (sp: number | null) => {
+    if (sp == null || maxSpeed === minSpeed) return size;
+    // Wider dynamic range so social crops still read "larger = faster".
+    return size * (0.45 + 1.1 * ((sp - minSpeed) / (maxSpeed - minSpeed)));
   };
 
   return (
@@ -85,6 +116,7 @@ export const ServeLayer = memo(function ServeLayer({
       {serves.map(({ isIn, isSecond, shot, x, y }, i) => {
         const cx = scales.x(x);
         const cy = scales.y(y);
+        const markerSize = sizeBy === "speed" ? speedScale(shot.speedKmh) : size;
         const useTriangle = shapeEncode && isSecond;
         const fillOpacity = isIn ? alpha : alpha * 0.45;
         const tooltipLines = [
@@ -103,31 +135,31 @@ export const ServeLayer = memo(function ServeLayer({
             {isIn && haloWidth > 0 && (
               useTriangle ? (
                 <path
-                  d={trianglePath(cx, cy, size + haloWidth)}
+                  d={trianglePath(cx, cy, markerSize + haloWidth)}
                   fill="none"
-                  opacity={0.5}
-                  stroke={theme.haloColor}
-                  strokeWidth={haloWidth}
+                  opacity={0.55}
+                  stroke={halo}
+                  strokeWidth={Math.max(haloWidth, 1)}
                 />
               ) : (
                 <circle
                   cx={cx}
                   cy={cy}
                   fill="none"
-                  opacity={0.5}
-                  r={size + haloWidth}
-                  stroke={theme.haloColor}
-                  strokeWidth={haloWidth}
+                  opacity={0.55}
+                  r={markerSize + haloWidth}
+                  stroke={halo}
+                  strokeWidth={Math.max(haloWidth, 1)}
                 />
               )
             )}
 
             {useTriangle ? (
               <path
-                d={trianglePath(cx, cy, size)}
-                fill={isIn ? color : "none"}
+                d={trianglePath(cx, cy, markerSize)}
+                fill={isIn ? secondColor : "none"}
                 opacity={fillOpacity}
-                stroke={isIn ? theme.haloColor : color}
+                stroke={isIn ? halo : secondColor}
                 strokeWidth={isIn ? 0.6 : 2}
               />
             ) : (
@@ -136,8 +168,8 @@ export const ServeLayer = memo(function ServeLayer({
                 cy={cy}
                 fill={isIn ? color : "none"}
                 opacity={fillOpacity}
-                r={size}
-                stroke={isIn ? theme.haloColor : color}
+                r={markerSize}
+                stroke={isIn ? halo : color}
                 strokeWidth={isIn ? 0.6 : 2}
               />
             )}

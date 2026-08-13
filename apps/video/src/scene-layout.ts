@@ -1,11 +1,7 @@
-const VERTICAL_HEADER = 172;
-const VERTICAL_CHROME = {
-  scoreBar: 66,
-  callout: 72,
-  gap: 20,
-  bottomPad: 24,
-  safeInset: 48,
-};
+import { chrome } from "@ppd/tokens";
+
+const VERTICAL_HEADER = chrome.vertical.header;
+const VERTICAL_CHROME = chrome.vertical;
 
 export const VERTICAL_FOOTER =
   VERTICAL_CHROME.scoreBar +
@@ -14,15 +10,10 @@ export const VERTICAL_FOOTER =
   VERTICAL_CHROME.bottomPad +
   VERTICAL_CHROME.safeInset;
 
-export const LANDSCAPE_HEADER = 140;
-export const LANDSCAPE_FOOTER = 200;
+export const LANDSCAPE_HEADER = chrome.landscape.header;
+export const LANDSCAPE_FOOTER = chrome.landscape.footer;
 
-const LANDSCAPE_CHROME = {
-  scoreBar: 40,
-  callout: 72,
-  gap: 20,
-  bottomPad: 28,
-};
+const LANDSCAPE_CHROME = chrome.landscape;
 
 export function chromeOffsets(orientation: "vertical" | "landscape") {
   if (orientation === "vertical") {
