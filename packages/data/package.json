@@ -1,6 +1,7 @@
 {
   "name": "@courtviz/data",
   "version": "0.0.0",
+  "sideEffects": false,
   "description": "SwingVision/Supabase data schemas, loaders, and shots↔points join for courtviz",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,7 @@
 {
   "name": "@ppd/tokens",
   "version": "0.0.0",
+  "sideEffects": false,
   "description": "Peak Performance Data design tokens — single source of truth for brand identity",
   "license": "MIT",
   "type": "module",

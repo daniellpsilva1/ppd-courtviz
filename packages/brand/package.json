@@ -1,6 +1,7 @@
 {
   "name": "@ppd/brand",
   "version": "0.0.0",
+  "sideEffects": false,
   "description": "PPD editorial modes, theme adapters, and match story payloads",
   "license": "MIT",
   "type": "module",

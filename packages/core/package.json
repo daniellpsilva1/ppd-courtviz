@@ -1,6 +1,7 @@
 {
   "name": "@courtviz/core",
   "version": "0.0.0",
+  "sideEffects": false,
   "description": "Framework-agnostic tennis court geometry, scales, and data normalization",
   "license": "MIT",
   "type": "module",

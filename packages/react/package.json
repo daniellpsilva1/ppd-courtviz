@@ -1,6 +1,7 @@
 {
   "name": "@courtviz/react",
   "version": "0.0.0",
+  "sideEffects": false,
   "description": "React SVG components for tennis court visualization",
   "license": "MIT",
   "type": "module",
