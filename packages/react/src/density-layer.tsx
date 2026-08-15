@@ -39,7 +39,7 @@ export interface DensityLayerProps {
 }
 
 export const DensityLayer = memo(function DensityLayer({
-  alpha = 0.4,
+  alpha = 0.3,
   bandwidth = 1.5,
   half = "full",
   highColor,
@@ -48,7 +48,7 @@ export const DensityLayer = memo(function DensityLayer({
   resolution = 200,
   scales,
   shots,
-  showOutlines = true,
+  showOutlines = false,
   theme,
   thresholds = 8,
 }: DensityLayerProps) {

@@ -74,8 +74,8 @@ export const MomentumChart = memo(function MomentumChart({
   const primaryColor = theme.playerHost ?? getPlayerColor("host", theme);
   const hostColor = monoBlue ? primaryColor : getPlayerColor("host", theme);
   const guestColor = monoBlue ? primaryColor : getPlayerColor("guest", theme);
-  const hostFillOpacity = monoBlue ? 0.45 : 0.38;
-  const guestFillOpacity = monoBlue ? 0.25 : 0.38;
+  const hostFillOpacity = monoBlue ? 0.32 : 0.26;
+  const guestFillOpacity = monoBlue ? 0.18 : 0.26;
   const zeroY = yScale(0);
 
   // Host area (positive, above zero) — uses d3.area with clamped y1 at zero
@@ -130,8 +130,20 @@ export const MomentumChart = memo(function MomentumChart({
       {accessibleSummary && <desc id={`${hostPlayer}-momentum-desc`}>{accessibleSummary}</desc>}
       <rect fill={theme.background} height={height} width={width} x={0} y={0} />
 
-      {/* Set boundary bands */}
-      {showSetBoundaries && setBoundaries.map((sb, i) => {
+      {momentum.length === 0 && (
+        <text
+          fill={theme.inkMuted}
+          fontFamily={fontBody}
+          fontSize={fs.label}
+          textAnchor="middle"
+          x={width / 2}
+          y={height / 2}
+        >
+          No momentum data
+        </text>
+      )}
+
+      {momentum.length > 0 && showSetBoundaries && setBoundaries.map((sb, i) => {
         const nextBoundary = setBoundaries[i + 1];
         const x1 = xScale(sb.index);
         const x2 = nextBoundary ? xScale(nextBoundary.index) : (width - padding.right);
@@ -197,42 +209,47 @@ export const MomentumChart = memo(function MomentumChart({
       })}
 
       {/* Zero line */}
-      <line
-        stroke={theme.inkMuted}
-        strokeDasharray="4 4"
-        strokeWidth={1}
-        x1={padding.left}
-        x2={width - padding.right}
-        y1={zeroY}
-        y2={zeroY}
-      />
+      {momentum.length > 0 && (
+        <line
+          stroke={theme.inkMuted}
+          strokeDasharray="4 4"
+          strokeWidth={1}
+          x1={padding.left}
+          x2={width - padding.right}
+          y1={zeroY}
+          y2={zeroY}
+        />
+      )}
 
-      {/* Host fill (positive) */}
-      <path
-        d={hostAreaPath}
-        fill={hostColor}
-        opacity={hostFillOpacity * revealProgress}
-      />
+      {momentum.length > 0 && (
+        <path
+          d={hostAreaPath}
+          fill={hostColor}
+          opacity={hostFillOpacity * revealProgress}
+        />
+      )}
 
-      {/* Guest fill (negative) */}
-      <path
-        d={guestAreaPath}
-        fill={guestColor}
-        opacity={guestFillOpacity * revealProgress}
-      />
+      {momentum.length > 0 && (
+        <path
+          d={guestAreaPath}
+          fill={guestColor}
+          opacity={guestFillOpacity * revealProgress}
+        />
+      )}
 
-      {/* Line */}
-      <path
-        d={linePath}
-        fill="none"
-        stroke={theme.ink}
-        strokeDasharray={`${chartW * 2}`}
-        strokeDashoffset={chartW * 2 * (1 - revealProgress)}
-        strokeWidth={4}
-      />
+      {momentum.length > 0 && (
+        <path
+          d={linePath}
+          fill="none"
+          stroke={theme.ink}
+          strokeDasharray={`${chartW * 2}`}
+          strokeDashoffset={chartW * 2 * (1 - revealProgress)}
+          strokeWidth={2.5}
+        />
+      )}
 
       {/* Break point markers with halos */}
-      {showBreakPoints &&
+      {momentum.length > 0 && showBreakPoints &&
         breakPoints.map((bp, i) => {
           const color = bp.pointWinner === hostPlayer ? hostColor : guestColor;
           const cx = xScale(bp.pointIndex);
@@ -249,13 +266,13 @@ export const MomentumChart = memo(function MomentumChart({
               onMouseEnter={() => show(cx, cy, tooltipLines)}
               style={{ cursor: "pointer" }}
             >
-              <circle cx={cx} cy={cy} fill="none" opacity={0.5} r={5} stroke={theme.haloColor} strokeWidth={1} />
-              <circle cx={cx} cy={cy} fill={color} r={3} stroke={theme.background} strokeWidth={1} />
+              <circle cx={cx} cy={cy} fill="none" opacity={0.4} r={4} stroke={theme.haloColor} strokeWidth={0.75} />
+              <circle cx={cx} cy={cy} fill={color} r={2.5} stroke={theme.background} strokeWidth={0.75} />
             </g>
           );
         })}
 
-      {momentum.map((point) => {
+      {momentum.length > 0 && momentum.map((point) => {
         const cx = xScale(point.pointIndex);
         const cy = yScale(point.cumulativeDiff);
         const tooltipLines = [
@@ -280,36 +297,42 @@ export const MomentumChart = memo(function MomentumChart({
       <SvgTooltip bounds={{ height, width }} theme={theme} tooltip={tooltip} />
 
       {/* Y-axis labels */}
-      <text
-        fill={hostColor}
-        fontFamily={fontBody}
-        fontSize={fs.small}
-        textAnchor="end"
-        x={padding.left - 6}
-        y={yScale(maxAbs) + 3}
-      >
-        +{maxAbs}
-      </text>
-      <text
-        fill={guestColor}
-        fontFamily={fontBody}
-        fontSize={fs.small}
-        textAnchor="end"
-        x={padding.left - 6}
-        y={yScale(-maxAbs) + 3}
-      >
-        -{maxAbs}
-      </text>
-      <text
-        fill={theme.inkMuted}
-        fontFamily={fontBody}
-        fontSize={fs.small}
-        textAnchor="end"
-        x={padding.left - 6}
-        y={zeroY + 3}
-      >
-        0
-      </text>
+      {momentum.length > 0 && (
+        <text
+          fill={hostColor}
+          fontFamily={fontBody}
+          fontSize={fs.small}
+          textAnchor="end"
+          x={padding.left - 6}
+          y={yScale(maxAbs) + 3}
+        >
+          +{maxAbs}
+        </text>
+      )}
+      {momentum.length > 0 && (
+        <text
+          fill={guestColor}
+          fontFamily={fontBody}
+          fontSize={fs.small}
+          textAnchor="end"
+          x={padding.left - 6}
+          y={yScale(-maxAbs) + 3}
+        >
+          -{maxAbs}
+        </text>
+      )}
+      {momentum.length > 0 && (
+        <text
+          fill={theme.inkMuted}
+          fontFamily={fontBody}
+          fontSize={fs.small}
+          textAnchor="end"
+          x={padding.left - 6}
+          y={zeroY + 3}
+        >
+          0
+        </text>
+      )}
     </svg>
   );
 });

@@ -1,4 +1,5 @@
-import { motionTokens } from "@ppd/tokens";
+import { colorPrimitives, layout, motionTokens } from "@ppd/tokens";
+import { cardBg } from "@courtviz/themes";
 import { useMemo } from "react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { KineticStat } from "../components/kinetic-number";
@@ -10,13 +11,14 @@ import {
   getMatchStats,
 } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
-import { PPD, theme } from "../ppd-tokens";
+import { useSceneTheme } from "../components/scene-theme-context";
 
 export function OutroScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const stats = useMemo(() => getMatchStats(), []);
+  const theme = useSceneTheme();
 
   const logoSpring = spring({ config: motionTokens.springs.snappy, fps, frame });
   const scoreSpring = spring({ config: motionTokens.springs.snappy, delay: 14, fps, frame });
@@ -70,7 +72,7 @@ export function OutroScene() {
           </div>
           <div
             style={{
-              color: PPD.textMuted,
+              color: theme.inkMuted,
               fontFamily: bodyFont,
               fontSize: 14,
               letterSpacing: "0.2em",
@@ -84,9 +86,9 @@ export function OutroScene() {
 
         <div
           style={{
-            backgroundColor: PPD.surface,
-            border: `1px solid ${PPD.border}`,
-            borderRadius: PPD.radius.md,
+            backgroundColor: cardBg(theme),
+            border: `1px solid ${theme.border}`,
+            borderRadius: layout.radii.md,
             marginTop: 40,
             opacity: scoreSpring,
             padding: "24px 56px",
@@ -130,7 +132,7 @@ export function OutroScene() {
 
         <div
           style={{
-            color: PPD.textMuted,
+            color: theme.inkMuted,
             fontFamily: bodyFont,
             fontSize: 14,
             marginTop: 20,
@@ -144,7 +146,7 @@ export function OutroScene() {
 
         <div
           style={{
-            backgroundColor: PPD.accent,
+            backgroundColor: colorPrimitives.accent,
             height: 2,
             margin: "28px 0",
             opacity: brandSpring,
@@ -154,7 +156,7 @@ export function OutroScene() {
 
         <div
           style={{
-            color: PPD.textMuted,
+            color: theme.inkMuted,
             fontFamily: bodyFont,
             fontSize: 13,
             letterSpacing: "0.12em",

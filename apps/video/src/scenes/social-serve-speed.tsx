@@ -1,4 +1,5 @@
 import { motionTokens } from "@ppd/tokens";
+import { useMemo } from "react";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { DuelStatRow } from "../components/duel-stat-row";
@@ -28,8 +29,8 @@ export function SocialServeSpeedScene() {
   const layout = verticalContentLayout(height);
   const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
 
-  const hostSpeeds = serveSpeeds(ctx.enrichedShots, "host");
-  const guestSpeeds = serveSpeeds(ctx.enrichedShots, "guest");
+  const hostSpeeds = useMemo(() => serveSpeeds(ctx.enrichedShots, "host"), [ctx.enrichedShots]);
+  const guestSpeeds = useMemo(() => serveSpeeds(ctx.enrichedShots, "guest"), [ctx.enrichedShots]);
 
   const rows = [
     {
@@ -59,7 +60,7 @@ export function SocialServeSpeedScene() {
   ];
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader delay={12} orientation="vertical" subtitle="Tracked serve velocity distribution" title="Serve Speed" />
 
       <div

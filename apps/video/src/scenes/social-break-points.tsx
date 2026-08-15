@@ -50,7 +50,7 @@ export function SocialBreakPointsScene() {
   ];
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader delay={12} orientation="vertical" subtitle="Pressure points decided the match" title="Break Point Battle" />
 
       <div

@@ -1,4 +1,4 @@
-import { motionTokens } from "@ppd/tokens";
+import { motionTokens, radii } from "@ppd/tokens";
 import { useMemo } from "react";
 import { computeMomentum, formatRate } from "@courtviz/core";
 import { MomentumChart } from "@courtviz/react";
@@ -8,7 +8,7 @@ import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
-import { theme } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { bodyFont, condensedFont } from "../fonts";
 import { getMatchStats, sceneInsightForStats } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
@@ -19,10 +19,11 @@ export function SocialMomentumScene() {
   const { fps, height, width } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const stats = useMemo(() => getMatchStats(), []);
+  const theme = useSceneTheme();
   const layout = verticalContentLayout(height);
   const chartW = width - layout.sidePadding * 2;
   const chartH = Math.round(layout.contentHeight * 0.6);
-  const momentum = computeMomentum(ctx.momentumPoints, "host");
+  const momentum = useMemo(() => computeMomentum(ctx.momentumPoints, "host"), [ctx.momentumPoints]);
   const finalLead = momentum.length ? momentum[momentum.length - 1]!.cumulativeDiff : 0;
   const leader = finalLead >= 0 ? ctx.hostName : ctx.guestName;
   const leadPts = Math.abs(finalLead);
@@ -43,7 +44,7 @@ export function SocialMomentumScene() {
   });
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader
         delay={12}
         orientation="vertical"
@@ -62,6 +63,20 @@ export function SocialMomentumScene() {
           top: layout.contentTop,
         }}
       >
+        <div
+          style={{
+            background: `linear-gradient(180deg, ${theme.playerHost}08 0%, transparent 100%)`,
+            borderRadius: radii.lg,
+            flex: 1,
+            height: chartH + 80,
+            left: 0,
+            pointerEvents: "none",
+            position: "absolute",
+            top: 0,
+            width: "100%",
+            zIndex: -1,
+          }}
+        />
         <SetBadge color={hostColor} name={ctx.hostName.split(" ").pop() ?? ""} setsWon={hostSetsWon} />
         <SetBadge color={guestColor} name={ctx.guestName.split(" ").pop() ?? ""} setsWon={guestSetsWon} />
       </div>
@@ -137,7 +152,7 @@ function SetBadge({ color, name, setsWon }: { color: string; name: string; setsW
         style={{
           backgroundColor: `${color}22`,
           border: `1px solid ${color}55`,
-          borderRadius: 6,
+          borderRadius: radii.brandMark,
           color,
           fontFamily: condensedFont,
           fontSize: 14,
@@ -152,6 +167,7 @@ function SetBadge({ color, name, setsWon }: { color: string; name: string; setsW
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
+  const theme = useSceneTheme();
   return (
     <div style={{ alignItems: "center", display: "flex", gap: 6 }}>
       <div style={{ backgroundColor: color, borderRadius: "50%", height: 8, width: 8 }} />

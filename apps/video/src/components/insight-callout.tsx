@@ -2,7 +2,8 @@ import { motionTokens } from "@ppd/tokens";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont } from "../fonts";
 import { chromeOffsets } from "../scene-layout";
-import { PPD, theme } from "../ppd-tokens";
+import { PPD } from "../ppd-tokens";
+import { useSceneTheme } from "./scene-theme-context";
 
 type InsightCalloutProps = {
   delay?: number;
@@ -13,6 +14,7 @@ type InsightCalloutProps = {
 export function InsightCallout({ delay = 20, orientation = "landscape", text }: InsightCalloutProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const sceneTheme = useSceneTheme();
   const { insightBottom } = chromeOffsets(orientation);
   const maxWidth = orientation === "vertical" ? 920 : 1100;
 
@@ -37,11 +39,11 @@ export function InsightCallout({ delay = 20, orientation = "landscape", text }: 
     >
       <div
         style={{
-          backgroundColor: theme.annotation.calloutFill,
+          backgroundColor: sceneTheme.annotation.calloutFill,
           border: `1px solid ${PPD.border}`,
-          borderLeft: `3px solid ${PPD.primary}`,
+          borderLeft: `2px solid ${PPD.primary}`,
           borderRadius: 8,
-          color: theme.annotation.calloutTextColor,
+          color: sceneTheme.annotation.calloutTextColor,
           display: "-webkit-box",
           fontFamily: bodyFont,
           fontSize: orientation === "vertical" ? 16 : 19,

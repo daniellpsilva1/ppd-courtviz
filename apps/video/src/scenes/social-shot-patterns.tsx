@@ -1,13 +1,14 @@
-import { motionTokens } from "@ppd/tokens";
+import { motionTokens, radii } from "@ppd/tokens";
 import { computeRallyBucketStats } from "@courtviz/core";
 import { getPlayerColor } from "@courtviz/themes";
+import { useMemo } from "react";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
 import { SFXTick } from "../components/sfx-cues";
-import { theme } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
 import { verticalContentLayout } from "../scene-layout";
@@ -19,14 +20,15 @@ export function SocialShotPatternsScene() {
   const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = verticalContentLayout(height);
-  const hostBuckets = computeRallyBucketStats(ctx.enrichedShots, "host");
-  const guestBuckets = computeRallyBucketStats(ctx.enrichedShots, "guest");
+  const theme = useSceneTheme();
+  const hostBuckets = useMemo(() => computeRallyBucketStats(ctx.enrichedShots, "host"), [ctx.enrichedShots]);
+  const guestBuckets = useMemo(() => computeRallyBucketStats(ctx.enrichedShots, "guest"), [ctx.enrichedShots]);
   const enter = spring({ config: motionTokens.springs.smooth, delay: 14, fps, frame });
   const hostColor = getPlayerColor("host", theme);
   const guestColor = getPlayerColor("guest", theme);
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SFXTick delay={14} />
       <SceneHeader delay={12} orientation="vertical" subtitle="Rally length win rates" title="Shot Patterns" />
 
@@ -112,10 +114,11 @@ function DuelRow({
   label: string;
   maxPct: number;
 }) {
+  const theme = useSceneTheme();
   const enter = spring({ config: motionTokens.springs.snappy, delay, fps, frame });
   const barProgress = spring({ config: motionTokens.springs.smooth, delay: delay + 4, fps, frame });
-  const barH = 32;
-  const trackW = 380;
+  const barH = 28;
+  const trackW = 340;
 
   return (
     <div
@@ -136,11 +139,11 @@ function DuelRow({
           {hostPct}%
         </span>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: 4, height: barH, overflow: "hidden", width: trackW }}>
-            <div style={{ backgroundColor: hostColor, borderRadius: 4, height: "100%", marginLeft: "auto", width: `${(hostPct / maxPct) * 100 * barProgress}%` }} />
+          <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: radii.sm, height: barH, overflow: "hidden", width: trackW }}>
+            <div style={{ backgroundColor: hostColor, borderRadius: radii.sm, height: "100%", marginLeft: "auto", width: `${(hostPct / maxPct) * 100 * barProgress}%` }} />
           </div>
-          <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: 4, height: barH, overflow: "hidden", width: trackW }}>
-            <div style={{ backgroundColor: guestColor, borderRadius: 4, height: "100%", width: `${(guestPct / maxPct) * 100 * barProgress}%` }} />
+          <div style={{ backgroundColor: `${theme.inkMuted}22`, borderRadius: radii.sm, height: barH, overflow: "hidden", width: trackW }}>
+            <div style={{ backgroundColor: guestColor, borderRadius: radii.sm, height: "100%", width: `${(guestPct / maxPct) * 100 * barProgress}%` }} />
           </div>
         </div>
         <span style={{ color: guestColor, fontFamily: condensedFont, fontSize: 36, fontWeight: 700, width: 80 }}>
@@ -155,6 +158,7 @@ function DuelRow({
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
+  const theme = useSceneTheme();
   return (
     <div style={{ alignItems: "center", display: "flex", gap: 6 }}>
       <div style={{ backgroundColor: color, borderRadius: "50%", height: 10, width: 10 }} />

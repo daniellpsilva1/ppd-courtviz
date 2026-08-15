@@ -58,7 +58,7 @@ export interface DotLayerProps {
 export const DotLayer = memo(function DotLayer({
   alpha = 0.6,
   colorBy = "stroke",
-  haloWidth = 1,
+  haloWidth = 0.5,
   highContrast = false,
   player,
   resultFilter,
@@ -115,10 +115,10 @@ export const DotLayer = memo(function DotLayer({
               cx={scales.x(x)}
               cy={scales.y(y)}
               fill="none"
-              opacity={alpha * 0.7}
+              opacity={alpha * 0.4}
               r={size + haloWidth + 0.5}
               stroke={theme.haloColor}
-              strokeWidth={haloWidth + 0.5}
+              strokeWidth={haloWidth + 0.25}
             />
           )}
           <circle

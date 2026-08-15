@@ -1,8 +1,8 @@
 /**
- * Generate frozen bench-landing.json fixture from Boluda demo data.
+ * Generate frozen bench-landing.json fixture from match data.
  *
- * Replicates BenchListResponse shape plus post-only enrichments needed for
- * the 20-slide Match report deck (duel stats, momentum, patterns, etc.).
+ * Defaults to Boluda demo data; supports --matchId (Supabase) or --cache (JSON)
+ * for per-match fixture generation.
  */
 
 const fs = require("fs");
@@ -17,16 +17,18 @@ const {
   enrichShots,
   extractPointsForMomentum,
   getOfficialStatValue,
-  match,
-  points,
-  sets,
-  shots,
-  stats,
-  guestName,
-  hostName,
-  matchDate,
-  surface,
+  match: boludaMatch,
+  points: boludaPoints,
+  sets: boludaSets,
+  shots: boludaShots,
+  stats: boludaStats,
+  guestName: boludaGuestName,
+  hostName: boludaHostName,
+  matchDate: boludaMatchDate,
+  surface: boludaSurface,
 } = require("@courtviz/data");
+
+const { loadMatchContext } = require("./load-match-data.cjs");
 
 const {
   computePointsWonRate,
@@ -376,13 +378,56 @@ function computeBenchRecords(summary, enrichedShotsData, momentumPts) {
   return [fastestServe, longestRally, bestBreakConv, topPointsWon].filter((r) => r != null);
 }
 
-function main() {
+function parseArg(prefix) {
+  const arg = process.argv.find((a) => a.startsWith(`${prefix}=`));
+  return arg ? arg.split("=").slice(1).join("=") : undefined;
+}
+
+async function main() {
+  const matchId = parseArg("--matchId");
+  const cachePath = parseArg("--cache");
+  const outArg = parseArg("--out");
+
+  let ctx;
+  if (matchId || cachePath) {
+    ctx = await loadMatchContext();
+  } else {
+    ctx = {
+      enrichedShots: enrichShots(boludaShots, boludaPoints),
+      guestName: boludaGuestName,
+      hostName: boludaHostName,
+      matchDate: boludaMatchDate,
+      matchId: boludaMatch.id,
+      momentumPoints: extractPointsForMomentum(boludaPoints),
+      points: boludaPoints,
+      sets: boludaSets,
+      shots: boludaShots,
+      stats: boludaStats ?? [],
+      surface: boludaSurface,
+      usingFixture: true,
+    };
+  }
+
+  const {
+    enrichedShots: ctxEnrichedShots,
+    guestName,
+    hostName,
+    matchDate,
+    matchId: ctxMatchId,
+    momentumPoints: ctxMomentumPoints,
+    points,
+    sets,
+    shots,
+    stats,
+    surface,
+  } = ctx;
+
   const setScore = sets.map((s) => `${s.hostScore}-${s.guestScore}`).join(" · ");
   const hostSetsWon = sets.filter((s) => s.hostScore > s.guestScore).length;
   const guestSetsWon = sets.filter((s) => s.guestScore > s.hostScore).length;
 
-  const enrichedShotsData = enrichShots(shots, points);
-  const momentumPts = extractPointsForMomentum(points);
+  const enrichedShotsData = ctxEnrichedShots ?? enrichShots(shots, points);
+  const momentumPts = ctxMomentumPoints ?? extractPointsForMomentum(points);
   const shotPreview = toShotPreview(enrichedShotsData);
 
   const hostPointsRate = computePointsWonRate(momentumPts, "host");
@@ -463,7 +508,7 @@ function main() {
     duelStats,
     guestName,
     guestSetsWon,
-    headline: "Quevedo's court patterns defined the match on clay",
+    headline: `${hostName}'s court patterns defined the match on ${surface ?? 'hard'}`,
     heroStats: [
       {
         key: "points_won_pct",
@@ -508,9 +553,11 @@ function main() {
     shotAccuracyPct,
     shotCount: shots.length,
     shotPreview,
-    slug: "demo-boluda-clay-2025-04-09",
+    slug: ctx.usingFixture
+      ? "demo-boluda-clay-2025-04-09"
+      : `match-${ctxMatchId}`,
     source: "swingvision",
-    surface: surface ?? "clay",
+    surface: surface ?? "hard",
     totalPoints: points.length,
   };
 
@@ -570,15 +617,17 @@ function main() {
     zoneWinRates,
   };
 
-  const outPath = path.resolve(
-    __dirname,
-    "..",
-    "packages",
-    "data",
-    "src",
-    "fixtures",
-    "bench-landing.json",
-  );
+  const outPath = outArg
+    ? path.resolve(outArg)
+    : path.resolve(
+        __dirname,
+        "..",
+        "packages",
+        "data",
+        "src",
+        "fixtures",
+        "bench-landing.json",
+      );
   fs.writeFileSync(outPath, JSON.stringify(fixture, null, 2), "utf-8");
 
   const hash = crypto.createHash("sha256").update(JSON.stringify(fixture)).digest("hex").slice(0, 12);
@@ -593,4 +642,7 @@ function main() {
   console.log(`   MIN_SAMPLE gate: ${MIN_SAMPLE}`);
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

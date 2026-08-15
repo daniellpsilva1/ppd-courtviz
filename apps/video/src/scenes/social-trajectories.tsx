@@ -1,5 +1,5 @@
-import { motionTokens } from "@ppd/tokens";
-import { getPlayerColor } from "@courtviz/themes";
+import { motionTokens, radii } from "@ppd/tokens";
+import { cardBg, getPlayerColor } from "@courtviz/themes";
 import { Court } from "@courtviz/react";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BRAND_SURFACE } from "../brand-surface";
@@ -11,10 +11,10 @@ import { SFXWhoosh } from "../components/sfx-cues";
 import {
   courtPixelBounds,
   curvedPath,
-  darkCourt,
   defaultCourtScales,
   getEfficiencyColor,
 } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { normalizeHit, normalizeShot } from "@courtviz/core";
 import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
@@ -27,6 +27,7 @@ export function SocialTrajectoriesScene() {
   const { fps, height, width } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = verticalContentLayout(height);
+  const darkCourt = useSceneTheme();
   const contentW = width - layout.sidePadding * 2;
   const courtH = layout.contentHeight - STATS_STRIP_H - 16;
   const courtW = Math.min(contentW, Math.round(courtH * 1.05));
@@ -56,7 +57,7 @@ export function SocialTrajectoriesScene() {
   const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SFXWhoosh delay={10} />
       <SceneHeader delay={12} orientation="vertical" subtitle="Hit → bounce arcs with speed" title="Ball Trajectories" />
 
@@ -121,7 +122,7 @@ export function SocialTrajectoriesScene() {
                   {isTop3 && progress > 0.7 ? (
                     <g opacity={(progress - 0.7) * 3.3}>
                       <rect
-                        fill="rgba(0,0,0,0.7)"
+                        fill={cardBg(darkCourt, 0.7)}
                         height={16}
                         rx={3}
                         width={48}
@@ -132,7 +133,7 @@ export function SocialTrajectoriesScene() {
                         dominantBaseline="middle"
                         fill={darkCourt.ink}
                         fontFamily={condensedFont}
-                        fontSize={11}
+                        fontSize={13}
                         fontWeight={700}
                         textAnchor="middle"
                         x={x2}
@@ -142,9 +143,9 @@ export function SocialTrajectoriesScene() {
                       </text>
                       <text
                         dominantBaseline="middle"
-                        fill={won ? "#4ade80" : "#f87171"}
+                        fill={won ? darkCourt.playerHost : darkCourt.playerGuest}
                         fontFamily={condensedFont}
-                        fontSize={10}
+                        fontSize={12}
                         fontWeight={700}
                         textAnchor="middle"
                         x={x2}
@@ -163,9 +164,9 @@ export function SocialTrajectoriesScene() {
         <div
           style={{
             backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(0,0,0,0.55)",
+            backgroundColor: cardBg(darkCourt),
             border: `1px solid ${darkCourt.inkMuted}33`,
-            borderRadius: 12,
+            borderRadius: radii.lg,
             display: "flex",
             justifyContent: "space-around",
             padding: "16px 20px",
@@ -188,6 +189,7 @@ export function SocialTrajectoriesScene() {
 }
 
 function StatPill({ label, value }: { label: string; value: string }) {
+  const darkCourt = useSceneTheme();
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ color: darkCourt.ink, fontFamily: condensedFont, fontSize: 26, fontWeight: 700 }}>{value}</div>

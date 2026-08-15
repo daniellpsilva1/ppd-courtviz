@@ -1,11 +1,12 @@
 import { motionTokens } from "@ppd/tokens";
 import { getPlayerColor } from "@courtviz/themes";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { useMemo } from "react";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
-import { theme } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { bodyFont, condensedFont } from "../fonts";
 import { getMatchStats } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
@@ -15,8 +16,9 @@ export function SocialClutchSpeedScene() {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const ctx = getVideoMatchContext();
-  const stats = getMatchStats();
+  const stats = useMemo(() => getMatchStats(), []);
   const layout = verticalContentLayout(height);
+  const theme = useSceneTheme();
   const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
   const hostColor = getPlayerColor("host", theme);
   const guestColor = getPlayerColor("guest", theme);
@@ -26,19 +28,22 @@ export function SocialClutchSpeedScene() {
   const hostPct = hostBP.total > 0 ? hostBP.won / hostBP.total : 0;
   const guestPct = guestBP.total > 0 ? guestBP.won / guestBP.total : 0;
 
-  const speeds = ctx.enrichedShots
-    .filter((s) => s.speedKmh != null && s.speedKmh > 0)
-    .map((s) => s.speedKmh as number);
-  const speedMin = Math.floor(Math.min(...speeds, 80) / 10) * 10;
-  const speedMax = Math.ceil(Math.max(...speeds, 200) / 10) * 10;
-  const binCount = 8;
-  const binSize = (speedMax - speedMin) / binCount;
-  const bins = Array.from({ length: binCount }, (_, i) => {
-    const lo = speedMin + i * binSize;
-    const hi = lo + binSize;
-    return { count: speeds.filter((s) => s >= lo && s < hi).length, hi, lo };
-  });
-  const maxBin = Math.max(...bins.map((b) => b.count), 1);
+  const { bins, maxBin, speedMax, speedMin } = useMemo(() => {
+    const speeds = ctx.enrichedShots
+      .filter((s) => s.speedKmh != null && s.speedKmh > 0)
+      .map((s) => s.speedKmh as number);
+    const sMin = Math.floor(Math.min(...speeds, 80) / 10) * 10;
+    const sMax = Math.ceil(Math.max(...speeds, 200) / 10) * 10;
+    const binCount = 8;
+    const binSize = (sMax - sMin) / binCount;
+    const computedBins = Array.from({ length: binCount }, (_, i) => {
+      const lo = sMin + i * binSize;
+      const hi = lo + binSize;
+      return { count: speeds.filter((s) => s >= lo && s < hi).length, hi, lo };
+    });
+    const mBin = Math.max(...computedBins.map((b) => b.count), 1);
+    return { bins: computedBins, maxBin: mBin, speedMax: sMax, speedMin: sMin };
+  }, [ctx.enrichedShots]);
 
   const funnelProgress = interpolate(frame, [12, 40], [0, 1], {
     extrapolateLeft: "clamp",
@@ -50,7 +55,7 @@ export function SocialClutchSpeedScene() {
   });
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader delay={12} orientation="vertical" subtitle="Pressure & power" title="Clutch & Speed" />
 
       <div
@@ -131,6 +136,7 @@ function BPFunnel({
   total: number;
   won: number;
 }) {
+  const theme = useSceneTheme();
   const r = 50;
   const circ = 2 * Math.PI * r;
   const dash = circ * pct * progress;
@@ -180,6 +186,7 @@ function SpeedStrip({
   speedMin: number;
   stripW: number;
 }) {
+  const theme = useSceneTheme();
   const stripH = 100;
   const barW = stripW / bins.length;
   const gap = 4;

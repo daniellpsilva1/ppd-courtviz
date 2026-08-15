@@ -1,4 +1,4 @@
-import { motionTokens } from "@ppd/tokens";
+import { motionTokens, radii } from "@ppd/tokens";
 import { useMemo } from "react";
 import { Court } from "@courtviz/react";
 import { getPlayerColor } from "@courtviz/themes";
@@ -10,11 +10,11 @@ import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
 import {
   buildPlayerHexbins,
-  darkCourt,
   defaultCourtScales,
   getEfficiencyColor,
   sharedEfficiencyDomain,
 } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { condensedFont } from "../fonts";
 import { sceneInsightForStats, getMatchStats } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
@@ -28,15 +28,16 @@ export function SocialHexbinScene() {
   const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const stats = useMemo(() => getMatchStats(), []);
+  const darkCourt = useSceneTheme();
   const layout = verticalContentLayout(height);
-  const hostHexbins = buildPlayerHexbins(ctx.enrichedShots, "host");
-  const guestHexbins = buildPlayerHexbins(ctx.enrichedShots, "guest");
-  const hostScales = defaultCourtScales(COURT_W, COURT_H, "near");
-  const guestScales = defaultCourtScales(COURT_W, COURT_H, "near");
-  const efficiencyDomain = sharedEfficiencyDomain([hostHexbins, guestHexbins]);
+  const hostHexbins = useMemo(() => buildPlayerHexbins(ctx.enrichedShots, "host"), [ctx.enrichedShots]);
+  const guestHexbins = useMemo(() => buildPlayerHexbins(ctx.enrichedShots, "guest"), [ctx.enrichedShots]);
+  const hostScales = useMemo(() => defaultCourtScales(COURT_W, COURT_H, "near"), []);
+  const guestScales = useMemo(() => defaultCourtScales(COURT_W, COURT_H, "near"), []);
+  const efficiencyDomain = useMemo(() => sharedEfficiencyDomain([hostHexbins, guestHexbins]), [hostHexbins, guestHexbins]);
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader delay={12} orientation="vertical" subtitle="Bigger = more shots · color = point win rate" title="Court Heatmaps" />
 
       <div
@@ -105,6 +106,7 @@ function PlayerBlock({
   startDelay: number;
   surface: string;
 }) {
+  const darkCourt = useSceneTheme();
   const label = spring({ config: motionTokens.springs.smooth, delay: startDelay, fps, frame });
   const colorT = (value: number) => {
     const span = Math.max(0.001, efficiencyDomain.vmax - efficiencyDomain.vmin);
@@ -116,15 +118,22 @@ function PlayerBlock({
     <div style={{ opacity: label, width: COURT_W }}>
       <div
         style={{
+          alignItems: "center",
           color,
+          display: "flex",
           fontFamily: condensedFont,
           fontSize: 24,
           fontWeight: 700,
+          gap: 10,
+          justifyContent: "space-between",
           marginBottom: 10,
           textTransform: "uppercase",
         }}
       >
-        {name}
+        <span>{name}</span>
+        <span style={{ color: darkCourt.inkMuted, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em" }}>
+          Near half · Deuce side
+        </span>
       </div>
       <Court half="near" height={COURT_H} surface={surface as "clay" | "hard" | "grass"} theme={darkCourt} width={COURT_W}>
         {sortedHexbins.map((hex, index) => {
@@ -148,10 +157,10 @@ function PlayerBlock({
             <polygon
               fill={colorT(hex.value)}
               key={index}
-              opacity={0.9 * progress}
+              opacity={0.7 * progress}
               points={points}
               stroke={darkCourt.haloColor}
-              strokeWidth={0.6}
+              strokeWidth={0.3}
             />
           );
         })}
@@ -161,6 +170,7 @@ function PlayerBlock({
 }
 
 function EfficiencyLegend({ domain }: { domain: { vmin: number; vmax: number } }) {
+  const darkCourt = useSceneTheme();
   const cold = getEfficiencyColor(0, true);
   const hot = getEfficiencyColor(1, true);
   const mid = getEfficiencyColor(0.5, true);
@@ -193,7 +203,7 @@ function EfficiencyLegend({ domain }: { domain: { vmin: number; vmax: number } }
         <div
           style={{
             background: `linear-gradient(90deg, ${cold}, ${mid}, ${hot})`,
-            borderRadius: 4,
+            borderRadius: radii.sm,
             height: 10,
             width: 180,
           }}

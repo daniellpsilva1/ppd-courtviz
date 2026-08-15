@@ -1,8 +1,11 @@
 import { TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { wipe } from "@remotion/transitions/wipe";
 import { AbsoluteFill } from "remotion";
-import { theme } from "./ppd-tokens";
+import { ppdSocial } from "@courtviz/themes";
 import { AudioBed } from "./components/audio-bed";
+import { SceneThemeContext } from "./components/scene-theme-context";
 import { SFXWhoosh } from "./components/sfx-cues";
 import { SocialTitleScene } from "./scenes/social-title";
 import { OutroScene } from "./scenes/outro";
@@ -22,7 +25,7 @@ import {
 
 function OpaqueWrap({ children }: { children: React.ReactNode }) {
   return (
-    <AbsoluteFill style={{ backgroundColor: theme.background }}>
+    <AbsoluteFill style={{ backgroundColor: ppdSocial.background }}>
       {children}
     </AbsoluteFill>
   );
@@ -30,17 +33,18 @@ function OpaqueWrap({ children }: { children: React.ReactNode }) {
 
 export function MatchRecapSocial() {
   return (
-    <AbsoluteFill style={{ backgroundColor: theme.background }}>
-      <AudioBed totalDuration={SOCIAL_TOTAL_DURATION} />
-      <SFXWhoosh delay={SOCIAL_DURATIONS.title - 12} />
-      <TransitionSeries>
+    <SceneThemeContext.Provider value={ppdSocial}>
+      <AbsoluteFill style={{ backgroundColor: ppdSocial.background }}>
+        <AudioBed totalDuration={SOCIAL_TOTAL_DURATION} />
+        <SFXWhoosh delay={SOCIAL_DURATIONS.title - 12} />
+        <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.title}>
           <OpaqueWrap>
             <SocialTitleScene />
           </OpaqueWrap>
         </TransitionSeries.Sequence>
 
-        <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
+        <TransitionSeries.Transition presentation={slide({ direction: "from-right" })} timing={SOCIAL_TRANSITION} />
 
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.hexbin} premountFor={12}>
           <OpaqueWrap>
@@ -56,7 +60,7 @@ export function MatchRecapSocial() {
           </OpaqueWrap>
         </TransitionSeries.Sequence>
 
-        <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
+        <TransitionSeries.Transition presentation={wipe({ direction: "from-left" })} timing={SOCIAL_TRANSITION} />
 
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.patterns} premountFor={12}>
           <OpaqueWrap>
@@ -72,7 +76,7 @@ export function MatchRecapSocial() {
           </OpaqueWrap>
         </TransitionSeries.Sequence>
 
-        <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
+        <TransitionSeries.Transition presentation={slide({ direction: "from-bottom" })} timing={SOCIAL_TRANSITION} />
 
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.clutchSpeed} premountFor={12}>
           <OpaqueWrap>
@@ -88,7 +92,7 @@ export function MatchRecapSocial() {
           </OpaqueWrap>
         </TransitionSeries.Sequence>
 
-        <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
+        <TransitionSeries.Transition presentation={wipe({ direction: "from-right" })} timing={SOCIAL_TRANSITION} />
 
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.coach} premountFor={12}>
           <OpaqueWrap>
@@ -104,7 +108,7 @@ export function MatchRecapSocial() {
           </OpaqueWrap>
         </TransitionSeries.Sequence>
 
-        <TransitionSeries.Transition presentation={fade()} timing={SOCIAL_TRANSITION} />
+        <TransitionSeries.Transition presentation={slide({ direction: "from-left" })} timing={SOCIAL_TRANSITION} />
 
         <TransitionSeries.Sequence durationInFrames={SOCIAL_DURATIONS.outro}>
           <OpaqueWrap>
@@ -112,6 +116,7 @@ export function MatchRecapSocial() {
           </OpaqueWrap>
         </TransitionSeries.Sequence>
       </TransitionSeries>
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </SceneThemeContext.Provider>
   );
 }

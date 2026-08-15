@@ -1,7 +1,7 @@
 import { motionTokens } from "@ppd/tokens";
 import { getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { theme } from "../court-viz-utils";
+import { useSceneTheme } from "./scene-theme-context";
 import { bodyFont, condensedFont } from "../fonts";
 
 type DuelStatRowProps = {
@@ -27,11 +27,12 @@ export function DuelStatRow({
 }: DuelStatRowProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const sceneTheme = useSceneTheme();
   const enter = spring({ config: motionTokens.springs.snappy, delay, fps, frame });
   const bar = spring({ config: motionTokens.springs.snappy, delay: delay + 6, fps, frame });
 
-  const hostColor = getPlayerColor("host", theme);
-  const guestColor = getPlayerColor("guest", theme);
+  const hostColor = getPlayerColor("host", sceneTheme);
+  const guestColor = getPlayerColor("guest", sceneTheme);
   const hostWins = hostShare >= guestShare;
   const total = Math.max(hostShare + guestShare, 0.001);
   const hostPct = (hostShare / total) * 100;
@@ -50,7 +51,7 @@ export function DuelStatRow({
     >
       <div
         style={{
-          color: theme.inkMuted,
+          color: sceneTheme.inkMuted,
           fontFamily: condensedFont,
           fontSize: 13,
           fontWeight: 600,
@@ -67,7 +68,7 @@ export function DuelStatRow({
         <div style={{ textAlign: "left" }}>
           <div
             style={{
-              color: hostWins ? hostColor : `${hostColor}88`,
+              color: hostWins ? hostColor : `${hostColor}66`,
               fontFamily: condensedFont,
               fontSize: hostWins ? 44 : 32,
               fontWeight: 700,
@@ -75,12 +76,12 @@ export function DuelStatRow({
           >
             {hostValue}
           </div>
-          <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12 }}>{hostLabel}</div>
+          <div style={{ color: sceneTheme.inkMuted, fontFamily: bodyFont, fontSize: 12 }}>{hostLabel}</div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div
             style={{
-              color: !hostWins ? guestColor : `${guestColor}88`,
+              color: !hostWins ? guestColor : `${guestColor}66`,
               fontFamily: condensedFont,
               fontSize: !hostWins ? 44 : 32,
               fontWeight: 700,
@@ -88,14 +89,14 @@ export function DuelStatRow({
           >
             {guestValue}
           </div>
-          <div style={{ color: theme.inkMuted, fontFamily: bodyFont, fontSize: 12 }}>{guestLabel}</div>
+          <div style={{ color: sceneTheme.inkMuted, fontFamily: bodyFont, fontSize: 12 }}>{guestLabel}</div>
         </div>
       </div>
 
       <div style={{ height: 14, position: "relative" }}>
         <div
           style={{
-            background: `${theme.inkMuted}33`,
+            background: `${sceneTheme.inkMuted}33`,
             borderRadius: 7,
             height: 14,
             left: "50%",

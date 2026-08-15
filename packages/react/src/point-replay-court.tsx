@@ -128,6 +128,8 @@ export const PointReplayCourt = memo(function PointReplayCourt({
 
       {showControls && (
         <div
+          role="group"
+          aria-label="Replay playback controls"
           style={{
             display: "flex",
             flexDirection: "column",
@@ -190,6 +192,7 @@ function Ctrl({
 }) {
   return (
     <button
+      aria-label={label}
       type="button"
       onClick={onClick}
       style={{

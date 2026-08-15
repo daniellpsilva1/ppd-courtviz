@@ -134,4 +134,31 @@ describe("MomentumChart", () => {
     );
     expect(markup).toContain("svg");
   });
+
+  it("renders 'No momentum data' text when points array is empty", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(MomentumChart, {
+        height: 200,
+        hostPlayer: "host",
+        points: [],
+        theme: sprawlball,
+        width: 800,
+      }),
+    );
+    expect(markup).toContain("No momentum data");
+  });
+
+  it("does not render 'No momentum data' text when points exist", () => {
+    const points = [makePoint({ pointWinner: "host" })];
+    const markup = renderToStaticMarkup(
+      React.createElement(MomentumChart, {
+        height: 200,
+        hostPlayer: "host",
+        points,
+        theme: sprawlball,
+        width: 800,
+      }),
+    );
+    expect(markup).not.toContain("No momentum data");
+  });
 });

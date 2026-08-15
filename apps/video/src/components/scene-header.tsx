@@ -1,7 +1,8 @@
 import { motionTokens } from "@ppd/tokens";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { bodyFont, condensedFont } from "../fonts";
-import { PPD, theme } from "../ppd-tokens";
+import { PPD } from "../ppd-tokens";
+import { useSceneTheme } from "./scene-theme-context";
 import { landscapeContentLayout, verticalContentLayout } from "../scene-layout";
 
 type SceneHeaderProps = {
@@ -19,6 +20,7 @@ export function SceneHeader({ delay = 0, orientation = "landscape", subtitle, ti
       ? verticalContentLayout(height)
       : landscapeContentLayout(height);
 
+  const sceneTheme = useSceneTheme();
   const progress = spring({
     config: motionTokens.springs.smooth,
     delay,
@@ -57,13 +59,13 @@ export function SceneHeader({ delay = 0, orientation = "landscape", subtitle, ti
           flexShrink: 0,
           height: isVertical ? accentSize : 2,
           marginBottom: isVertical ? 0 : 12,
-          width: isVertical ? 3 : accentSize,
+          width: isVertical ? 2 : accentSize,
         }}
       />
       <div>
         <div
           style={{
-            color: theme.ink,
+            color: sceneTheme.ink,
             fontFamily: condensedFont,
             fontSize: 32,
             fontWeight: 700,
@@ -79,7 +81,7 @@ export function SceneHeader({ delay = 0, orientation = "landscape", subtitle, ti
             style={{
               color: PPD.textMuted,
               fontFamily: bodyFont,
-              fontSize: 16,
+              fontSize: 17,
               marginTop: 8,
             }}
           >

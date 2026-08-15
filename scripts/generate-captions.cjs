@@ -14,6 +14,7 @@ const { loadMatchContext } = require("./load-match-data.cjs");
 const { brandHashtag } = require("./brand-helpers.cjs");
 const { BENCH_POSTS_SLIDES } = require("./bench-posts-slides.cjs");
 const { setScore } = require("./export-slide-helpers.cjs");
+const { selectSlides } = require("./select-slides.cjs");
 
 function buildHashtags() {
   const brandTag = `#${brandHashtag()}`;
@@ -24,10 +25,11 @@ function buildHashtags() {
   };
 }
 
-function buildCaptions(ctx) {
+function buildCaptions(ctx, slideCount) {
   const score = setScore(ctx.sets);
   const HASHTAGS = buildHashtags();
-  const deckHook = `Swipe through ${BENCH_POSTS_SLIDES.length} slides: shot maps → heatmaps → match analysis → coach takeaways.`;
+  const count = slideCount || BENCH_POSTS_SLIDES.length;
+  const deckHook = `Swipe through ${count} slides: shot maps → heatmaps → match analysis → coach takeaways.`;
   const primaryInsight = primaryCoachInsight({
     enrichedShots: ctx.enrichedShots,
     guestName: ctx.guestName,
@@ -56,21 +58,42 @@ function buildCaptions(ctx) {
   };
 }
 
+function parseArg(prefix) {
+  const arg = process.argv.find((a) => a.startsWith(`${prefix}=`));
+  return arg ? arg.split("=").slice(1).join("=") : undefined;
+}
+
 async function main() {
+  const matchId = parseArg("--matchId");
+  const outArg = parseArg("--out");
   const ctx = await loadMatchContext();
-  const outDir = path.resolve(__dirname, "..", "apps", "demo", "public", "exports", "captions");
+
+  // When --matchId is provided, use the selector to determine the actual slide count
+  let slideCount;
+  let selectedSlides;
+  if (matchId) {
+    selectedSlides = selectSlides(ctx);
+    slideCount = selectedSlides.length;
+  } else {
+    slideCount = BENCH_POSTS_SLIDES.length;
+  }
+
+  const outDir = outArg
+    ? path.resolve(outArg)
+    : path.resolve(__dirname, "..", "apps", "demo", "public", "exports", "captions");
   fs.mkdirSync(outDir, { recursive: true });
 
-  const captions = buildCaptions(ctx);
+  const captions = buildCaptions(ctx, slideCount);
   const manifest = {
-    deckSlideCount: BENCH_POSTS_SLIDES.length,
+    deckSlideCount: slideCount,
     guestName: ctx.guestName,
     hostName: ctx.hostName,
     matchDate: ctx.matchDate,
-    matchId: ctx.matchId,
+    matchId: matchId ?? ctx.matchId ?? null,
     platforms: captions,
     generatedAt: new Date().toISOString(),
     schemaVersion: 1,
+    selectedSlides: selectedSlides ?? null,
   };
 
   fs.writeFileSync(path.join(outDir, "captions.json"), JSON.stringify(manifest, null, 2), "utf-8");

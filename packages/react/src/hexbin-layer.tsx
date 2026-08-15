@@ -82,13 +82,13 @@ function getCountColor(count: number, vmax: number, playerColor: string, lowColo
 }
 
 export const HexbinLayer = memo(function HexbinLayer({
-  alpha = 0.85,
+  alpha = 0.68,
   clip = false,
   colorScale = "efficiency",
   extent,
   gridsize = 6,
   half = "full",
-  haloWidth = 0.75,
+  haloWidth = 0.5,
   labelMinCount = 6,
   minCount = 2,
   player,
@@ -203,8 +203,8 @@ export const HexbinLayer = memo(function HexbinLayer({
               fill={color}
               opacity={alpha}
               points={points}
-              stroke={theme.ink}
-              strokeWidth={0.5}
+              stroke={theme.haloColor}
+              strokeWidth={0.3}
             />
 
             {showLabels && hex.count >= labelMinCount && r > labelSize * 0.9 && (

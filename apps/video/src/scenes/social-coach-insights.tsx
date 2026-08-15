@@ -1,14 +1,14 @@
 import { formatRate } from "@courtviz/core";
-import { motionTokens } from "@ppd/tokens";
+import { motionTokens, radii } from "@ppd/tokens";
 import { generateCoachInsights } from "@ppd/brand";
-import { getPlayerColor } from "@courtviz/themes";
+import { cardBg, getPlayerColor } from "@courtviz/themes";
 import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
 import { SFXImpact } from "../components/sfx-cues";
-import { theme } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { bodyFont, condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
 import { verticalContentLayout } from "../scene-layout";
@@ -18,6 +18,7 @@ export function SocialCoachInsightsScene() {
   const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = verticalContentLayout(height);
+  const theme = useSceneTheme();
   const insights = generateCoachInsights(
     {
       enrichedShots: ctx.enrichedShots,
@@ -30,7 +31,7 @@ export function SocialCoachInsightsScene() {
   const enter = spring({ config: motionTokens.springs.smooth, delay: 10, fps, frame });
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SFXImpact delay={12} />
       <SceneHeader delay={12} orientation="vertical" subtitle="Actionable takeaways" title="Coach Insights" />
 
@@ -63,10 +64,10 @@ export function SocialCoachInsightsScene() {
               style={{
                 alignItems: "center",
                 backdropFilter: "blur(10px)",
-                backgroundColor: "rgba(0,0,0,0.55)",
+                backgroundColor: cardBg(theme),
                 border: `1px solid ${accent}44`,
                 borderLeft: `5px solid ${accent}`,
-                borderRadius: 12,
+                borderRadius: radii.lg,
                 display: "flex",
                 flex: 1,
                 gap: 16,
@@ -127,6 +128,7 @@ export function SocialCoachInsightsScene() {
 }
 
 function SocialMiniViz({ frame, fps, insight }: { frame: number; fps: number; insight: ReturnType<typeof generateCoachInsights>[number] }) {
+  const theme = useSceneTheme();
   if (!insight.viz) return null;
   const enter = spring({ config: motionTokens.springs.snappy, delay: 20, fps, frame });
   const viz = insight.viz;

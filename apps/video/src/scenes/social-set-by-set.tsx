@@ -1,12 +1,13 @@
-import { motionTokens } from "@ppd/tokens";
+import { motionTokens, radii } from "@ppd/tokens";
 import { computeMomentum } from "@courtviz/core";
-import { getPlayerColor } from "@courtviz/themes";
+import { cardBg, getPlayerColor } from "@courtviz/themes";
+import { useMemo } from "react";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BroadcastShell } from "../components/broadcast-shell";
 import { InsightCallout } from "../components/insight-callout";
 import { MatchScoreBar } from "../components/match-score-bar";
 import { SceneHeader } from "../components/scene-header";
-import { theme } from "../court-viz-utils";
+import { useSceneTheme } from "../components/scene-theme-context";
 import { condensedFont } from "../fonts";
 import { getVideoMatchContext } from "../match-data";
 import { verticalContentLayout } from "../scene-layout";
@@ -16,13 +17,14 @@ export function SocialSetBySetScene() {
   const { fps, height } = useVideoConfig();
   const ctx = getVideoMatchContext();
   const layout = verticalContentLayout(height);
+  const theme = useSceneTheme();
   const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
   const hostColor = getPlayerColor("host", theme);
   const guestColor = getPlayerColor("guest", theme);
-  const momentum = computeMomentum(ctx.momentumPoints, "host");
+  const momentum = useMemo(() => computeMomentum(ctx.momentumPoints, "host"), [ctx.momentumPoints]);
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader delay={12} orientation="vertical" subtitle="Per-set score breakdown" title="Set by Set" />
 
       <div
@@ -65,10 +67,10 @@ export function SocialSetBySetScene() {
               style={{
                 alignItems: "center",
                 backdropFilter: "blur(10px)",
-                backgroundColor: "rgba(0,0,0,0.55)",
+                backgroundColor: cardBg(theme),
                 border: `1px solid ${winnerColor}44`,
                 borderLeft: `4px solid ${winnerColor}`,
-                borderRadius: 12,
+                borderRadius: radii.lg,
                 display: "flex",
                 flex: 1,
                 flexDirection: "column",
@@ -150,7 +152,14 @@ function MiniMomentumStrip({
   maxAbs: number;
   progress: number;
 }) {
-  if (momentum.length === 0) return null;
+  const theme = useSceneTheme();
+  if (momentum.length === 0) {
+    return (
+      <div style={{ color: theme.inkMuted, fontFamily: condensedFont, fontSize: 11, padding: "8px 0" }}>
+        No momentum data
+      </div>
+    );
+  }
   const stripW = 880;
   const stripH = 36;
   const midY = stripH / 2;

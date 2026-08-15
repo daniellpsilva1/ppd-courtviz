@@ -34,7 +34,7 @@ export function chromeOffsets(orientation: "vertical" | "landscape") {
   };
 }
 
-export function verticalContentLayout(canvasHeight: number, sidePadding = 40) {
+export function verticalContentLayout(canvasHeight: number, sidePadding = 56) {
   const contentTop = VERTICAL_HEADER;
   const contentHeight = canvasHeight - contentTop - VERTICAL_FOOTER;
   return {

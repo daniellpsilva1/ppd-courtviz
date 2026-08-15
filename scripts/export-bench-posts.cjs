@@ -1,9 +1,10 @@
 /**
- * Bench social posts exporter — 13 portrait 4:5 (2160×2700) PNG slides.
+ * Bench social posts exporter — portrait 4:5 (2160×2700) PNG slides.
  *
  * Usage:
  *   node scripts/export-bench-posts.cjs
  *   node scripts/export-bench-posts.cjs --svg-only
+ *   node scripts/export-bench-posts.cjs --matchId=<uuid> --slug=<slug> --outRoot=<path> --json
  */
 
 const fs = require("fs");
@@ -18,6 +19,8 @@ const sharp = require("sharp");
 const { socialFormats } = require("@ppd/tokens");
 const { BENCH_POSTS_FORMAT, BENCH_POSTS_SLIDES, benchPostFileName } = require("./bench-posts-slides.cjs");
 const { buildSlide, resolveBranding, BENCH_BG_MID } = require("./bench-post-helpers.cjs");
+const { loadMatchContext: loadMatchContextFromData } = require("./load-match-data.cjs");
+const { selectSlides } = require("./select-slides.cjs");
 
 const SERVE_SLIDE_IDS = new Set([
   "serve-map-host", "serve-map-guest", "serve-zones-heat",
@@ -107,24 +110,22 @@ function runQaAsserts(fixture, matchCtx) {
   return errors.length;
 }
 
-function loadMatchContext() {
-  const data = require("@courtviz/data");
-  return {
-    enrichedShots: data.enrichedShots,
-    guestName: data.guestName,
-    hostName: data.hostName,
-    matchDate: data.matchDate,
-    momentumPoints: data.momentumPoints,
-    points: data.points,
-    sets: data.sets,
-    shots: data.shots,
-    surface: data.surface,
-  };
+async function loadMatchContext() {
+  return loadMatchContextFromData();
+}
+
+function parseArg(prefix) {
+  const arg = process.argv.find((a) => a.startsWith(`${prefix}=`));
+  return arg ? arg.split("=").slice(1).join("=") : undefined;
 }
 
 function parseArgs() {
   const svgOnly = process.argv.includes("--svg-only");
-  return { svgOnly };
+  const json = process.argv.includes("--json");
+  const matchId = parseArg("--matchId");
+  const slug = parseArg("--slug");
+  const outRootArg = parseArg("--outRoot");
+  return { json, matchId, outRootArg, slug, svgOnly };
 }
 
 function cleanOutput(outRoot) {
@@ -147,15 +148,28 @@ function computeFixtureHash(fixture) {
 }
 
 async function main() {
-  const { svgOnly } = parseArgs();
+  const { json, matchId, outRootArg, slug, svgOnly } = parseArgs();
   const fixture = loadFixture();
   const fixtureHash = computeFixtureHash(fixture);
-  const matchCtx = loadMatchContext();
+  const matchCtx = await loadMatchContext();
 
   runQaAsserts(fixture, matchCtx);
 
+  // Determine which slides to render: selector-chosen for per-match, all for default
+  let slideIdsToRender;
+  let selectedSlides;
+  if (matchId) {
+    slideIdsToRender = selectSlides(matchCtx);
+    selectedSlides = BENCH_POSTS_SLIDES.filter((s) => slideIdsToRender.includes(s.id));
+  } else {
+    selectedSlides = BENCH_POSTS_SLIDES;
+    slideIdsToRender = selectedSlides.map((s) => s.id);
+  }
+
   const branding = resolveBranding();
-  const outRoot = path.resolve(__dirname, "..", "apps", "demo", "public", "exports", "bench-posts");
+  const outRoot = outRootArg
+    ? path.resolve(outRootArg)
+    : path.resolve(__dirname, "..", "apps", "demo", "public", "exports", "bench-posts");
   cleanOutput(outRoot);
 
   const distExports = path.resolve(__dirname, "..", "apps", "demo", "dist", "exports", "bench-posts");
@@ -171,8 +185,8 @@ async function main() {
 
   const exportedSlides = [];
 
-  for (const [index, slide] of BENCH_POSTS_SLIDES.entries()) {
-    const element = buildSlide(slide.id, fixture, branding, index, BENCH_POSTS_SLIDES.length, matchCtx);
+  for (const [index, slide] of selectedSlides.entries()) {
+    const element = buildSlide(slide.id, fixture, branding, index, selectedSlides.length, matchCtx);
     const svgPath = path.join(outRoot, benchPostFileName(index, slide.id, "svg"));
     const pngPath = svgOnly ? undefined : path.join(outRoot, benchPostFileName(index, slide.id, "png"));
 
@@ -207,9 +221,12 @@ async function main() {
     format: BENCH_POSTS_FORMAT,
     generatedAt: new Date().toISOString(),
     height: pngHeight,
+    matchId: matchId ?? null,
     platforms: ["instagram", "tiktok", "x", "linkedin"],
     schemaVersion: 1,
+    selectedSlides: slideIdsToRender,
     slides: exportedSlides,
+    slug: slug ?? null,
     width: pngWidth,
   };
 
@@ -220,6 +237,17 @@ async function main() {
 
   if (!svgOnly) {
     await runAlphaCheck(outRoot, exportedSlides);
+  }
+
+  if (json) {
+    console.log(JSON.stringify({
+      fixtureHash,
+      manifestPath: path.join(outRoot, "manifest.json"),
+      matchId: matchId ?? null,
+      outRoot,
+      selectedSlides: slideIdsToRender,
+      slug: slug ?? null,
+    }));
   }
 }
 

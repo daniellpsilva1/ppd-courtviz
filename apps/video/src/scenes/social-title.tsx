@@ -1,11 +1,12 @@
-import { motionTokens } from "@ppd/tokens";
+import { layout, motionTokens } from "@ppd/tokens";
+import { cardBg } from "@courtviz/themes";
 import { Court } from "@courtviz/react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { BRAND_SURFACE } from "../brand-surface";
 import { bodyFont, condensedFont } from "../fonts";
 import { formatMatchResultFromContext, formatSetScoreDetailedFromSets } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
-import { PPD, theme } from "../ppd-tokens";
+import { useSceneTheme } from "../components/scene-theme-context";
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "April 2025";
@@ -26,6 +27,7 @@ export function SocialTitleScene() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ctx = getVideoMatchContext();
+  const theme = useSceneTheme();
 
   const courtOpacity = interpolate(frame, [0, 30], [0, 0.12], {
     extrapolateLeft: "clamp",
@@ -74,7 +76,7 @@ export function SocialTitleScene() {
       >
         <div
           style={{
-            color: PPD.textMuted,
+            color: theme.inkMuted,
             fontFamily: bodyFont,
             fontSize: 12,
             fontWeight: 500,
@@ -106,7 +108,7 @@ export function SocialTitleScene() {
 
         <div
           style={{
-            color: PPD.textMuted,
+            color: theme.inkMuted,
             fontFamily: condensedFont,
             fontSize: 18,
             fontWeight: 600,
@@ -140,9 +142,9 @@ export function SocialTitleScene() {
 
         <div
           style={{
-            backgroundColor: PPD.surface,
-            border: `1px solid ${PPD.border}`,
-            borderRadius: PPD.radius.md,
+            backgroundColor: cardBg(theme),
+            border: `1px solid ${theme.border}`,
+            borderRadius: layout.radii.md,
             marginTop: 32,
             opacity: scoreOpacity,
             padding: "16px 36px",
@@ -174,7 +176,7 @@ export function SocialTitleScene() {
 
         <div
           style={{
-            color: PPD.textMuted,
+            color: theme.inkMuted,
             fontFamily: bodyFont,
             fontSize: 12,
             letterSpacing: "0.1em",

@@ -19,8 +19,6 @@ export function SocialStatsScene() {
   const layout = verticalContentLayout(height);
   const enter = spring({ config: motionTokens.springs.smooth, delay: 8, fps, frame });
 
-  const longTotal = Math.max(stats.longRallyBattle.hostWon + stats.longRallyBattle.guestWon, 1);
-
   const statRows = [
     {
       delay: 12,
@@ -31,23 +29,7 @@ export function SocialStatsScene() {
       title: "Service Points Won",
     },
     {
-      delay: 18,
-      guestShare: stats.guestServiceStats.servePlusOneRate,
-      guestValue: `${Math.round(stats.guestServiceStats.servePlusOneRate * 100)}%`,
-      hostShare: stats.hostServiceStats.servePlusOneRate,
-      hostValue: `${Math.round(stats.hostServiceStats.servePlusOneRate * 100)}%`,
-      title: "Short Rallies Won (1-3)",
-    },
-    {
-      delay: 24,
-      guestShare: stats.longRallyBattle.guestWon / longTotal,
-      guestValue: `${Math.round((stats.longRallyBattle.guestWon / longTotal) * 100)}%`,
-      hostShare: stats.longRallyBattle.hostWon / longTotal,
-      hostValue: `${Math.round((stats.longRallyBattle.hostWon / longTotal) * 100)}%`,
-      title: "Long Rallies Won (7+)",
-    },
-    {
-      delay: 30,
+      delay: 20,
       guestShare: stats.guestFirstServe.rate ?? 0,
       guestValue: formatRate(stats.guestFirstServe.rate),
       hostShare: stats.hostFirstServe.rate ?? 0,
@@ -55,15 +37,15 @@ export function SocialStatsScene() {
       title: "First Serve In",
     },
     {
-      delay: 36,
+      delay: 28,
       guestShare: stats.guestBreakConv.rate ?? 0,
       guestValue: formatRate(stats.guestBreakConv.rate),
       hostShare: stats.hostBreakConv.rate ?? 0,
       hostValue: formatRate(stats.hostBreakConv.rate),
-      title: "Break Points Converted (Return)",
+      title: "Break Points Converted",
     },
     {
-      delay: 42,
+      delay: 36,
       guestShare: stats.guestWinRate.rate ?? 0,
       guestValue: formatRate(stats.guestWinRate.rate),
       hostShare: stats.hostWinRate.rate ?? 0,
@@ -73,14 +55,14 @@ export function SocialStatsScene() {
   ];
 
   return (
-    <BroadcastShell>
+    <BroadcastShell variant="social">
       <SceneHeader delay={12} orientation="vertical" subtitle="How the match was won" title="Key Stats" />
 
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 16,
+          gap: 24,
           height: layout.contentHeight,
           justifyContent: "space-evenly",
           left: layout.sidePadding,

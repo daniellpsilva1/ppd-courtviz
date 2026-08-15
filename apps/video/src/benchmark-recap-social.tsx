@@ -1,5 +1,6 @@
 import { TransitionSeries } from "@remotion/transitions";
-import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { wipe } from "@remotion/transitions/wipe";
 import { AbsoluteFill } from "remotion";
 import {
   BENCHMARK_DURATIONS,
@@ -18,15 +19,15 @@ export function BenchmarkStorySocial() {
         <TransitionSeries.Sequence durationInFrames={BENCHMARK_DURATIONS.hook}>
           <BenchmarkHookScene />
         </TransitionSeries.Sequence>
-        <TransitionSeries.Transition presentation={fade()} timing={BENCHMARK_TRANSITION} />
+        <TransitionSeries.Transition presentation={slide({ direction: "from-right" })} timing={BENCHMARK_TRANSITION} />
         <TransitionSeries.Sequence durationInFrames={BENCHMARK_DURATIONS.hexbin}>
           <BenchmarkHexbinScene />
         </TransitionSeries.Sequence>
-        <TransitionSeries.Transition presentation={fade()} timing={BENCHMARK_TRANSITION} />
+        <TransitionSeries.Transition presentation={wipe({ direction: "from-left" })} timing={BENCHMARK_TRANSITION} />
         <TransitionSeries.Sequence durationInFrames={BENCHMARK_DURATIONS.insight}>
           <BenchmarkInsightScene />
         </TransitionSeries.Sequence>
-        <TransitionSeries.Transition presentation={fade()} timing={BENCHMARK_TRANSITION} />
+        <TransitionSeries.Transition presentation={slide({ direction: "from-bottom" })} timing={BENCHMARK_TRANSITION} />
         <TransitionSeries.Sequence durationInFrames={BENCHMARK_DURATIONS.outro}>
           <BenchmarkOutroScene />
         </TransitionSeries.Sequence>

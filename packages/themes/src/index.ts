@@ -272,8 +272,38 @@ export const sprawlball: CourtvizTheme = {
   },
 };
 
+/**
+ * Social-optimized dark theme — softer navy, muted player colors, and a
+ * sequential teal diverging ramp for a lighter, more editorial Instagram look.
+ */
+export const ppdSocial: CourtvizTheme = {
+  ...ppd,
+  name: "ppd-social",
+  background: "#141B2E",
+  ink: "#E8ECF4",
+  inkMuted: "#8B95A8",
+  border: "#2A3245",
+  haloColor: "#141B2E",
+  playerHost: "#5B8DEF",
+  playerGuest: "#E88B5C",
+  diverging: {
+    low: "#2A4A6B",
+    lowMid: "#3B6B8C",
+    mid: "#1E2A40",
+    midLight: "#2E4060",
+    high: "#5B9EAF",
+    peak: "#7BC4D8",
+  },
+  annotation: {
+    calloutFill: "#1C2438",
+    calloutTextColor: "#E8ECF4",
+    leaderColor: "#8B95A8",
+    leaderWidth: 1,
+  },
+};
+
 export const themes: Record<string, CourtvizTheme> = {
-  broadcast, ppd, ppdDark, ppdDeck, ppdEditorial, ppdLight, sprawlball,
+  broadcast, ppd, ppdDark, ppdDeck, ppdEditorial, ppdLight, ppdSocial, sprawlball,
 };
 
 export function getTheme(name: string = "ppd"): CourtvizTheme {
@@ -294,6 +324,18 @@ export function getSurroundColor(surface: Surface, theme: CourtvizTheme = ppd): 
 
 export function getPlayerColor(player: string, theme: CourtvizTheme = ppd): string {
   return player === "host" ? theme.playerHost : theme.playerGuest;
+}
+
+/** Semi-transparent card background for glassmorphism panels (backdrop-blur cards). */
+export function cardBg(theme: CourtvizTheme = ppd, opacity = 0.55): string {
+  const fill = theme.annotation.calloutFill;
+  if (fill.startsWith("#") && fill.length === 7) {
+    const r = parseInt(fill.slice(1, 3), 16);
+    const g = parseInt(fill.slice(3, 5), 16);
+    const b = parseInt(fill.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${opacity})`;
+  }
+  return `rgba(0,0,0,${opacity})`;
 }
 
 export function efficiencyColorStops(theme: CourtvizTheme = ppd): Array<[number, string]> {

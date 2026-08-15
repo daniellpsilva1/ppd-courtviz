@@ -5,7 +5,8 @@ import { formatSetScoreFromSets } from "../match-stats";
 import { getVideoMatchContext } from "../match-data";
 import { chromeOffsets } from "../scene-layout";
 import { PpdLogo } from "./ppd-logo";
-import { PPD, theme } from "../ppd-tokens";
+import { PPD } from "../ppd-tokens";
+import { useSceneTheme } from "./scene-theme-context";
 
 type MatchScoreBarProps = {
   guestName: string;
@@ -20,6 +21,7 @@ export function MatchScoreBar({
 }: MatchScoreBarProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const sceneTheme = useSceneTheme();
   const ctx = getVideoMatchContext();
   const { scoreBottom } = chromeOffsets(orientation);
 
@@ -45,9 +47,9 @@ export function MatchScoreBar({
         style={{
           alignItems: "center",
           backgroundColor: PPD.surface,
-          border: `1px solid ${PPD.border}`,
+          border: `1px solid ${PPD.border}66`,
           borderRadius: PPD.radius.md,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
           display: "flex",
           gap: 24,
           padding: "14px 28px",
@@ -55,7 +57,7 @@ export function MatchScoreBar({
       >
         <span
           style={{
-            color: theme.playerHost,
+            color: sceneTheme.playerHost,
             fontFamily: condensedFont,
             fontSize: 18,
             fontWeight: 700,
@@ -66,7 +68,7 @@ export function MatchScoreBar({
         </span>
         <span
           style={{
-            color: theme.ink,
+            color: sceneTheme.ink,
             fontFamily: condensedFont,
             fontSize: 24,
             fontWeight: 700,
@@ -77,7 +79,7 @@ export function MatchScoreBar({
         </span>
         <span
           style={{
-            color: theme.playerGuest,
+            color: sceneTheme.playerGuest,
             fontFamily: condensedFont,
             fontSize: 18,
             fontWeight: 700,

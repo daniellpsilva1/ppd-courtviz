@@ -2,7 +2,7 @@
  * <RayLayer> — shot trajectory arrows with optional curved arcs and flow mode.
  */
 
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import {
   type CourtScales,
   type EnrichedShot,
@@ -71,7 +71,7 @@ export interface RayLayerProps {
 }
 
 export const RayLayer = memo(function RayLayer({
-  alpha = 0.55,
+  alpha = 0.45,
   clip = true,
   clipBounds,
   curved = false,
@@ -121,8 +121,9 @@ export const RayLayer = memo(function RayLayer({
     });
   }, [shots, flowMode, player, strokeFilter, flowMinCount]);
 
-  const markerId = useMemo(() => `ray-arrowhead-${Math.random().toString(36).slice(2, 8)}`, []);
-  const clipId = useMemo(() => `ray-clip-${Math.random().toString(36).slice(2, 8)}`, []);
+  const reactId = useId().replace(/:/g, "");
+  const markerId = `ray-arrowhead-${reactId}`;
+  const clipId = `ray-clip-${reactId}`;
 
   const maxFlowCount = useMemo(() => {
     return flows.reduce((m, f) => Math.max(m, f.count), 0);
@@ -188,10 +189,10 @@ export const RayLayer = memo(function RayLayer({
             d={d}
             fill="none"
             key={`flow-underlay-${i}`}
-            opacity={0.25}
+            opacity={0.15}
             stroke="#ffffff"
             strokeLinecap="round"
-            strokeWidth={width + 2}
+            strokeWidth={width + 1.5}
           />
         );
       })
@@ -212,10 +213,10 @@ export const RayLayer = memo(function RayLayer({
               <path
                 d={d}
                 fill="none"
-                opacity={0.12}
+                opacity={0.08}
                 stroke="#ffffff"
                 strokeLinecap="round"
-                strokeWidth={strokeWidth + 2}
+                strokeWidth={strokeWidth + 1.5}
               />
               <path
                 d={d}
@@ -233,9 +234,9 @@ export const RayLayer = memo(function RayLayer({
         return (
           <g key={i}>
             <line
-              opacity={0.12}
+              opacity={0.08}
               stroke="#ffffff"
-              strokeWidth={strokeWidth + 2}
+              strokeWidth={strokeWidth + 1.5}
               x1={x1}
               x2={x2}
               y1={y1}
