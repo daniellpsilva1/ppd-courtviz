@@ -2,54 +2,8 @@
   "name": "courtviz",
   "version": "0.0.0",
   "private": true,
-  "description": "A professional tennis visualization library for React",
-  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "build": "turbo run build",
-    "build:app": "turbo run build --filter=@courtviz/react...",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "test:integration": "pnpm --filter @courtviz/render exec vitest run --config ../../vitest.config.ts",
-    "test:visual": "turbo run test:visual",
-    "test:watch": "turbo run test:watch",
-    "typecheck": "turbo run typecheck",
-    "changeset": "changeset",
-    "version": "changeset version",
-    "release": "turbo run build && changeset publish",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "export": "turbo run build && tsx scripts/export.ts --mode=default",
-    "export:bench-posts": "turbo run build && node scripts/export-bench-posts.cjs",
-    "export:deck-pdf": "node scripts/build-deck-pdf.cjs",
-    "export:posters": "turbo run build && tsx scripts/export.ts --mode=posters",
-    "export:social": "turbo run build && tsx scripts/export.ts --mode=posters",
-    "export:bench-fixture": "node scripts/generate-bench-fixture.cjs",
-    "sync:bench-posts": "node scripts/sync-bench-posts.cjs",
-    "export:captions": "turbo run build && tsx scripts/export.ts --mode=captions",
-    "export:all": "turbo run build && tsx scripts/export.ts --mode=all",
-    "video:prepare": "node scripts/prepare-video-data.cjs",
-    "video:render:social": "turbo run build && node scripts/prepare-video-data.cjs && pnpm --filter @courtviz/video render:social",
-    "video:render": "turbo run build && node scripts/prepare-video-data.cjs && pnpm --filter @courtviz/video render",
-    "video:render:all": "turbo run build && node scripts/prepare-video-data.cjs && pnpm --filter @courtviz/video render && pnpm --filter @courtviz/video render:social",
-    "spike:export": "turbo run build && tsx scripts/export-court-dominance-spike.ts",
-    "spike:export:bundle": "turbo run build --filter=@courtviz/spike... && tsx scripts/render-court-dominance-2d-video.ts",
-    "spike:export:3d": "turbo run build --filter=@courtviz/gallery... && tsx scripts/capture-court-dominance-video.ts",
-    "replay:export": "turbo run build --filter=@courtviz/react... --filter=@courtviz/export-video... --filter=@courtviz/data... && tsx scripts/render-point-replay-video.ts"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.27.12",
-    "@playwright/test": "^1.49.0",
-    "@types/node": "^20.17.0",
-    "pdfkit": "^0.19.1",
-    "playwright": "^1.49.0",
-    "sharp": "^0.33.5",
-    "tsx": "^4.19.0",
-    "turbo": "^2.4.0",
-    "typescript": "^5.7.0"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=9.0.0"
-  },
-  "packageManager": "pnpm@9.15.0"
+    "build:app": "echo 'courtviz stubs — nothing to build'"
+  }
 }

@@ -12,4 +12,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
+  external: ["zod", "@supabase/supabase-js"],
 });
